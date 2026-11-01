@@ -1,13 +1,13 @@
 {
   "schema_version": "1.0",
   "dataset": "rule",
-  "updated_at": "2026-10-31T12:38:47+09:00",
+  "updated_at": "2026-11-01T12:37:12+09:00",
   "items": {
     "law:2094548": {
       "source_id": "law:2094548",
       "slug": "47d94468aa665886",
       "content_hash": "2f7db7865e7b120ddf12ec14d8309d1f8cab139dd5407f67489a56f43711626b",
-      "last_seen_at": "2026-10-31T12:37:11+09:00",
+      "last_seen_at": "2026-11-01T12:35:12+09:00",
       "miss_count": 0,
       "status": "active"
     },
@@ -15,7 +15,7 @@
       "source_id": "law:2094754",
       "slug": "cd37675ff99b5e0c",
       "content_hash": "4fc9e12aa9ccc0bf679553a05cf7e4b0df506494aa9fccf38c4e613e586a7e61",
-      "last_seen_at": "2026-10-31T12:37:15+09:00",
+      "last_seen_at": "2026-11-01T12:35:17+09:00",
       "miss_count": 0,
       "status": "active"
     },
@@ -23,7 +23,7 @@
       "source_id": "law:2094668",
       "slug": "285e89a517fc30c1",
       "content_hash": "608ef7a055064becf85e7623582177dbc74026a94b3cbe93e9ff1f134ff8c66b",
-      "last_seen_at": "2026-10-31T12:37:25+09:00",
+      "last_seen_at": "2026-11-01T12:35:24+09:00",
       "miss_count": 0,
       "status": "active"
     },
@@ -31,7 +31,7 @@
       "source_id": "law:2107782",
       "slug": "dc9b17ff59477ed4",
       "content_hash": "54c8d29a7eeba4281e3a5351a36ccda08ed184f999c97e899e502ecb42427b81",
-      "last_seen_at": "2026-10-31T12:37:27+09:00",
+      "last_seen_at": "2026-11-01T12:35:26+09:00",
       "miss_count": 0,
       "status": "active"
     },
@@ -39,7 +39,7 @@
       "source_id": "law:2096468",
       "slug": "2211ceebb3b8f7ae",
       "content_hash": "7d50a02a67ff06db05aef2790ccf47f9c3ee64faea091991324a91719e86f142",
-      "last_seen_at": "2026-10-31T12:37:29+09:00",
+      "last_seen_at": "2026-11-01T12:35:28+09:00",
       "miss_count": 0,
       "status": "active"
     },
@@ -47,7 +47,7 @@
       "source_id": "law:2097128",
       "slug": "dda3bedee3201af3",
       "content_hash": "0fcc61c1b54ed080ca0f9d59c3b950ba6501ddf35013089fa32ced36626f958f",
-      "last_seen_at": "2026-10-31T12:37:31+09:00",
+      "last_seen_at": "2026-11-01T12:35:30+09:00",
       "miss_count": 0,
       "status": "active"
     },
@@ -55,7 +55,7 @@
       "source_id": "law:2095328",
       "slug": "752e11d0e39c0c38",
       "content_hash": "ec16334faa11c99fab5ae5d9128fd68b4713740443c5799020c61107efd434da",
-      "last_seen_at": "2026-10-31T12:37:34+09:00",
+      "last_seen_at": "2026-11-01T12:35:32+09:00",
       "miss_count": 0,
       "status": "active"
     },
@@ -63,7 +63,7 @@
       "source_id": "law:2096708",
       "slug": "27fff834f5186f72",
       "content_hash": "87902b6e86e4277aae13e1c5393bda6ca521e9a5ec23847715933e3a6ec71b8a",
-      "last_seen_at": "2026-10-31T12:37:36+09:00",
+      "last_seen_at": "2026-11-01T12:35:34+09:00",
       "miss_count": 0,
       "status": "active"
     },
@@ -71,7 +71,7 @@
       "source_id": "law:2096668",
       "slug": "49d9f077e5661ea3",
       "content_hash": "10170ecf1234de974a43835d99514f94a400bb2a16b1a355a48b2b0f718b07e9",
-      "last_seen_at": "2026-10-31T12:37:38+09:00",
+      "last_seen_at": "2026-11-01T12:35:35+09:00",
       "miss_count": 0,
       "status": "active"
     },
@@ -79,7 +79,7 @@
       "source_id": "law:2095808",
       "slug": "7809e7ddf300eab9",
       "content_hash": "33e17725655821edc94d2108a0bd7ce73e0fc4f78a7df6b0a734b35e25b50940",
-      "last_seen_at": "2026-10-31T12:37:40+09:00",
+      "last_seen_at": "2026-11-01T12:35:37+09:00",
       "miss_count": 0,
       "status": "active"
     },
@@ -87,7 +87,7 @@
       "source_id": "law:2095848",
       "slug": "93ec80696bce445d",
       "content_hash": "30ccd3418446dff8761572a76124677af6d9f3cb22370a81aa3b84a384815e57",
-      "last_seen_at": "2026-10-31T12:37:41+09:00",
+      "last_seen_at": "2026-11-01T12:35:39+09:00",
       "miss_count": 0,
       "status": "active"
     },
@@ -95,7 +95,7 @@
       "source_id": "law:2095809",
       "slug": "8ecef2f55460b946",
       "content_hash": "3ad3dc6fafaae70f7a7def2a0e523f9e33da0fc82e3aa399d711c6053573a7b7",
-      "last_seen_at": "2026-10-31T12:37:44+09:00",
+      "last_seen_at": "2026-11-01T12:35:41+09:00",
       "miss_count": 0,
       "status": "active"
     },
@@ -103,7 +103,7 @@
       "source_id": "law:2095868",
       "slug": "1c66129d8d49ca11",
       "content_hash": "b5b3cd67ec0447cba72b1bd963b13557637eb8b69a6da4e1c3febb95ebaf0e47",
-      "last_seen_at": "2026-10-31T12:37:46+09:00",
+      "last_seen_at": "2026-11-01T12:35:43+09:00",
       "miss_count": 0,
       "status": "active"
     },
@@ -111,7 +111,7 @@
       "source_id": "law:2095888",
       "slug": "8cf01e667ec2aab9",
       "content_hash": "e211b0641d0688e10981a9db13f02e8e62e9382d42306cf2ecc7f46e06d4475a",
-      "last_seen_at": "2026-10-31T12:37:47+09:00",
+      "last_seen_at": "2026-11-01T12:35:45+09:00",
       "miss_count": 0,
       "status": "active"
     },
@@ -119,7 +119,7 @@
       "source_id": "law:2094948",
       "slug": "8da0bbee3e91bfe6",
       "content_hash": "0d97c655aa1c45860d31847b970c8435efdd1c2879e77c952d3e61df1b7c73e8",
-      "last_seen_at": "2026-10-31T12:37:49+09:00",
+      "last_seen_at": "2026-11-01T12:35:47+09:00",
       "miss_count": 0,
       "status": "active"
     },
@@ -127,7 +127,7 @@
       "source_id": "law:2094908",
       "slug": "3525a0e364cd1897",
       "content_hash": "4a1e47a672c56ae1ee276e24da6e2ef7942ad3dc2a47d80b4ebaf5be4a3688a3",
-      "last_seen_at": "2026-10-31T12:37:51+09:00",
+      "last_seen_at": "2026-11-01T12:35:48+09:00",
       "miss_count": 0,
       "status": "active"
     },
@@ -135,7 +135,7 @@
       "source_id": "law:2094928",
       "slug": "d29e3a916c05ab91",
       "content_hash": "acd77a03e42f8c9a8523aaa1682ca529879219728f4344f84474da238635030e",
-      "last_seen_at": "2026-10-31T12:37:53+09:00",
+      "last_seen_at": "2026-11-01T12:35:50+09:00",
       "miss_count": 0,
       "status": "active"
     },
@@ -143,7 +143,7 @@
       "source_id": "law:2094949",
       "slug": "fc3b46293e9a74be",
       "content_hash": "48ee098c2a153a0ce8d00e52f2517ed558dc80beedc835ee45a7e46151fb8eb9",
-      "last_seen_at": "2026-10-31T12:37:55+09:00",
+      "last_seen_at": "2026-11-01T12:35:52+09:00",
       "miss_count": 0,
       "status": "active"
     },
@@ -151,7 +151,7 @@
       "source_id": "law:2106750",
       "slug": "e65ebf64f6ed2a6f",
       "content_hash": "6fcc65e6a8f51eec28439a26a18cc0b46a25c6d8c2c3e7cd08d33cd2f7c476c8",
-      "last_seen_at": "2026-10-31T12:37:57+09:00",
+      "last_seen_at": "2026-11-01T12:35:54+09:00",
       "miss_count": 0,
       "status": "active"
     },
@@ -159,7 +159,7 @@
       "source_id": "law:2108109",
       "slug": "2e023b35a1109346",
       "content_hash": "68fbe2071e000bfe2efc3cb21764bcb11db3dff9996e86eabc5c100708d80900",
-      "last_seen_at": "2026-10-31T12:37:59+09:00",
+      "last_seen_at": "2026-11-01T12:35:56+09:00",
       "miss_count": 0,
       "status": "active"
     },
@@ -167,7 +167,7 @@
       "source_id": "bylaw:2:726750",
       "slug": "08377611111729cf",
       "content_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "last_seen_at": "2026-10-31T12:38:34+09:00",
+      "last_seen_at": "2026-11-01T12:36:59+09:00",
       "miss_count": 0,
       "status": "active"
     },
@@ -175,7 +175,7 @@
       "source_id": "bylaw:2:726617",
       "slug": "ca977b8e13e7a9bc",
       "content_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "last_seen_at": "2026-10-31T12:38:34+09:00",
+      "last_seen_at": "2026-11-01T12:37:00+09:00",
       "miss_count": 0,
       "status": "active"
     },
@@ -183,7 +183,7 @@
       "source_id": "bylaw:2:726548",
       "slug": "7dbc33b4c98a336e",
       "content_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "last_seen_at": "2026-10-31T12:38:35+09:00",
+      "last_seen_at": "2026-11-01T12:37:01+09:00",
       "miss_count": 0,
       "status": "active"
     },
@@ -191,7 +191,7 @@
       "source_id": "bylaw:2:726521",
       "slug": "0487126c7eb96159",
       "content_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "last_seen_at": "2026-10-31T12:38:36+09:00",
+      "last_seen_at": "2026-11-01T12:37:01+09:00",
       "miss_count": 0,
       "status": "active"
     },
@@ -199,7 +199,7 @@
       "source_id": "bylaw:2:726503",
       "slug": "2752f32052c3befe",
       "content_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "last_seen_at": "2026-10-31T12:38:37+09:00",
+      "last_seen_at": "2026-11-01T12:37:02+09:00",
       "miss_count": 0,
       "status": "active"
     },
@@ -207,7 +207,7 @@
       "source_id": "bylaw:2:726494",
       "slug": "29297ee34a8dbca8",
       "content_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "last_seen_at": "2026-10-31T12:38:38+09:00",
+      "last_seen_at": "2026-11-01T12:37:03+09:00",
       "miss_count": 0,
       "status": "active"
     },
@@ -215,7 +215,7 @@
       "source_id": "bylaw:2:726493",
       "slug": "19e4bf9c203e568d",
       "content_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "last_seen_at": "2026-10-31T12:38:39+09:00",
+      "last_seen_at": "2026-11-01T12:37:04+09:00",
       "miss_count": 0,
       "status": "active"
     },
@@ -223,7 +223,7 @@
       "source_id": "bylaw:2:726417",
       "slug": "4007b52d3107dedf",
       "content_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "last_seen_at": "2026-10-31T12:38:40+09:00",
+      "last_seen_at": "2026-11-01T12:37:05+09:00",
       "miss_count": 0,
       "status": "active"
     },
@@ -231,7 +231,7 @@
       "source_id": "bylaw:2:726409",
       "slug": "bc75f9083058421e",
       "content_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "last_seen_at": "2026-10-31T12:38:41+09:00",
+      "last_seen_at": "2026-11-01T12:37:06+09:00",
       "miss_count": 0,
       "status": "active"
     },
@@ -239,7 +239,7 @@
       "source_id": "bylaw:2:726407",
       "slug": "61ad0d597c970bc4",
       "content_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "last_seen_at": "2026-10-31T12:38:41+09:00",
+      "last_seen_at": "2026-11-01T12:37:07+09:00",
       "miss_count": 0,
       "status": "active"
     },
@@ -247,7 +247,7 @@
       "source_id": "bylaw:2:726151",
       "slug": "7edb4132c1f89e5d",
       "content_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "last_seen_at": "2026-10-31T12:38:42+09:00",
+      "last_seen_at": "2026-11-01T12:37:08+09:00",
       "miss_count": 0,
       "status": "active"
     },
@@ -255,7 +255,7 @@
       "source_id": "bylaw:2:725920",
       "slug": "09bb9e39277ff0b6",
       "content_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "last_seen_at": "2026-10-31T12:38:43+09:00",
+      "last_seen_at": "2026-11-01T12:37:09+09:00",
       "miss_count": 0,
       "status": "active"
     },
@@ -263,7 +263,7 @@
       "source_id": "bylaw:2:725346",
       "slug": "3ea9bf952de8021b",
       "content_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "last_seen_at": "2026-10-31T12:38:44+09:00",
+      "last_seen_at": "2026-11-01T12:37:10+09:00",
       "miss_count": 0,
       "status": "active"
     },
@@ -271,7 +271,7 @@
       "source_id": "bylaw:1:725264",
       "slug": "8b63ce02accd3862",
       "content_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "last_seen_at": "2026-10-31T12:38:45+09:00",
+      "last_seen_at": "2026-11-01T12:37:10+09:00",
       "miss_count": 0,
       "status": "active"
     },
@@ -279,7 +279,7 @@
       "source_id": "bylaw:1:725012",
       "slug": "6235b9bfe294e4d3",
       "content_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "last_seen_at": "2026-10-31T12:38:46+09:00",
+      "last_seen_at": "2026-11-01T12:37:11+09:00",
       "miss_count": 0,
       "status": "active"
     },
@@ -287,7 +287,7 @@
       "source_id": "bylaw:2:724900",
       "slug": "10eedcb8ba7673da",
       "content_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "last_seen_at": "2026-10-31T12:38:47+09:00",
+      "last_seen_at": "2026-11-01T12:37:12+09:00",
       "miss_count": 0,
       "status": "active"
     }

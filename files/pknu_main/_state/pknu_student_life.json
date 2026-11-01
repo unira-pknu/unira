@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "dataset": "pknu_student_life",
-  "updated_at": "2026-10-31T12:36:55+09:00",
+  "updated_at": "2026-11-01T12:34:43+09:00",
   "items": {
     "3053ba1d1ea5": {
       "slug": "3053ba1d1ea5",
@@ -1963,7 +1963,7 @@
       "slug": "979ed2288d2e1b8a",
       "content_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "pdf_url": "https://www.pknu.ac.kr/upload/media/2025/12/12/5162cd5e-1447-4d51-9b07-8aee26d2a9e2.pdf",
-      "last_seen_at": "2026-10-31T12:36:25+09:00",
+      "last_seen_at": "2026-11-01T12:34:20+09:00",
       "source_id": "979ed2288d2e1b8a",
       "miss_count": 0,
       "status": "active"
@@ -1972,7 +1972,7 @@
       "slug": "25efcd84529d3b94",
       "content_hash": "e65b3e496eedc92c14398bf9835b1fe279f691de0c76eb5a60af74d0f14f2233",
       "pdf_url": "https://www.pknu.ac.kr/upload/media/2024/12/12/935ede1f-fa07-4384-b589-78aaa9fbb33f.pdf",
-      "last_seen_at": "2026-10-31T12:36:28+09:00",
+      "last_seen_at": "2026-11-01T12:34:22+09:00",
       "source_id": "25efcd84529d3b94",
       "miss_count": 0,
       "status": "active"
@@ -1981,7 +1981,7 @@
       "slug": "30d7dc4ae8bc170b",
       "content_hash": "c761ab21b323ecf3787c1945991cdb0368e7d86965c0f5d86398dc2b0618e37c",
       "pdf_url": "https://www.pknu.ac.kr/upload/media/2025/01/21/e65ff972-3f53-4d57-bd78-72fa634813a3.pdf",
-      "last_seen_at": "2026-10-31T12:36:50+09:00",
+      "last_seen_at": "2026-11-01T12:34:38+09:00",
       "source_id": "30d7dc4ae8bc170b",
       "miss_count": 0,
       "status": "active"
@@ -1990,7 +1990,7 @@
       "slug": "f5f98b03cbdeadd8",
       "content_hash": "3abc88ccc8160583f029b7973e29dcf66e3e95321c391e6ddc59c37de54e67de",
       "pdf_url": "https://www.pknu.ac.kr/upload/media/2025/02/05/e0625a3a-93b3-406c-9b94-8d6db81b4c6c.pdf",
-      "last_seen_at": "2026-10-31T12:36:53+09:00",
+      "last_seen_at": "2026-11-01T12:34:41+09:00",
       "source_id": "f5f98b03cbdeadd8",
       "miss_count": 0,
       "status": "active"
@@ -1999,7 +1999,7 @@
       "slug": "d7cf329a5ce56a96",
       "content_hash": "0ec1241c96b47c0d45c0cef08003ecd86ecf8061fc802ea51324b451b3b015d0",
       "pdf_url": "https://www.pknu.ac.kr/upload/media/2023/12/26/f63bf0a2-8869-4c63-b208-07bf0c120a93.pdf",
-      "last_seen_at": "2026-10-31T12:36:55+09:00",
+      "last_seen_at": "2026-11-01T12:34:43+09:00",
       "source_id": "d7cf329a5ce56a96",
       "miss_count": 0,
       "status": "active"
