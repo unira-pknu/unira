@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 
@@ -18,6 +19,7 @@ from .routers import admin as admin_router
 from .routers import ask as ask_router
 from .routers import popular as popular_router
 from .supabase_client import ThreadLocalSupabase
+from .warmup import keep_warm
 
 logger = logging.getLogger(__name__)
 
@@ -71,9 +73,17 @@ async def lifespan(app: FastAPI):
     )
     logger.info("Backend startup complete.")
 
+    warmup_task = None
+    if settings.warmup_interval_seconds > 0:
+        warmup_task = asyncio.create_task(
+            keep_warm(app.state.app_state, settings.warmup_interval_seconds)
+        )
+
     try:
         yield
     finally:
+        if warmup_task is not None:
+            warmup_task.cancel()
         logger.info("Backend shutting down.")
 
 
@@ -92,7 +102,7 @@ def create_app() -> FastAPI:
     cors_origins = list(settings.cors_origins)
     for origin in (
         "http://localhost:3000",
-        "https://campus-rag.vercel.app",
+        "https://unira-pknu.vercel.app",
     ):
         if origin not in cors_origins:
             cors_origins.append(origin)

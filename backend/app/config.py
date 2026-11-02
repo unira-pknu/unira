@@ -105,6 +105,13 @@ class Settings(BaseSettings):
     # 관리자 대시보드(/admin/*)에 접근할 수 있는 계정 이메일 (콤마 구분).
     # 비어 있으면 아무도 접근할 수 없다(기본 거부). 대소문자 무시.
     admin_emails: Annotated[List[str], NoDecode] = []
+    # 한 계정이 하루(한국 시간 자정 기준)에 /ask를 부를 수 있는 횟수. 분당 20회
+    # 제한만으로는 하루 수만 건(OpenAI 요금)까지 갈 수 있어서 둔다. 0이면 끔.
+    # 관리자(admin_emails)는 평가·점검용으로 제외.
+    ask_daily_limit: int = 100
+    # 질문이 없을 때도 이 간격(초)마다 GPT 없이 검색 1회를 돌려 DB를 깨워 둔다
+    # (app/warmup.py). 시작 직후에도 1회. 0이면 끔.
+    warmup_interval_seconds: float = 600
     log_level: str = "INFO"
     port: int = 8000
 
