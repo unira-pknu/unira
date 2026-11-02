@@ -931,7 +931,7 @@ export default function AuthContent({ update = false }: { update?: boolean }) {
             borderTop: "1px solid rgba(37,52,139,0.08)",
           }}
         >
-          국립부경대학교 재학생만 이용할 수 있습니다
+          국립부경대학교 학교 메일로 이용할 수 있습니다
         </footer>
       </div>
     </div>
