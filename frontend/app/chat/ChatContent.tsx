@@ -11,6 +11,7 @@ import { useQueryContext } from "@/app/context/QueryContext";
 import { displayNameOf, useAuth } from "@/app/context/AuthContext";
 import { AskError, askBackend, type ChatTurn } from "@/app/lib/api";
 import { prepareSources } from "./mergeSources";
+import { sourceKindLabel } from "./sourceLabel";
 import PopularQuestions from "@/app/components/PopularQuestions";
 import {
   createChat,
@@ -36,7 +37,7 @@ interface Source {
   id: number;
   title: string;
   category: string;
-  /** e.g. "학과 홈페이지 · 공지사항" — falls back to 학과 홈페이지 · {category} */
+  /** e.g. "학과 홈페이지 · 공지사항" — 없으면 주소로 정한 종류(sourceKindLabel) */
   chipMeta?: string;
   quote: string;
   quoteSource?: string;
@@ -327,7 +328,7 @@ function circledSourceIndex(id: number): string {
 }
 
 function chipMetaFromSource(source: Source): string {
-  return source.chipMeta ?? `학과 홈페이지 · ${source.category}`;
+  return source.chipMeta ?? sourceKindLabel(source.url);
 }
 
 // ── 출처 카드 컴포넌트 ────────────────────────────────────────────────────────
