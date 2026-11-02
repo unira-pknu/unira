@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, type CSSProperties } from "react";
+import { useState, useEffect, useMemo, useRef, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ReactMarkdown, { type Components } from "react-markdown";
@@ -10,6 +10,7 @@ import chatData from "@/data/routes/chat.json";
 import { useQueryContext } from "@/app/context/QueryContext";
 import { displayNameOf, useAuth } from "@/app/context/AuthContext";
 import { AskError, askBackend, type ChatTurn } from "@/app/lib/api";
+import { prepareSources } from "./mergeSources";
 import PopularQuestions from "@/app/components/PopularQuestions";
 import {
   createChat,
@@ -520,10 +521,15 @@ function AssistantMessage({
     if (rating === "down") onFeedbackChange(null);
     else setDislikeOpen(true);
   };
-  const hasSources = msg.sources && msg.sources.length > 0;
+  // 출처는 답변이 인용한 것만, 같은 공지는 하나로 보여 준다(답변 속 [n]도 같이 맞춘다).
+  const { content: shownContent, sources: shownSources } = useMemo(
+    () => prepareSources(msg.content, msg.sources ?? []),
+    [msg.content, msg.sources],
+  );
+  const hasSources = shownSources.length > 0;
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(msg.content).catch(() => {});
+    navigator.clipboard.writeText(shownContent).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -534,7 +540,7 @@ function AssistantMessage({
 
   const visibleSources =
     hasSources && activeSourceId !== null
-      ? msg.sources!.filter((source) => source.id === activeSourceId)
+      ? shownSources.filter((source) => source.id === activeSourceId)
       : [];
 
   const navyToggle = "#25348B";
@@ -545,7 +551,7 @@ function AssistantMessage({
 
         {/* 답변 카드 */}
         <div className="glass-card rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col gap-3 sm:gap-4 w-full">
-          <AnswerContent content={msg.content} />
+          <AnswerContent content={shownContent} />
 
           {/* 메시지 레벨 첨부파일 */}
           {msg.attachments && msg.attachments.length > 0 && (
@@ -614,7 +620,7 @@ function AssistantMessage({
               /* 출처가 많으면(①~⑩) 모바일에서 한 줄로 안 들어가 오른쪽이 잘리던 문제:
                  flex-shrink-0 + 줄바꿈 없음 → 묶음 안에서 줄바꿈되도록 flex-wrap, 오른쪽 정렬 유지 */
               <div className="ml-auto flex min-w-0 max-w-full flex-wrap items-center justify-end gap-1.5">
-                {msg.sources!.map((src) => {
+                {shownSources.map((src) => {
                   const active = activeSourceId === src.id;
                   return (
                     <button
