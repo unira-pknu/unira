@@ -9,7 +9,7 @@ import remarkGfm from "remark-gfm";
 import chatData from "@/data/routes/chat.json";
 import { useQueryContext } from "@/app/context/QueryContext";
 import { displayNameOf, useAuth } from "@/app/context/AuthContext";
-import { askBackend } from "@/app/lib/api";
+import { AskError, askBackend, type ChatTurn } from "@/app/lib/api";
 import PopularQuestions from "@/app/components/PopularQuestions";
 import {
   createChat,
@@ -685,6 +685,8 @@ export default function ChatContent() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [chatState, setChatState] = useState<ChatState>("idle");
+  // chatState가 "error"일 때 보여 줄 문구. null이면 일반 실패 안내.
+  const [chatError, setChatError] = useState<string | null>(null);
 
   // ── 사이드바 상태 (SSR-safe: false로 시작, mount 후 보정) ──
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -869,7 +871,8 @@ export default function ChatContent() {
   }, [messages, chatState]);
 
   // ── AI 응답 요청 (공통) ───────────────────────────────────────
-  const requestAIReply = async (question: string) => {
+  // history: 이 질문 앞까지의 같은 채팅 대화(오래된 것부터). 이어지는 질문 이해용.
+  const requestAIReply = async (question: string, history: ChatTurn[] = []) => {
     const view = viewRef.current;
     // 질문한 화면 그대로인지, 아니면 다른 채팅에 갔다가 이 채팅으로 돌아왔는지.
     const sameView = () => viewRef.current === view;
@@ -912,7 +915,7 @@ export default function ChatContent() {
     }
 
     try {
-      const { answer, sources } = await askBackend(question);
+      const { answer, sources } = await askBackend(question, history);
       const finalContent = answer || "관련 정보를 찾을 수 없습니다.";
       const assistantLocalId = uid();
       // 돌아온 채팅은 기록을 불러오는 중일 수 있어 화면에 직접 붙이지 않고,
@@ -956,7 +959,11 @@ export default function ChatContent() {
       }
     } catch (err) {
       console.error("[chat] askBackend failed:", err);
-      if (sameView() || returnedTo(persistedChatId)) setChatState("error");
+      if (sameView() || returnedTo(persistedChatId)) {
+        // 횟수 제한(429)만 서버 안내 문구를 보여 준다. 나머지는 내부 오류 문구라 일반 안내로.
+        setChatError(err instanceof AskError && err.status === 429 ? err.message : null);
+        setChatState("error");
+      }
     } finally {
       if (persistedChatId) setChatPending(persistedChatId, false);
     }
@@ -973,8 +980,9 @@ export default function ChatContent() {
     const q = inputValue.trim();
     if (!q || chatState === "loading") return;
     setInputValue("");
+    const history = messages.map(({ role, content }) => ({ role, content }));
     setMessages((prev) => [...prev, { id: uid(), role: "user", content: q }]);
-    void requestAIReply(q);
+    void requestAIReply(q, history);
   };
 
   // ── NEW_CHAT ──────────────────────────────────────────────────
@@ -1316,20 +1324,6 @@ export default function ChatContent() {
               className="flex-shrink-0 pt-2 mt-1 flex flex-col gap-0.5"
               style={{ borderTop: "1px solid rgba(255,255,255,0.5)" }}
             >
-              <Link
-                href="/docs"
-                prefetch
-                className="w-full flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium transition-colors hover:bg-white/50"
-                style={{ color: "var(--clr-text-muted)", textDecoration: "none" }}
-              >
-                <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6">
-                  <path d="M3 1h6l3 3v9a1 1 0 01-1 1H3a1 1 0 01-1-1V2a1 1 0 011-1z" />
-                  <polyline points="9,1 9,4 12,4" />
-                  <line x1="4" y1="7" x2="10" y2="7" />
-                  <line x1="4" y1="9.5" x2="7.5" y2="9.5" />
-                </svg>
-                수집 문서 현황
-              </Link>
               <button
                 onMouseDown={(e) => e.stopPropagation()}
                 onClick={handleUserMenuToggle}
@@ -1648,7 +1642,7 @@ export default function ChatContent() {
             <div className="flex justify-start">
               <div className="glass-card rounded-2xl px-4 sm:px-5 py-3 sm:py-4 shadow-sm flex flex-wrap items-center gap-2 sm:gap-3">
                 <p className="text-xs sm:text-sm" style={{ color: "#c0392b" }}>
-                  답변 생성에 실패했어요.
+                  {chatError ?? "답변 생성에 실패했어요."}
                 </p>
                 <button
                   onClick={() => setChatState("idle")}

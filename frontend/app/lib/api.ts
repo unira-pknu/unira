@@ -70,8 +70,24 @@ async function readErrorMessage(res: Response): Promise<string> {
   return `요청 실패 (HTTP ${res.status})`;
 }
 
+/** /api/ask failure; `status` lets the chat show the backend's own text for
+ * limits (429) instead of the generic failure line. */
+export class AskError extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message);
+  }
+}
+
+export type ChatTurn = { role: "user" | "assistant"; content: string };
+
+// 이어지는 질문("그럼 거기 전화번호는?")을 알아듣는 데는 최근 몇 턴이면 충분하다.
+// 턴이 늘수록 매 질문의 프롬프트(요금·속도)도 늘어서 3번 주고받은 만큼만 보낸다.
+const HISTORY_TURNS = 6;
+const HISTORY_TURN_MAX_CHARS = 4000; // 백엔드 ChatMessage.content 상한
+
 export async function askBackend(
   question: string,
+  history: ChatTurn[] = [],
   signal?: AbortSignal,
 ): Promise<AskResult> {
   const {
@@ -88,12 +104,18 @@ export async function askBackend(
       Accept: "application/json",
       Authorization: `Bearer ${session.access_token}`,
     },
-    body: JSON.stringify({ question }),
+    body: JSON.stringify({
+      question,
+      chat_history: history
+        .filter((turn) => turn.content.trim())
+        .slice(-HISTORY_TURNS)
+        .map((turn) => ({ role: turn.role, content: turn.content.slice(0, HISTORY_TURN_MAX_CHARS) })),
+    }),
     signal,
   });
 
   if (!res.ok) {
-    throw new Error(await readErrorMessage(res));
+    throw new AskError(await readErrorMessage(res), res.status);
   }
 
   const data = (await res.json()) as BackendAskResponse;
