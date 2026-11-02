@@ -14,7 +14,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 
-import { useAuth } from "@/app/context/AuthContext";
+import { MAIL_SENT_HINT, useAuth } from "@/app/context/AuthContext";
 import { authErrorMessage, safeNextPath } from "@/app/lib/safeRedirect";
 
 const NAVY = "#25348B";
@@ -25,6 +25,8 @@ const NAVY_MUTED = "rgba(37,52,139,0.45)";
 // 측 사전 검증이다. office.pknu.ac.kr는 행정실 등 교직원 계정으로 추정.
 const SCHOOL_DOMAINS = ["pknu.ac.kr", "pukyong.ac.kr", "office.pknu.ac.kr"] as const;
 type SchoolDomain = (typeof SCHOOL_DOMAINS)[number];
+// 처음엔 비워 둔다: 기본값이 있으면 고르지 않고 넘어가 다른 도메인으로 보내는 실수가 잦았다(11-02).
+type DomainValue = SchoolDomain | "";
 const SCHOOL_EMAIL_RE = new RegExp(
   `^[^\\s@]+@(${SCHOOL_DOMAINS.map((d) => d.replace(/\./g, "\\.")).join("|")})$`,
   "i",
@@ -151,102 +153,140 @@ const INPUT_STYLE = {
 const onFocusBorder = (e: { currentTarget: HTMLElement }) => { e.currentTarget.style.borderColor = INPUT_BORDER_FOCUS; };
 const onIdleBorder = (e: { currentTarget: HTMLElement }) => { e.currentTarget.style.borderColor = INPUT_BORDER; };
 
-// 학교 도메인 드롭다운. 기본 <select>는 펼친 목록 모양을 바꿀 수 없어 직접 만든다
-// (select-only combobox: 버튼이 포커스를 갖고 aria-activedescendant로 항목을 가리킨다).
-function DomainSelect({
+// 학교 도메인 칸: 직접 입력하거나 목록에서 고른다(editable combobox, aria-autocomplete="list").
+// 처음엔 비어 있고, 입력한 글자가 들어간 도메인만 목록에 남긴다. ↓↑ + Enter 또는 클릭으로 고른다.
+// 목록에 있는 도메인과 정확히 같을 때만 값이 되고, 아니면 부모에 ""를 알린다(제출 버튼 꺼짐).
+function DomainCombobox({
   value,
   onChange,
+  onInvalidChange,
 }: {
-  value: SchoolDomain;
-  onChange: (value: SchoolDomain) => void;
+  value: DomainValue;
+  onChange: (value: DomainValue) => void;
+  /** 칸을 벗어났는데 목록에 없는 글자가 남아 있는지 */
+  onInvalidChange: (invalid: boolean) => void;
 }) {
   const id = useId();
   const listId = `${id}-list`;
   const optionId = (index: number) => `${id}-opt-${index}`;
-  const rootRef = useRef<HTMLDivElement>(null);
+  const [text, setText] = useState<string>(value);
   const [open, setOpen] = useState(false);
   const [focused, setFocused] = useState(false);
-  const [active, setActive] = useState(() => SCHOOL_DOMAINS.indexOf(value));
+  // 표시된 목록 항목. -1 = 아직 없음(↓를 처음 누르면 첫 항목으로 간다).
+  const [active, setActive] = useState(-1);
+
+  // 아이디 칸에 "학번@pknu.ac.kr"을 붙여 넣으면 부모가 도메인을 정한다 → 글자도 맞춘다
+  // (렌더 중에 이전 값과 비교해 맞추는 React 권장 방식, effect 안 setState 대신).
+  const [prevValue, setPrevValue] = useState(value);
+  if (value !== prevValue) {
+    setPrevValue(value);
+    if (value) setText(value);
+  }
+
+  const query = text.trim().toLowerCase();
+  const matches = query
+    ? [...SCHOOL_DOMAINS]
+        .filter((d) => d.includes(query))
+        .sort((a, b) => Number(!a.startsWith(query)) - Number(!b.startsWith(query)))
+    : [...SCHOOL_DOMAINS];
+  const showList = open && matches.length > 0;
+  const invalid = !focused && query !== "" && !isSchoolDomain(query);
 
   useEffect(() => {
-    if (!open) return;
-    const closeOutside = (e: PointerEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("pointerdown", closeOutside);
-    return () => document.removeEventListener("pointerdown", closeOutside);
-  }, [open]);
+    onInvalidChange(invalid);
+  }, [invalid, onInvalidChange]);
 
-  const openMenu = () => {
-    setActive(SCHOOL_DOMAINS.indexOf(value));
+  const update = (raw: string) => {
+    setText(raw);
     setOpen(true);
+    setActive(-1);
+    const domain = raw.trim().toLowerCase();
+    onChange(isSchoolDomain(domain) ? domain : "");
   };
-  const choose = (index: number) => {
-    onChange(SCHOOL_DOMAINS[index]);
+  const choose = (domain: SchoolDomain) => {
+    setText(domain);
+    onChange(domain);
     setOpen(false);
   };
 
-  const handleKeyDown = (e: ReactKeyboardEvent<HTMLButtonElement>) => {
-    const last = SCHOOL_DOMAINS.length - 1;
-    if (!open) {
-      if (["ArrowDown", "ArrowUp", "Enter", " "].includes(e.key)) {
-        e.preventDefault();
-        openMenu();
-      }
-      return;
-    }
+  const handleKeyDown = (e: ReactKeyboardEvent<HTMLInputElement>) => {
     switch (e.key) {
-      case "ArrowDown": e.preventDefault(); setActive((i) => Math.min(i + 1, last)); break;
-      case "ArrowUp": e.preventDefault(); setActive((i) => Math.max(i - 1, 0)); break;
-      case "Home": e.preventDefault(); setActive(0); break;
-      case "End": e.preventDefault(); setActive(last); break;
+      case "ArrowDown":
+        e.preventDefault();
+        setOpen(true);
+        setActive((i) => Math.min(i + 1, matches.length - 1));
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        setActive((i) => Math.max(i - 1, 0));
+        break;
       case "Enter":
-      case " ": e.preventDefault(); choose(active); break;
-      case "Escape": e.preventDefault(); setOpen(false); break;
-      case "Tab": setOpen(false); break;
+        // 목록이 열려 있으면 Enter 는 고르기(폼 제출 아님). 표시된 항목이 없으면 맨 위 항목.
+        if (showList) {
+          e.preventDefault();
+          choose(matches[Math.max(0, Math.min(active, matches.length - 1))]);
+        }
+        break;
+      case "Escape":
+        if (open) { e.preventDefault(); setOpen(false); }
+        break;
+      case "Tab":
+        setOpen(false);
+        break;
     }
   };
 
+  const borderColor = invalid ? INPUT_BORDER_ERROR : focused ? INPUT_BORDER_FOCUS : INPUT_BORDER;
+
   return (
     // 폭은 가장 긴 도메인(office.pknu.ac.kr)에 맞추고, 좁은 화면에서는 아이디 칸이 줄어든다.
-    <div ref={rootRef} className="relative flex-shrink-0">
-      <button
-        type="button"
+    <div className="relative flex-shrink-0">
+      {/* 폭 잡기용(보이지 않음): 입력 칸이 가장 긴 도메인 + 화살표만큼 넓다 */}
+      <span
+        aria-hidden
+        className="invisible block whitespace-nowrap pl-3 pr-8 py-2.5 text-xs sm:text-sm"
+        style={{ border: "1.5px solid transparent" }}
+      >
+        office.pknu.ac.kr
+      </span>
+      <input
+        type="text"
         role="combobox"
         aria-label="이메일 도메인"
-        aria-haspopup="listbox"
-        aria-expanded={open}
+        aria-autocomplete="list"
+        aria-expanded={showList}
         aria-controls={listId}
-        aria-activedescendant={open ? optionId(active) : undefined}
-        onClick={() => (open ? setOpen(false) : openMenu())}
+        aria-activedescendant={showList && active >= 0 ? optionId(Math.min(active, matches.length - 1)) : undefined}
+        aria-invalid={invalid || undefined}
+        inputMode="email"
+        autoComplete="off"
+        autoCapitalize="none"
+        spellCheck={false}
+        value={text}
+        onChange={(e) => update(e.target.value)}
         onKeyDown={handleKeyDown}
-        // 영문 소문자는 같은 글꼴의 한글보다 낮게 찍혀(globals.css 참고) 위·아래 여백을 1px 다르게 둔다.
-        className="flex items-center justify-between gap-1.5 whitespace-nowrap rounded-xl pt-[9px] pb-[11px] pl-3 pr-2.5 text-left text-xs sm:text-sm outline-none transition-colors"
-        style={{ ...INPUT_STYLE, borderColor: open || focused ? INPUT_BORDER_FOCUS : INPUT_BORDER }}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
+        onFocus={() => { setFocused(true); setOpen(true); setActive(-1); }}
+        onBlur={() => { setFocused(false); setOpen(false); }}
+        onClick={() => setOpen(true)}
+        className="absolute inset-0 w-full rounded-xl pl-3 pr-8 text-xs sm:text-sm outline-none transition-colors"
+        style={{ ...INPUT_STYLE, borderColor }}
+      />
+      <button
+        type="button"
+        tabIndex={-1}
+        aria-hidden
+        onPointerDown={(e) => e.preventDefault()} // 입력 칸 포커스 유지
+        onClick={(e) => {
+          const input = e.currentTarget.parentElement?.querySelector("input");
+          input?.focus();
+          setOpen((o) => !o);
+        }}
+        className="absolute inset-y-0 right-0 flex w-8 items-center justify-center transition-transform duration-150"
+        style={{ color: NAVY_MUTED, transform: showList ? "rotate(180deg)" : undefined }}
       >
-        {/* 가장 긴 도메인 자리를 미리 잡아 두어, 선택이 바뀌어도 칸 폭이 흔들리지 않는다 */}
-        <span className="grid">
-          {SCHOOL_DOMAINS.map((domain) => (
-            <span
-              key={domain}
-              className="col-start-1 row-start-1"
-              style={{ visibility: domain === value ? "visible" : "hidden" }}
-              aria-hidden={domain !== value}
-            >
-              {domain}
-            </span>
-          ))}
-        </span>
-        <span
-          className="flex flex-shrink-0 transition-transform duration-150"
-          style={{ color: NAVY_MUTED, transform: open ? "rotate(180deg)" : undefined }}
-        >
-          <IconChevronDown />
-        </span>
+        <IconChevronDown />
       </button>
-      {open && (
+      {showList && (
         <ul
           id={listId}
           role="listbox"
@@ -258,7 +298,7 @@ function DomainSelect({
             boxShadow: "0 8px 24px rgba(37,52,139,0.12)",
           }}
         >
-          {SCHOOL_DOMAINS.map((domain, index) => {
+          {matches.map((domain, index) => {
             const selected = domain === value;
             return (
               <li
@@ -266,16 +306,16 @@ function DomainSelect({
                 id={optionId(index)}
                 role="option"
                 aria-selected={selected}
-                onPointerDown={(e) => e.preventDefault()} // 버튼 포커스 유지
+                onPointerDown={(e) => e.preventDefault()} // 입력 칸 포커스 유지
                 onPointerEnter={() => setActive(index)}
-                onClick={() => choose(index)}
+                onClick={() => choose(domain)}
                 className="cursor-pointer select-none whitespace-nowrap rounded-lg px-2.5 pt-[7px] pb-[9px] text-xs sm:text-sm transition-colors"
                 style={{
                   color: NAVY,
                   fontWeight: selected ? 600 : 400,
-                  background: selected
+                  background: index === active
                     ? "rgba(37,52,139,0.08)"
-                    : index === active
+                    : selected
                       ? "rgba(37,52,139,0.04)"
                       : "transparent",
                 }}
@@ -299,16 +339,18 @@ function SchoolEmailField({
   error,
 }: {
   localPart: string;
-  domain: SchoolDomain;
+  domain: DomainValue;
   onLocalPartChange: (value: string) => void;
-  onDomainChange: (value: SchoolDomain) => void;
+  onDomainChange: (value: DomainValue) => void;
   error?: string | null;
 }) {
   const id = useId();
   const helpId = `${id}-help`;
   const errorId = `${id}-error`;
   const [helpOpen, setHelpOpen] = useState(false);
+  const [domainInvalid, setDomainInvalid] = useState(false);
   const helpRef = useRef<HTMLDivElement>(null);
+  const shownError = error ?? (domainInvalid ? "도메인은 목록에 있는 것만 쓸 수 있어요." : null);
 
   // 안내 문구는 ?를 다시 누르거나, 바깥을 누르거나, Esc로 닫는다. iOS Safari는
   // 버튼을 눌러도 포커스를 주지 않아 onBlur만으로는 닫히지 않는다.
@@ -390,11 +432,11 @@ function SchoolEmailField({
         <span className="flex-shrink-0 text-xs sm:text-sm font-semibold" style={{ color: NAVY_MUTED }} aria-hidden>
           @
         </span>
-        <DomainSelect value={domain} onChange={onDomainChange} />
+        <DomainCombobox value={domain} onChange={onDomainChange} onInvalidChange={setDomainInvalid} />
       </div>
-      {error && (
+      {shownError && (
         <span id={errorId} role="alert" className="text-[11px] font-medium" style={{ color: ERROR_RED }}>
-          {error}
+          {shownError}
         </span>
       )}
     </div>
@@ -475,15 +517,22 @@ function PasswordField({
   );
 }
 
-type Mode = "signin" | "signup";
+// reset: 비밀번호 재설정 메일 요청, update: 메일 링크로 들어와 새 비밀번호 정하기
+// (/auth/reset-password). 둘 다 탭 대신 제목을 보여 준다.
+type Mode = "signin" | "signup" | "reset" | "update";
 
-export default function AuthContent() {
+export default function AuthContent({ update = false }: { update?: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { signInWithPassword, signUpWithPassword, user, loading } = useAuth();
+  const { signInWithPassword, signUpWithPassword, sendPasswordReset, updatePassword, user, loading } = useAuth();
 
-  // ── 모드(?mode=signup|signin), 복귀 경로(?next=/foo) ─────────────────────────
-  const initialMode: Mode = searchParams?.get("mode") === "signup" ? "signup" : "signin";
+  // ── 모드(?mode=signup|signin|reset), 복귀 경로(?next=/foo) ───────────────────
+  const modeParam = searchParams?.get("mode");
+  const initialMode: Mode = update
+    ? "update"
+    : modeParam === "signup" || modeParam === "reset"
+      ? modeParam
+      : "signin";
   const [mode, setMode] = useState<Mode>(initialMode);
   const nextPath = useMemo(() => safeNextPath(searchParams?.get("next")), [searchParams]);
 
@@ -491,8 +540,8 @@ export default function AuthContent() {
   // 로그인·회원가입 모두 아이디와 도메인을 따로 받아 하나의 주소로 합친다
   // (모든 계정이 학교 도메인이다 — DB 트리거가 가입을 막는다).
   const [emailLocalPart, setEmailLocalPart] = useState("");
-  const [emailDomain, setEmailDomain] = useState<SchoolDomain>(SCHOOL_DOMAINS[0]);
-  const email = emailLocalPart.trim() ? `${emailLocalPart.trim()}@${emailDomain}` : "";
+  const [emailDomain, setEmailDomain] = useState<DomainValue>("");
+  const email = emailLocalPart.trim() && emailDomain ? `${emailLocalPart.trim()}@${emailDomain}` : "";
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [confirmError, setConfirmError] = useState<string | null>(null);
@@ -504,14 +553,19 @@ export default function AuthContent() {
   // 로그인은 기존 계정(옛 6자 비밀번호 포함)이 들어올 수 있게 비밀번호 기준을 걸지 않는다.
   const localPart = emailLocalPart.trim();
   const localPartValid = LOCAL_PART_RE.test(localPart);
+  const emailComplete = localPartValid && emailDomain !== "";
   const passwordValid = PASSWORD_RULES.every((rule) => rule.test(password));
   // 확인 칸은 비밀번호 길이만큼 쳤을 때부터 틀렸다고 알려 준다(입력 중에 깜빡이지 않게).
   const confirmMismatch =
     passwordConfirm.length >= password.length && passwordConfirm.length > 0 && passwordConfirm !== password;
   const canSubmit =
-    mode === "signin"
-      ? localPartValid && password.length > 0
-      : localPartValid && passwordValid && passwordConfirm.length > 0 && passwordConfirm === password;
+    mode === "update"
+      ? !!user && passwordValid && passwordConfirm === password
+      : mode === "reset"
+        ? emailComplete
+        : mode === "signin"
+          ? emailComplete && password.length > 0
+          : emailComplete && passwordValid && passwordConfirm.length > 0 && passwordConfirm === password;
   const emailError =
     localPart && !localPartValid ? "아이디에는 영문, 숫자, . _ - + % 만 쓸 수 있어요." : null;
   const passwordRulesId = useId();
@@ -523,12 +577,19 @@ export default function AuthContent() {
     if (message) setError(message);
   }, [searchParams]);
 
-  // 이미 로그인된 상태로 /auth 진입 → next 로 보내기
+  // 이미 로그인된 상태로 /auth 진입 → next 로 보내기(새 비밀번호 화면은 로그인 상태가 정상)
   useEffect(() => {
-    if (!loading && user) {
+    if (mode !== "update" && !loading && user) {
       router.replace(nextPath);
     }
-  }, [user, loading, nextPath, router]);
+  }, [mode, user, loading, nextPath, router]);
+
+  // 메일 링크(/auth/confirm)를 거치지 않았거나 세션이 끝났으면 다시 요청하게 안내한다.
+  useEffect(() => {
+    if (mode === "update" && !loading && !user) {
+      setError("재설정 링크가 만료되었어요. 재설정 메일을 다시 요청해 주세요.");
+    }
+  }, [mode, user, loading]);
 
   // 모드 전환 시 에러/안내 메시지 초기화
   const switchMode = (next: Mode) => {
@@ -547,6 +608,52 @@ export default function AuthContent() {
     setError(null);
     setInfo(null);
     setConfirmError(null);
+
+    if (mode === "update") {
+      if (!passwordValid) {
+        setError("비밀번호는 8자 이상, 영문과 숫자를 모두 포함해야 합니다.");
+        return;
+      }
+      if (password !== passwordConfirm) {
+        setConfirmError("비밀번호가 일치하지 않습니다.");
+        return;
+      }
+      setSubmitting(true);
+      try {
+        const result = await updatePassword(password);
+        if (!result.ok) {
+          setError(result.message ?? "요청이 실패했습니다.");
+          return;
+        }
+        setPassword("");
+        setPasswordConfirm("");
+        setInfo("비밀번호를 바꿨어요. 잠시 후 채팅 화면으로 이동해요.");
+        window.setTimeout(() => router.replace("/chat"), 1500);
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
+
+    if (mode === "reset") {
+      if (!localPartValid || !SCHOOL_EMAIL_RE.test(email)) {
+        setError("이메일 아이디를 확인해 주세요. 공백이나 @ 없이 아이디만 입력하면 됩니다.");
+        return;
+      }
+      setSubmitting(true);
+      try {
+        const result = await sendPasswordReset(email);
+        if (!result.ok) {
+          setError(result.message ?? "요청이 실패했습니다.");
+          return;
+        }
+        // 가입 여부를 알려 주지 않도록 있는 주소든 없는 주소든 같은 문구.
+        setInfo(MAIL_SENT_HINT(email, "가입된 주소라면 재설정 링크가 도착해요."));
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
 
     if (!email || !password) {
       setError("이메일과 비밀번호를 모두 입력해 주세요.");
@@ -579,7 +686,7 @@ export default function AuthContent() {
       }
 
       if (mode === "signup" && result.emailConfirmationRequired) {
-        setInfo(result.message ?? "확인 메일을 보냈습니다. 메일함을 확인해 주세요.");
+        setInfo(MAIL_SENT_HINT(email, "인증 링크를 보냈어요."));
         return;
       }
 
@@ -591,6 +698,10 @@ export default function AuthContent() {
 
   // ── 렌더 ──────────────────────────────────────────────────────────────────
   const isSignup = mode === "signup";
+  const isReset = mode === "reset";
+  const isUpdate = mode === "update";
+  // 새 비밀번호를 만드는 화면(기준·확인 칸을 보여 준다)
+  const choosesPassword = isSignup || isUpdate;
 
   return (
     // 카드 위쪽을 고정한다: 가운데 정렬이면 회원가입 칸이 펼쳐질 때 탭까지 위로 밀린다.
@@ -639,7 +750,19 @@ export default function AuthContent() {
 
         {/* ── Body ── */}
         <main className="flex flex-col gap-5 px-6 py-7 sm:px-8 sm:py-8">
-          {/* 모드 탭 */}
+          {/* 모드 탭 (재설정 화면에서는 제목) */}
+          {isReset || isUpdate ? (
+            <div className="flex flex-col gap-1">
+              <h1 className="text-base sm:text-lg font-semibold" style={{ color: NAVY }}>
+                {isReset ? "비밀번호 재설정" : "새 비밀번호 정하기"}
+              </h1>
+              {isUpdate && (
+                <p className="text-xs leading-relaxed" style={{ color: NAVY_MUTED }}>
+                  {user?.email ? `${user.email} 계정의 새 비밀번호를 입력해 주세요.` : "새 비밀번호를 입력해 주세요."}
+                </p>
+              )}
+            </div>
+          ) : (
           <div
             className="relative flex p-1 rounded-xl"
             style={{ background: "rgba(37,52,139,0.06)", border: "1px solid rgba(37,52,139,0.08)" }}
@@ -670,33 +793,51 @@ export default function AuthContent() {
               );
             })}
           </div>
+          )}
 
           {/* 이메일 / 비밀번호 폼 (학교 이메일만 가입 가능) */}
           <form className="flex flex-col gap-3" onSubmit={handleSubmit} noValidate>
-            <SchoolEmailField
-              localPart={emailLocalPart}
-              domain={emailDomain}
-              onLocalPartChange={setEmailLocalPart}
-              onDomainChange={setEmailDomain}
-              error={emailError}
-            />
-
-            <PasswordField
-              label="비밀번호"
-              value={password}
-              onChange={(value) => { setPassword(value); setConfirmError(null); }}
-              autoComplete={isSignup ? "new-password" : "current-password"}
-              placeholder={isSignup ? "8자 이상, 영문·숫자 포함" : "비밀번호"}
-              describedBy={isSignup ? passwordRulesId : undefined}
-            >
-              {/* PasswordField 안쪽 gap-1.5(6px) */}
-              <Collapse open={isSignup} gap={6}>
-                <PasswordRules password={password} id={passwordRulesId} />
-              </Collapse>
-            </PasswordField>
+            {!isUpdate && (
+              <SchoolEmailField
+                localPart={emailLocalPart}
+                domain={emailDomain}
+                onLocalPartChange={setEmailLocalPart}
+                onDomainChange={setEmailDomain}
+                error={emailError}
+              />
+            )}
 
             {/* 폼의 gap-3(12px) */}
-            <Collapse open={isSignup} gap={12}>
+            <Collapse open={!isReset} gap={12}>
+            <PasswordField
+              label={isUpdate ? "새 비밀번호" : "비밀번호"}
+              value={password}
+              onChange={(value) => { setPassword(value); setConfirmError(null); }}
+              autoComplete={choosesPassword ? "new-password" : "current-password"}
+              placeholder={choosesPassword ? "8자 이상, 영문·숫자 포함" : "비밀번호"}
+              describedBy={choosesPassword ? passwordRulesId : undefined}
+            >
+              {/* PasswordField 안쪽 gap-1.5(6px) */}
+              <Collapse open={choosesPassword} gap={6}>
+                <PasswordRules password={password} id={passwordRulesId} />
+              </Collapse>
+              <Collapse open={mode === "signin"} gap={6}>
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => switchMode("reset")}
+                    className="text-[11px] font-medium underline underline-offset-2 hover:opacity-75 transition-opacity"
+                    style={{ color: NAVY_MUTED, background: "transparent" }}
+                  >
+                    비밀번호를 잊으셨나요?
+                  </button>
+                </div>
+              </Collapse>
+            </PasswordField>
+            </Collapse>
+
+            {/* 폼의 gap-3(12px) */}
+            <Collapse open={choosesPassword} gap={12}>
               <PasswordField
                 label="비밀번호 확인"
                 value={passwordConfirm}
@@ -721,16 +862,25 @@ export default function AuthContent() {
               </p>
             )}
             {info && (
-              <p
-                className="text-xs leading-relaxed px-3 py-2 rounded-lg"
+              // 첫 줄은 요점(굵게), 둘째 줄부터는 옅은 보충 설명(메일 안내에서는 둘째 줄이 받는 주소).
+              <div
+                role="status"
+                className="flex flex-col gap-0.5 px-3 py-2.5 rounded-lg"
                 style={{
                   background: "rgba(37,52,139,0.07)",
-                  color: NAVY,
                   border: "1px solid rgba(37,52,139,0.18)",
                 }}
               >
-                {info}
-              </p>
+                {info.split("\n").map((line, i) => (
+                  <p
+                    key={i}
+                    className={i === 0 ? "text-xs font-semibold" : "text-[11px] leading-relaxed"}
+                    style={{ color: i === 0 ? NAVY : "rgba(37,52,139,0.7)" }}
+                  >
+                    {line}
+                  </p>
+                ))}
+              </div>
             )}
 
             <button
@@ -741,22 +891,36 @@ export default function AuthContent() {
               style={{ background: canSubmit || submitting ? NAVY : "rgba(37,52,139,0.32)" }}
             >
               {submitting && <IconSpinner />}
-              <span>{isSignup ? "회원가입" : "로그인"}</span>
+              <span>{isUpdate ? "비밀번호 바꾸기" : isReset ? "재설정 메일 보내기" : isSignup ? "회원가입" : "로그인"}</span>
             </button>
           </form>
 
           {/* 모드 전환 텍스트 */}
+          {isUpdate ? (
+            !loading && !user && (
+              <p className="text-xs text-center" style={{ color: NAVY_MUTED }}>
+                <Link
+                  href="/auth?mode=reset"
+                  className="font-semibold underline underline-offset-2 hover:opacity-75 transition-opacity"
+                  style={{ color: NAVY }}
+                >
+                  재설정 메일 다시 요청하기
+                </Link>
+              </p>
+            )
+          ) : (
           <p className="text-xs text-center" style={{ color: NAVY_MUTED }}>
-            {isSignup ? "이미 계정이 있으세요?" : "계정이 없으세요?"}{" "}
+            {isReset ? "비밀번호가 생각나셨나요?" : isSignup ? "이미 계정이 있으세요?" : "계정이 없으세요?"}{" "}
             <button
               type="button"
-              onClick={() => switchMode(isSignup ? "signin" : "signup")}
+              onClick={() => switchMode(isSignup || isReset ? "signin" : "signup")}
               className="font-semibold underline underline-offset-2 hover:opacity-75 transition-opacity"
               style={{ color: NAVY, background: "transparent" }}
             >
-              {isSignup ? "로그인" : "회원가입"}
+              {isSignup || isReset ? "로그인" : "회원가입"}
             </button>
           </p>
+          )}
         </main>
 
         {/* ── Footer ── */}

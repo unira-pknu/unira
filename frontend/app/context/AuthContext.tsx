@@ -37,12 +37,22 @@ interface AuthContextValue {
 
   signInWithPassword: (email: string, password: string) => Promise<AuthActionResult>;
   signUpWithPassword: (email: string, password: string) => Promise<AuthActionResult>;
+  /** 비밀번호 재설정 메일 발송. 메일 링크는 /auth/confirm → /auth/reset-password 로 온다. */
+  sendPasswordReset: (email: string) => Promise<AuthActionResult>;
+  /** 로그인된(재설정 링크로 들어온) 사용자의 비밀번호 변경. */
+  updatePassword: (password: string) => Promise<AuthActionResult>;
   signOut: () => Promise<AuthActionResult>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 const ALREADY_REGISTERED_MESSAGE = "이미 가입된 계정입니다. 로그인해 주세요.";
+
+// 인증 메일은 Gmail SMTP(unira.pknu@gmail.com)로 보내 학교 메일에서 스팸함에 들어가기 쉽다
+// (2026-11-02 첫 시험에서 '위험한 메일'로 분류되고 링크가 막힘). 메일을 기다리는 화면에서 먼저 알린다.
+// 받는 주소를 함께 보여 줘 도메인을 잘못 고른 실수가 바로 보이게 한다. (줄마다 화면에서 나눠 그린다)
+export const MAIL_SENT_HINT = (email: string, detail: string) =>
+  `메일을 확인해 주세요\n${email}\n${detail} 안 보이면 스팸함도 확인해 주세요.`;
 
 // ── 에러 메시지 정규화 ────────────────────────────────────────────────────────
 // Supabase 에러 메시지는 영어라 한국어로 짧게 매핑. 매칭 안 되면 원문 그대로.
@@ -62,13 +72,31 @@ function normalizeAuthError(message: string | undefined | null): string {
   if (m.includes("password should be at least") || m.includes("password should contain")) {
     return "비밀번호는 8자 이상, 영문과 숫자를 모두 포함해야 합니다.";
   }
+  if (m.includes("should be different from the old password")) {
+    return "지금 쓰는 비밀번호와 다른 비밀번호를 입력해 주세요.";
+  }
   if (m.includes("weak") || m.includes("pwned") || m.includes("known to be")) {
     return "너무 흔하거나 유출된 적 있는 비밀번호예요. 다른 비밀번호를 써 주세요.";
+  }
+  // 같은 주소로 메일(가입 확인·재설정)을 60초 안에 다시 요청한 경우
+  if (m.includes("for security purposes")) {
+    return "메일은 1분에 한 번만 요청할 수 있어요. 잠시 후 다시 시도해 주세요.";
+  }
+  if (m.includes("failed to fetch") || m.includes("network")) {
+    return "서버에 연결하지 못했습니다. 인터넷 연결을 확인하고 다시 시도해 주세요.";
   }
   if (m.includes("rate limit") || m.includes("too many")) {
     return "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.";
   }
   return message;
+}
+
+// 인증 메일 링크가 도착할 화면(/auth/confirm) 주소. next 는 인증 뒤 갈 곳.
+function confirmUrl(next: string): string | undefined {
+  if (typeof window === "undefined") return undefined;
+  const url = new URL("/auth/confirm", window.location.origin);
+  url.searchParams.set("next", next);
+  return url.toString();
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -115,11 +143,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email,
         password,
         options: {
-          // 이메일 확인 메일의 redirect 도 같은 콜백 라우트로 모은다.
-          emailRedirectTo:
-            typeof window !== "undefined"
-              ? new URL("/auth/callback", window.location.origin).toString()
-              : undefined,
+          // 메일 템플릿이 이 주소 뒤에 &token_hash=…&type=email 을 붙인다(/auth/confirm 참고).
+          emailRedirectTo: confirmUrl("/"),
         },
       });
       if (error) return { ok: false, message: normalizeAuthError(error.message) };
@@ -137,12 +162,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ok: true,
         emailConfirmationRequired,
         message: emailConfirmationRequired
-          ? "확인 메일을 보냈습니다. 메일함을 확인해 주세요."
+          ? MAIL_SENT_HINT(email, "인증 링크를 보냈어요.")
           : undefined,
       };
     },
     [],
   );
+
+  const sendPasswordReset = useCallback(async (email: string): Promise<AuthActionResult> => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      // 메일 템플릿이 이 주소 뒤에 &token_hash=…&type=recovery 를 붙인다(/auth/confirm 참고).
+      redirectTo: confirmUrl("/auth/reset-password"),
+    });
+    // 없는 주소여도 Supabase 는 성공으로 답한다(가입 여부를 알려 주지 않으려고). 화면도 같은 문구.
+    if (error) return { ok: false, message: normalizeAuthError(error.message) };
+    return { ok: true };
+  }, []);
+
+  const updatePassword = useCallback(async (password: string): Promise<AuthActionResult> => {
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) return { ok: false, message: normalizeAuthError(error.message) };
+    return { ok: true };
+  }, []);
 
   const signOut = useCallback(async (): Promise<AuthActionResult> => {
     const { error } = await supabase.auth.signOut();
@@ -157,9 +198,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       signInWithPassword,
       signUpWithPassword,
+      sendPasswordReset,
+      updatePassword,
       signOut,
     }),
-    [session, loading, signInWithPassword, signUpWithPassword, signOut],
+    [session, loading, signInWithPassword, signUpWithPassword, sendPasswordReset, updatePassword, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
