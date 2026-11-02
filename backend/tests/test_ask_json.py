@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 
 from app.deps import get_state
 from app.rate_limit import enforce_ask_rate_limit
-from app.routers.ask import router
+from app.routers.ask import _search_all, router
 from app.schemas import Source
 
 
@@ -74,3 +74,24 @@ class AskJsonTests(unittest.TestCase):
             response = self.client.post("/ask", json={"question": "Question"})
         self.assertEqual(response.status_code, 502)
         self.assertEqual(response.json(), {"detail": "generation failed"})
+
+
+class SearchAllTests(unittest.TestCase):
+    def test_sub_queries_run_together_and_keep_their_order(self):
+        import threading
+
+        # 세 검색이 모두 동시에 들어와야 통과하는 문 — 차례로 돌면 1초 뒤 BrokenBarrierError
+        gate = threading.Barrier(3, timeout=1)
+
+        def search_one(_state, query):
+            gate.wait()
+            return [{"id": query}]
+
+        with patch("app.routers.ask._search_one", side_effect=search_one):
+            rows = _search_all(None, ["a", "b", "c"])
+        self.assertEqual([[{"id": "a"}], [{"id": "b"}], [{"id": "c"}]], rows)
+
+    def test_single_query_skips_the_thread_pool(self):
+        with patch("app.routers.ask._search_one", return_value=[{"id": 1}]) as search_one:
+            self.assertEqual([[{"id": 1}]], _search_all(None, ["q"]))
+        search_one.assert_called_once()
