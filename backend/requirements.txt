@@ -1,11 +1,11 @@
 # Web framework
-fastapi==0.115.6
+fastapi==0.162.0  # pulls starlette 1.x: fixes 14 known starlette 0.41.3 vulnerabilities (pip-audit 2026-11-02)
 uvicorn[standard]==0.34.0
 
 # Settings & validation
 pydantic==2.10.4
 pydantic-settings==2.7.1
-python-dotenv==1.0.1
+python-dotenv==1.2.4
 
 # Embedding (must match dimensions of rag_chunks.embedding column)
 sentence-transformers==3.3.1
