@@ -518,17 +518,20 @@ function PasswordField({
 }
 
 // reset: 비밀번호 재설정 메일 요청, update: 메일 링크로 들어와 새 비밀번호 정하기
-// (/auth/reset-password). 둘 다 탭 대신 제목을 보여 준다.
-type Mode = "signin" | "signup" | "reset" | "update";
+// (/auth/reset-password), change: 로그인한 채로 현재 비밀번호를 넣고 바꾸기
+// (/auth/change-password). 셋 다 탭 대신 제목을 보여 준다.
+type Mode = "signin" | "signup" | "reset" | "update" | "change";
 
-export default function AuthContent({ update = false }: { update?: boolean }) {
+export default function AuthContent({ update = false, change = false }: { update?: boolean; change?: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { signInWithPassword, signUpWithPassword, sendPasswordReset, updatePassword, user, loading } = useAuth();
 
   // ── 모드(?mode=signup|signin|reset), 복귀 경로(?next=/foo) ───────────────────
   const modeParam = searchParams?.get("mode");
-  const initialMode: Mode = update
+  const initialMode: Mode = change
+    ? "change"
+    : update
     ? "update"
     : modeParam === "signup" || modeParam === "reset"
       ? modeParam
@@ -543,6 +546,7 @@ export default function AuthContent({ update = false }: { update?: boolean }) {
   const [emailDomain, setEmailDomain] = useState<DomainValue>("");
   const email = emailLocalPart.trim() && emailDomain ? `${emailLocalPart.trim()}@${emailDomain}` : "";
   const [password, setPassword] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [confirmError, setConfirmError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -559,8 +563,8 @@ export default function AuthContent({ update = false }: { update?: boolean }) {
   const confirmMismatch =
     passwordConfirm.length >= password.length && passwordConfirm.length > 0 && passwordConfirm !== password;
   const canSubmit =
-    mode === "update"
-      ? !!user && passwordValid && passwordConfirm === password
+    mode === "update" || mode === "change"
+      ? !!user && passwordValid && passwordConfirm === password && (mode === "update" || currentPassword.length > 0)
       : mode === "reset"
         ? emailComplete
         : mode === "signin"
@@ -579,10 +583,17 @@ export default function AuthContent({ update = false }: { update?: boolean }) {
 
   // 이미 로그인된 상태로 /auth 진입 → next 로 보내기(새 비밀번호 화면은 로그인 상태가 정상)
   useEffect(() => {
-    if (mode !== "update" && !loading && user) {
+    if (mode !== "update" && mode !== "change" && !loading && user) {
       router.replace(nextPath);
     }
   }, [mode, user, loading, nextPath, router]);
+
+  // 비밀번호 변경은 로그인한 사람만 — 로그아웃 상태면 로그인 뒤 이 화면으로 돌아오게 한다.
+  useEffect(() => {
+    if (mode === "change" && !loading && !user) {
+      router.replace("/auth?next=/auth/change-password");
+    }
+  }, [mode, user, loading, router]);
 
   // 메일 링크(/auth/confirm)를 거치지 않았거나 세션이 끝났으면 다시 요청하게 안내한다.
   useEffect(() => {
@@ -609,7 +620,7 @@ export default function AuthContent({ update = false }: { update?: boolean }) {
     setInfo(null);
     setConfirmError(null);
 
-    if (mode === "update") {
+    if (mode === "update" || mode === "change") {
       if (!passwordValid) {
         setError("비밀번호는 8자 이상, 영문과 숫자를 모두 포함해야 합니다.");
         return;
@@ -620,13 +631,14 @@ export default function AuthContent({ update = false }: { update?: boolean }) {
       }
       setSubmitting(true);
       try {
-        const result = await updatePassword(password);
+        const result = await updatePassword(password, mode === "change" ? currentPassword : undefined);
         if (!result.ok) {
           setError(result.message ?? "요청이 실패했습니다.");
           return;
         }
         setPassword("");
         setPasswordConfirm("");
+        setCurrentPassword("");
         setInfo("비밀번호를 바꿨어요. 잠시 후 채팅 화면으로 이동해요.");
         window.setTimeout(() => router.replace("/chat"), 1500);
       } finally {
@@ -700,8 +712,9 @@ export default function AuthContent({ update = false }: { update?: boolean }) {
   const isSignup = mode === "signup";
   const isReset = mode === "reset";
   const isUpdate = mode === "update";
+  const isChange = mode === "change";
   // 새 비밀번호를 만드는 화면(기준·확인 칸을 보여 준다)
-  const choosesPassword = isSignup || isUpdate;
+  const choosesPassword = isSignup || isUpdate || isChange;
 
   return (
     // 카드 위쪽을 고정한다: 가운데 정렬이면 회원가입 칸이 펼쳐질 때 탭까지 위로 밀린다.
@@ -751,14 +764,14 @@ export default function AuthContent({ update = false }: { update?: boolean }) {
         {/* ── Body ── */}
         <main className="flex flex-col gap-5 px-6 py-7 sm:px-8 sm:py-8">
           {/* 모드 탭 (재설정 화면에서는 제목) */}
-          {isReset || isUpdate ? (
+          {isReset || isUpdate || isChange ? (
             <div className="flex flex-col gap-1">
               <h1 className="text-base sm:text-lg font-semibold" style={{ color: NAVY }}>
-                {isReset ? "비밀번호 재설정" : "새 비밀번호 정하기"}
+                {isReset ? "비밀번호 재설정" : isChange ? "비밀번호 변경" : "새 비밀번호 정하기"}
               </h1>
-              {isUpdate && (
+              {(isUpdate || isChange) && (
                 <p className="text-xs leading-relaxed" style={{ color: NAVY_MUTED }}>
-                  {user?.email ? `${user.email} 계정의 새 비밀번호를 입력해 주세요.` : "새 비밀번호를 입력해 주세요."}
+                  {isChange ? user?.email : user?.email ? `${user.email} 계정의 새 비밀번호를 입력해 주세요.` : "새 비밀번호를 입력해 주세요."}
                 </p>
               )}
             </div>
@@ -797,7 +810,7 @@ export default function AuthContent({ update = false }: { update?: boolean }) {
 
           {/* 이메일 / 비밀번호 폼 (학교 이메일만 가입 가능) */}
           <form className="flex flex-col gap-3" onSubmit={handleSubmit} noValidate>
-            {!isUpdate && (
+            {!isUpdate && !isChange && (
               <SchoolEmailField
                 localPart={emailLocalPart}
                 domain={emailDomain}
@@ -807,10 +820,20 @@ export default function AuthContent({ update = false }: { update?: boolean }) {
               />
             )}
 
+            {isChange && (
+              <PasswordField
+                label="현재 비밀번호"
+                value={currentPassword}
+                onChange={setCurrentPassword}
+                autoComplete="current-password"
+                placeholder="지금 쓰는 비밀번호"
+              />
+            )}
+
             {/* 폼의 gap-3(12px) */}
             <Collapse open={!isReset} gap={12}>
             <PasswordField
-              label={isUpdate ? "새 비밀번호" : "비밀번호"}
+              label={isUpdate || isChange ? "새 비밀번호" : "비밀번호"}
               value={password}
               onChange={(value) => { setPassword(value); setConfirmError(null); }}
               autoComplete={choosesPassword ? "new-password" : "current-password"}
@@ -891,12 +914,12 @@ export default function AuthContent({ update = false }: { update?: boolean }) {
               style={{ background: canSubmit || submitting ? NAVY : "rgba(37,52,139,0.32)" }}
             >
               {submitting && <IconSpinner />}
-              <span>{isUpdate ? "비밀번호 바꾸기" : isReset ? "재설정 메일 보내기" : isSignup ? "회원가입" : "로그인"}</span>
+              <span>{isUpdate || isChange ? "비밀번호 바꾸기" : isReset ? "재설정 메일 보내기" : isSignup ? "회원가입" : "로그인"}</span>
             </button>
           </form>
 
           {/* 모드 전환 텍스트 */}
-          {isUpdate ? (
+          {isChange ? null : isUpdate ? (
             !loading && !user && (
               <p className="text-xs text-center" style={{ color: NAVY_MUTED }}>
                 <Link

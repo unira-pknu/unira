@@ -1492,19 +1492,33 @@ export default function ChatContent() {
             {/* 액션 영역 — 로그인/비로그인 분기 */}
             <div className="p-2 flex flex-col gap-1">
               {user ? (
-                <button
-                  type="button"
-                  onClick={async () => {
-                    setUserMenuOpen(false);
-                    setUserMenuPos(null);
-                    await signOut();
-                    router.refresh();
-                  }}
-                  className="w-full px-3 py-2 rounded-lg text-xs font-semibold transition-colors hover:bg-red-50"
-                  style={{ color: "#c53030", background: "transparent" }}
-                >
-                  로그아웃
-                </button>
+                <>
+                  <Link
+                    href="/auth/change-password"
+                    prefetch={false}
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      setUserMenuPos(null);
+                    }}
+                    className="w-full px-3 py-2 rounded-lg text-xs font-semibold text-center transition-colors hover:bg-black/5"
+                    style={{ color: "var(--clr-navy)", textDecoration: "none" }}
+                  >
+                    비밀번호 변경
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setUserMenuOpen(false);
+                      setUserMenuPos(null);
+                      await signOut();
+                      router.refresh();
+                    }}
+                    className="w-full px-3 py-2 rounded-lg text-xs font-semibold transition-colors hover:bg-red-50"
+                    style={{ color: "#c53030", background: "transparent" }}
+                  >
+                    로그아웃
+                  </button>
+                </>
               ) : (
                 <>
                   <Link

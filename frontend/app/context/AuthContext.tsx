@@ -39,8 +39,9 @@ interface AuthContextValue {
   signUpWithPassword: (email: string, password: string) => Promise<AuthActionResult>;
   /** 비밀번호 재설정 메일 발송. 메일 링크는 /auth/confirm → /auth/reset-password 로 온다. */
   sendPasswordReset: (email: string) => Promise<AuthActionResult>;
-  /** 로그인된(재설정 링크로 들어온) 사용자의 비밀번호 변경. */
-  updatePassword: (password: string) => Promise<AuthActionResult>;
+  /** 로그인된 사용자의 비밀번호 변경. 재설정 링크로 들어왔으면 현재 비밀번호 없이, 설정 메뉴에서는
+   *  현재 비밀번호와 함께(Supabase 'Require current password' 켜짐). */
+  updatePassword: (password: string, currentPassword?: string) => Promise<AuthActionResult>;
   signOut: () => Promise<AuthActionResult>;
 }
 
@@ -71,6 +72,14 @@ function normalizeAuthError(message: string | undefined | null): string {
   // Supabase Auth 비밀번호 기준(Password requirements)에 걸린 경우
   if (m.includes("password should be at least") || m.includes("password should contain")) {
     return "비밀번호는 8자 이상, 영문과 숫자를 모두 포함해야 합니다.";
+  }
+  // 'Require current password' — Supabase는 틀린 현재 비밀번호에도 "...required..."로 답한다
+  // (11-03 실제 계정 확인). 변경 화면은 칸이 비면 버튼이 꺼지므로 여기 오면 틀린 것이다.
+  if (m.includes("current password")) {
+    return "현재 비밀번호가 맞지 않아요.";
+  }
+  if (m.includes("reauthentication")) {
+    return "보안을 위해 다시 로그인한 뒤 비밀번호를 바꿔 주세요.";
   }
   if (m.includes("should be different from the old password")) {
     return "지금 쓰는 비밀번호와 다른 비밀번호를 입력해 주세요.";
@@ -179,8 +188,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { ok: true };
   }, []);
 
-  const updatePassword = useCallback(async (password: string): Promise<AuthActionResult> => {
-    const { error } = await supabase.auth.updateUser({ password });
+  const updatePassword = useCallback(async (password: string, currentPassword?: string): Promise<AuthActionResult> => {
+    const { error } = await supabase.auth.updateUser(
+      currentPassword ? { password, current_password: currentPassword } : { password },
+    );
     if (error) return { ok: false, message: normalizeAuthError(error.message) };
     return { ok: true };
   }, []);
