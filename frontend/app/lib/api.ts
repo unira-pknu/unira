@@ -85,10 +85,21 @@ export type ChatTurn = { role: "user" | "assistant"; content: string };
 const HISTORY_TURNS = 6;
 const HISTORY_TURN_MAX_CHARS = 4000; // 백엔드 ChatMessage.content 상한
 
+/** 백엔드가 실제로 들어간 단계(backend routers/ask.py _ask_events). 문구는 화면이 정한다. */
+export type AskStage = "planning" | "searching" | "writing" | "revising";
+
+export type AskProgress = {
+  onStage?: (stage: AskStage, count?: number) => void;
+  /** 지금까지 쓰인 답 전체(조각을 이어 붙인 것). 숫자 확인으로 고쳐 쓰면 고친 답으로 바뀐다. */
+  onText?: (text: string) => void;
+};
+
+/** progress 를 넘기면 단계 안내·답 글자를 받는 대로 알려 주고, 끝나면 같은 AskResult 를 돌려준다. */
 export async function askBackend(
   question: string,
   history: ChatTurn[] = [],
   signal?: AbortSignal,
+  progress?: AskProgress,
 ): Promise<AskResult> {
   const {
     data: { session },
@@ -101,11 +112,12 @@ export async function askBackend(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Accept: "application/json",
+      Accept: progress ? "text/event-stream" : "application/json",
       Authorization: `Bearer ${session.access_token}`,
     },
     body: JSON.stringify({
       question,
+      stream: !!progress,
       chat_history: history
         .filter((turn) => turn.content.trim())
         .slice(-HISTORY_TURNS)
@@ -118,7 +130,9 @@ export async function askBackend(
     throw new AskError(await readErrorMessage(res), res.status);
   }
 
-  const data = (await res.json()) as BackendAskResponse;
+  const data = res.headers.get("Content-Type")?.includes("text/event-stream")
+    ? await readAskStream(res, progress ?? {})
+    : ((await res.json()) as BackendAskResponse);
   if (typeof data?.answer !== "string" || !Array.isArray(data.sources)) {
     throw new Error("답변 응답 형식이 올바르지 않습니다.");
   }
@@ -130,6 +144,41 @@ export async function askBackend(
     sources: answerable ? (data.sources ?? []).map(adaptSource) : [],
     answerable,
   };
+}
+
+type AskStreamEvent =
+  | { type: "status"; stage: AskStage; count?: number }
+  | { type: "token"; text: string }
+  | { type: "replace"; text: string }
+  | ({ type: "done" } & BackendAskResponse)
+  | { type: "error"; detail?: string };
+
+/** "data: {...}\n\n" 이벤트를 받는 대로 처리하고, done 이벤트의 내용을 돌려준다. */
+async function readAskStream(res: Response, progress: AskProgress): Promise<BackendAskResponse> {
+  const reader = res.body!.pipeThrough(new TextDecoderStream()).getReader();
+  let buffer = "";
+  let text = "";
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += value;
+    let end: number;
+    while ((end = buffer.indexOf("\n\n")) >= 0) {
+      const line = buffer.slice(0, end).trim();
+      buffer = buffer.slice(end + 2);
+      if (!line.startsWith("data:")) continue;
+      const event = JSON.parse(line.slice(5)) as AskStreamEvent;
+      if (event.type === "status") progress.onStage?.(event.stage, event.count);
+      else if (event.type === "token") progress.onText?.((text += event.text));
+      else if (event.type === "replace") progress.onText?.((text = event.text));
+      else if (event.type === "error") throw new AskError(event.detail ?? "답변 생성에 실패했어요.", 502);
+      else if (event.type === "done") {
+        await reader.cancel();
+        return event;
+      }
+    }
+  }
+  throw new AskError("답변이 끝나기 전에 연결이 끊겼어요.", 502);
 }
 
 // ── 관리자 대시보드 (/api/admin/dashboard → 백엔드 /admin/dashboard) ─────────────

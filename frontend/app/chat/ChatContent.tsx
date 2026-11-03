@@ -9,7 +9,7 @@ import remarkGfm from "remark-gfm";
 import chatData from "@/data/routes/chat.json";
 import { useQueryContext } from "@/app/context/QueryContext";
 import { displayNameOf, useAuth } from "@/app/context/AuthContext";
-import { AskError, askBackend, type ChatTurn } from "@/app/lib/api";
+import { AskError, askBackend, type AskStage, type ChatTurn } from "@/app/lib/api";
 import { prepareSources } from "./mergeSources";
 import { sourceKindLabel } from "./sourceLabel";
 import PopularQuestions from "@/app/components/PopularQuestions";
@@ -483,6 +483,14 @@ function normalizeAnswerMarkdown(content: string): string {
 }
 
 // 완성된 JSON 답변 표시 (마크다운: 굵게·링크·목록·표, 줄바꿈 유지)
+// 답을 기다리는 동안 백엔드가 실제로 하고 있는 단계(api.ts AskStage)
+function stageText(stage: AskStage, count?: number): string {
+  if (stage === "searching") return count && count > 1 ? `${count}가지 내용을 찾고 있어요` : "관련 자료를 찾고 있어요";
+  if (stage === "writing") return "답변을 쓰고 있어요";
+  if (stage === "revising") return "자료와 다른 숫자가 있어 고쳐 쓰고 있어요";
+  return "질문을 이해하고 있어요";
+}
+
 function AnswerContent({ content }: { content: string }) {
   return (
     <div
@@ -694,6 +702,8 @@ export default function ChatContent() {
   const [chatState, setChatState] = useState<ChatState>("idle");
   // chatState가 "error"일 때 보여 줄 문구. null이면 일반 실패 안내.
   const [chatError, setChatError] = useState<string | null>(null);
+  // 답을 기다리는 동안의 단계와 지금까지 쓰인 답(다 끝나면 messages 로 옮기고 비운다)
+  const [live, setLive] = useState<{ stage: AskStage; count?: number; text: string } | null>(null);
 
   // ── 사이드바 상태 (SSR-safe: false로 시작, mount 후 보정) ──
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -788,10 +798,13 @@ export default function ChatContent() {
   }, []);
 
   // ── 로그인 시 사이드바 목록을 DB에서, 비로그인 시 JSON sidebar ─────
+  // 계정이 바뀔 때만 다시 불러온다. Supabase 는 창을 오가거나 토큰을 갱신할 때도 같은 사람의
+  // user 를 새 객체로 다시 주는데, 그때마다 지금 대화방을 잊어서 다음 질문이 새 방으로 들어갔다.
+  const userId = user?.id ?? null;
   useEffect(() => {
     if (authLoading) return;
 
-    if (!user) {
+    if (!userId) {
       setHistory(sidebarHistory);
       setActiveId(sidebarHistory[0]?.id ?? "");
       persistChatIdRef.current = null;
@@ -816,7 +829,7 @@ export default function ChatContent() {
     return () => {
       cancelled = true;
     };
-  }, [user, authLoading]);
+  }, [userId, authLoading]);
 
   // ── Context 질문 소비: 인증 준비 후.
   // takePendingQuery()는 읽음과 동시에 지우는 원자적 연산이라(QueryContext 참고),
@@ -879,7 +892,8 @@ export default function ChatContent() {
 
   // ── AI 응답 요청 (공통) ───────────────────────────────────────
   // history: 이 질문 앞까지의 같은 채팅 대화(오래된 것부터). 이어지는 질문 이해용.
-  const requestAIReply = async (question: string, history: ChatTurn[] = []) => {
+  // resend: 답을 못 받은 질문을 다시 보낼 때. 질문은 이미 저장돼 있어 다시 저장하지 않는다.
+  const requestAIReply = async (question: string, history: ChatTurn[] = [], resend = false) => {
     const view = viewRef.current;
     // 질문한 화면 그대로인지, 아니면 다른 채팅에 갔다가 이 채팅으로 돌아왔는지.
     const sameView = () => viewRef.current === view;
@@ -912,9 +926,11 @@ export default function ChatContent() {
           persistedChatId = await pendingChatCreateRef.current;
         }
         setChatPending(persistedChatId, true);
-        await insertChatMessage(persistedChatId, "user", question, null);
-        const refreshed = await listChats();
-        setHistory(refreshed.map((r) => ({ id: r.id, title: r.title })));
+        if (!resend) {
+          await insertChatMessage(persistedChatId, "user", question, null);
+          const refreshed = await listChats();
+          setHistory(refreshed.map((r) => ({ id: r.id, title: r.title })));
+        }
       } catch (err) {
         console.error("[chat] persist user message failed:", err);
         showToast("대화 저장에 실패했습니다.");
@@ -922,7 +938,16 @@ export default function ChatContent() {
     }
 
     try {
-      const { answer, sources } = await askBackend(question, history);
+      if (sameView()) setLive({ stage: "planning", text: "" });
+      const { answer, sources } = await askBackend(question, history, undefined, {
+        onStage: (stage, count) => {
+          if (sameView()) setLive((prev) => ({ text: prev?.text ?? "", stage, count }));
+        },
+        onText: (text) => {
+          if (sameView()) setLive((prev) => ({ stage: prev?.stage ?? "writing", count: prev?.count, text }));
+        },
+      });
+      if (sameView()) setLive(null);
       const finalContent = answer || "관련 정보를 찾을 수 없습니다.";
       const assistantLocalId = uid();
       // 돌아온 채팅은 기록을 불러오는 중일 수 있어 화면에 직접 붙이지 않고,
@@ -966,6 +991,7 @@ export default function ChatContent() {
       }
     } catch (err) {
       console.error("[chat] askBackend failed:", err);
+      if (sameView()) setLive(null);
       if (sameView() || returnedTo(persistedChatId)) {
         // 횟수 제한(429)만 서버 안내 문구를 보여 준다. 나머지는 내부 오류 문구라 일반 안내로.
         setChatError(err instanceof AskError && err.status === 429 ? err.message : null);
@@ -974,6 +1000,14 @@ export default function ChatContent() {
     } finally {
       if (persistedChatId) setChatPending(persistedChatId, false);
     }
+  };
+
+  // ── 답을 못 받은 마지막 질문 다시 보내기 ─────────────────────────
+  const handleResend = () => {
+    const last = messages[messages.length - 1];
+    if (!last || last.role !== "user" || chatState === "loading") return;
+    const history = messages.slice(0, -1).map(({ role, content }) => ({ role, content }));
+    void requestAIReply(last.content, history, true);
   };
 
   // ── 대화 시작 ─────────────────────────────────────────────────
@@ -996,6 +1030,7 @@ export default function ChatContent() {
   const handleNewChat = () => {
     // 답변을 기다리던 요청은 계속 진행된다(requestAIReply가 원래 채팅에 저장).
     viewRef.current += 1;
+    setLive(null);
     setMessages([]);
     setChatState("idle");
     setInputValue("");
@@ -1011,6 +1046,7 @@ export default function ChatContent() {
   // ── LOAD_HISTORY ──────────────────────────────────────────────
   const handleLoadHistory = async (item: HistoryItem) => {
     viewRef.current += 1;
+    setLive(null);
     const view = viewRef.current;
     pendingChatCreateRef.current = null;
     setActiveId(item.id);
@@ -1611,10 +1647,10 @@ export default function ChatContent() {
             </div>
           )}
 
-          {messages.map((msg) =>
+          {messages.map((msg, index) =>
             msg.role === "user" ? (
               /* ── 사용자 말풍선 ── */
-              <div key={msg.id} className="flex justify-end">
+              <div key={msg.id} className="flex flex-col items-end gap-1.5">
                 <span
                   className="max-w-[80%] sm:max-w-xs md:max-w-md px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl text-xs sm:text-sm leading-relaxed"
                   style={{
@@ -1627,6 +1663,22 @@ export default function ChatContent() {
                 >
                   {msg.content}
                 </span>
+                {/* 답이 실패해 질문만 저장된 채로 다시 연 경우(실패 직후는 아래 오류 카드가 대신한다) */}
+                {index === messages.length - 1 &&
+                  (chatState === "idle" || chatState === "success") &&
+                  !pendingChats.has(activeId) && (
+                    <span className="flex items-center gap-2 text-[11px] sm:text-xs" style={{ color: "var(--clr-text-muted)" }}>
+                      답변을 받지 못했어요
+                      <button
+                        type="button"
+                        onClick={handleResend}
+                        className="font-semibold underline underline-offset-2 hover:opacity-75 transition-opacity"
+                        style={{ color: "var(--clr-navy)" }}
+                      >
+                        다시 보내기
+                      </button>
+                    </span>
+                  )}
               </div>
             ) : (
               <AssistantMessage
@@ -1637,26 +1689,56 @@ export default function ChatContent() {
             )
           )}
 
-          {/* JSON 답변이 완성될 때까지 로딩 표시 */}
-          {chatState === "loading" && (
-            <div className="flex justify-start">
-              <div className="glass-card rounded-2xl px-4 sm:px-5 py-3 sm:py-4 shadow-sm">
-                <div className="flex items-center gap-2">
-                  <div className="flex gap-1.5">
-                    <span className="typing-dot" />
-                    <span className="typing-dot" />
-                    <span className="typing-dot" />
+          {/* 답을 기다리는 동안: 실제 단계 안내 → 답이 써지기 시작하면 그 글을 그대로 */}
+          {chatState === "loading" &&
+            (live?.text ? (
+              <div className="flex justify-start w-full">
+                <div className="flex flex-col items-start max-w-[88%] sm:max-w-lg w-full">
+                  <div className="glass-card rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col gap-3 w-full">
+                    <div
+                      className="transition-opacity duration-300"
+                      style={{ opacity: live.stage === "revising" ? 0.45 : 1 }}
+                    >
+                      {/* 출처 번호는 끝난 뒤 인용된 것만 다시 매기므로, 쓰는 동안에는 숨긴다 */}
+                      <AnswerContent content={live.text.replace(/\[\d+\]/g, "")} />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex gap-1.5">
+                        <span className="typing-dot" />
+                        <span className="typing-dot" />
+                        <span className="typing-dot" />
+                      </div>
+                      <span
+                        key={live.stage}
+                        className="status-fade-in text-[11px] sm:text-xs"
+                        style={{ color: live.stage === "revising" ? "#b7791f" : "var(--clr-text-muted)" }}
+                      >
+                        {stageText(live.stage, live.count)}
+                      </span>
+                    </div>
                   </div>
-                  <span
-                    className="status-fade-in text-[11px] sm:text-xs"
-                    style={{ color: "var(--clr-text-muted)" }}
-                  >
-                    답변과 관련 자료를 준비하고 있어요...
-                  </span>
                 </div>
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="flex justify-start">
+                <div className="glass-card rounded-2xl px-4 sm:px-5 py-3 sm:py-4 shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="flex gap-1.5">
+                      <span className="typing-dot" />
+                      <span className="typing-dot" />
+                      <span className="typing-dot" />
+                    </div>
+                    <span
+                      key={live?.stage ?? "start"}
+                      className="status-fade-in text-[11px] sm:text-xs"
+                      style={{ color: "var(--clr-text-muted)" }}
+                    >
+                      {live ? stageText(live.stage, live.count) : "질문을 보내고 있어요"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
 
           {/* 에러 */}
           {chatState === "error" && (
@@ -1665,13 +1747,16 @@ export default function ChatContent() {
                 <p className="text-xs sm:text-sm" style={{ color: "#c0392b" }}>
                   {chatError ?? "답변 생성에 실패했어요."}
                 </p>
-                <button
-                  onClick={() => setChatState("idle")}
-                  className="text-xs px-3 py-1.5 rounded-full border font-medium"
-                  style={{ color: "var(--clr-navy)", borderColor: "var(--clr-navy)" }}
-                >
-                  다시 시도하기
-                </button>
+                {/* 횟수 제한(chatError)은 다시 보내도 또 막히므로 버튼을 두지 않는다 */}
+                {!chatError && (
+                  <button
+                    onClick={handleResend}
+                    className="text-xs px-3 py-1.5 rounded-full border font-medium"
+                    style={{ color: "var(--clr-navy)", borderColor: "var(--clr-navy)" }}
+                  >
+                    다시 보내기
+                  </button>
+                )}
               </div>
             </div>
           )}

@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterator, List, Optional, Tuple
 
 from openai import OpenAI
 
@@ -178,19 +178,70 @@ def generate_answer(
         len(chat_history or []),
     )
     answer = _complete(openai_client, model, messages, temperature, max_tokens, timeout)
+    problems = _number_problems(answer, question, rows, max_chars_per_chunk)
+    if not problems:
+        return answer
+    return _complete(openai_client, model, _retry_messages(messages, answer, problems), temperature, max_tokens, timeout)
+
+
+def stream_answer(
+    *,
+    openai_client: OpenAI,
+    model: str,
+    system_prompt: str,
+    question: str,
+    rows: List[Dict[str, Any]],
+    max_chars_per_chunk: int,
+    timeout: float,
+    temperature: float = 0.1,
+    max_tokens: int = 700,
+    chat_history: Optional[List[Dict[str, str]]] = None,
+) -> Iterator[Tuple[str, str]]:
+    """generate_answer, but yields ("token", text) while the model writes.
+
+    The number check still runs on the finished text; when it fails, yields
+    ("revising", "") and then ("replace", rewritten answer) so the screen can
+    swap out what it already showed. Always ends with ("final", answer).
+    """
+    messages = build_messages(system_prompt, question, rows, max_chars_per_chunk, chat_history)
+    logger.info(
+        "generation: stream start model=%s source_count=%d history_turns=%d",
+        model,
+        len(rows),
+        len(chat_history or []),
+    )
+    parts: List[str] = []
+    for delta in _stream_complete(openai_client, model, messages, temperature, max_tokens, timeout):
+        parts.append(delta)
+        yield "token", delta
+    answer = "".join(parts).strip()
+    problems = _number_problems(answer, question, rows, max_chars_per_chunk)
+    if problems:
+        yield "revising", ""
+        answer = _complete(openai_client, model, _retry_messages(messages, answer, problems), temperature, max_tokens, timeout)
+        yield "replace", answer
+    yield "final", answer
+
+
+def _number_problems(answer: str, question: str, rows: List[Dict[str, Any]], max_chars_per_chunk: int) -> List[str]:
+    """Figures in the answer its sources don't back up, as retry instructions."""
     # What the model was shown: each chunk as truncated in the prompt.
     shown = [_truncate(str(row.get("content") or ""), max_chars_per_chunk) for row in rows]
     missing = unsupported_numbers(answer, [question] + shown)
     miscited = miscited_numbers(answer, question, shown)
     if not missing and not miscited:
-        return answer
+        return []
     logger.info("generation: retry unsupported_numbers=%s miscited_numbers=%s", missing, miscited)
     problems = []
     if missing:
         problems.append(f"수치 {', '.join(missing)}는 참고 자료 본문에 없습니다")
     if miscited:
         problems.append(f"수치 {', '.join(miscited)}는 그 문장이 단 출처 번호의 자료에 없고 다른 자료에 있습니다")
-    retry = messages + [
+    return problems
+
+
+def _retry_messages(messages: List[Dict[str, str]], answer: str, problems: List[str]) -> List[Dict[str, str]]:
+    return messages + [
         {"role": "assistant", "content": answer},
         {
             "role": "user",
@@ -201,7 +252,6 @@ def generate_answer(
             ),
         },
     ]
-    return _complete(openai_client, model, retry, temperature, max_tokens, timeout)
 
 
 SMALL_TALK_PROMPT = (
@@ -263,3 +313,37 @@ def _complete(
         total_tokens,
     )
     return (response.choices[0].message.content or "").strip()
+
+
+def _stream_complete(
+    openai_client: OpenAI,
+    model: str,
+    messages: List[Dict[str, str]],
+    temperature: float,
+    max_tokens: int,
+    timeout: float,
+) -> Iterator[str]:
+    started = time.perf_counter()
+    stream = openai_client.chat.completions.create(
+        model=model,
+        messages=messages,
+        temperature=temperature,
+        max_tokens=max_tokens,
+        timeout=timeout,
+        stream=True,
+    )
+    first_token_ms = None
+    for chunk in stream:
+        if not chunk.choices:
+            continue
+        delta = chunk.choices[0].delta.content
+        if delta:
+            if first_token_ms is None:
+                first_token_ms = (time.perf_counter() - started) * 1000
+            yield delta
+    logger.info(
+        "generation: stream done model=%s first_token_ms=%s latency_ms=%.1f",
+        model,
+        f"{first_token_ms:.1f}" if first_token_ms is not None else None,
+        (time.perf_counter() - started) * 1000,
+    )

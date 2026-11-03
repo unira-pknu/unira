@@ -28,10 +28,10 @@ class AskJsonTests(unittest.TestCase):
         app.dependency_overrides[enforce_ask_rate_limit] = lambda: "test-user"
         self.client = TestClient(app)
 
-    def test_answer_and_sources_are_json_even_for_legacy_stream_requests(self):
+    def test_answer_and_sources_are_json_unless_stream_is_asked_for(self):
         source = Source(title="Guide", uri="https://example.com/guide",
                         content="Graduation requirements", similarity=0.9)
-        for extra in ({}, {"stream": False}, {"stream": True}):
+        for extra in ({}, {"stream": False}):
             with self.subTest(extra=extra), patch(
                 "app.routers.ask._retrieve", return_value=([{}], [source])
             ), patch("app.routers.ask.generate_answer", return_value="Answer [1]."):
@@ -43,7 +43,7 @@ class AskJsonTests(unittest.TestCase):
 
     def test_no_sources_is_json(self):
         with patch("app.routers.ask._retrieve", return_value=([], [])):
-            response = self.client.post("/ask", json={"question": "Unknown", "stream": True})
+            response = self.client.post("/ask", json={"question": "Unknown"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["sources"], [])
         self.assertTrue(response.json()["answer"])
@@ -134,3 +134,75 @@ class PlanSearchQueriesTests(unittest.TestCase):
         for content in ["not json", '{"other": 1}', '{"queries": "q"}']:
             with self.subTest(content=content):
                 self.assertEqual(["q"], self.plan(content))
+
+
+def _events(response):
+    import json
+
+    return [json.loads(line[6:]) for line in response.text.splitlines() if line.startswith("data: ")]
+
+
+class AskStreamTests(unittest.TestCase):
+    def setUp(self):
+        app = FastAPI()
+        app.include_router(router)
+        settings = SimpleNamespace(
+            openai_model="test", max_chars_per_chunk=500, openai_timeout_seconds=10,
+            openai_temperature=0.1, openai_max_tokens=100, source_excerpt_max_chars=300,
+        )
+        app.dependency_overrides[get_state] = lambda: SimpleNamespace(settings=settings, openai=None, system_prompt="s")
+        app.dependency_overrides[enforce_ask_rate_limit] = lambda: "test-user"
+        self.client = TestClient(app)
+
+    def post(self, **patches):
+        source = Source(title="Guide", uri="", content="본문", similarity=1)
+        defaults = {
+            "plan_search_queries": ["q1", "q2"],
+            "_retrieve": ([{"content": "본문"}], [source]),
+            "stream_answer": iter([("token", "졸업은 "), ("token", "130학점[1]."), ("final", "졸업은 130학점[1].")]),
+        }
+        defaults.update(patches)
+        with patch("app.routers.ask.plan_search_queries", return_value=defaults["plan_search_queries"]), patch(
+            "app.routers.ask._retrieve", return_value=defaults["_retrieve"]
+        ), patch("app.routers.ask.stream_answer", return_value=defaults["stream_answer"]), patch(
+            "app.routers.ask.generate_small_talk", return_value="안녕하세요!"
+        ):
+            response = self.client.post("/ask", json={"question": "졸업 학점?", "stream": True})
+        self.assertTrue(response.headers["content-type"].startswith("text/event-stream"))
+        return _events(response)
+
+    def test_steps_then_answer_pieces_then_done(self):
+        events = self.post()
+        self.assertEqual(
+            [("status", "planning"), ("status", "searching"), ("status", "writing"), ("token", None), ("token", None), ("done", None)],
+            [(e["type"], e.get("stage")) for e in events],
+        )
+        self.assertEqual(2, events[1]["count"])
+        self.assertEqual("졸업은 130학점[1].", events[-1]["answer"])
+        self.assertEqual(["Guide"], [s["title"] for s in events[-1]["sources"]])
+        self.assertTrue(events[-1]["answerable"])
+
+    def test_failed_number_check_announces_and_replaces(self):
+        events = self.post(stream_answer=iter([
+            ("token", "150만원"), ("revising", ""), ("replace", "금액은 자료에 없습니다."), ("final", "금액은 자료에 없습니다."),
+        ]))
+        self.assertEqual(["status", "status", "status", "token", "status", "replace", "done"], [e["type"] for e in events])
+        self.assertEqual("revising", events[4]["stage"])
+        self.assertEqual("금액은 자료에 없습니다.", events[-1]["answer"])
+
+    def test_small_talk_skips_search(self):
+        events = self.post(plan_search_queries=[])
+        self.assertEqual([("status", "planning"), ("done", None)], [(e["type"], e.get("stage")) for e in events])
+        self.assertEqual({"answer": "안녕하세요!", "sources": [], "answerable": True}, {k: events[-1][k] for k in ("answer", "sources", "answerable")})
+
+    def test_no_sources_is_a_no_info_done(self):
+        events = self.post(_retrieve=([], []))
+        self.assertEqual({"type": "done", "answer": "관련 정보를 찾을 수 없습니다.", "sources": [], "answerable": False}, events[-1])
+
+    def test_generation_failure_mid_stream_is_an_error_event(self):
+        def broken():
+            yield "token", "졸업은"
+            raise RuntimeError("openai down")
+
+        events = self.post(stream_answer=broken())
+        self.assertEqual({"type": "error", "detail": "generation failed"}, events[-1])

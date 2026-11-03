@@ -2,17 +2,19 @@
 
 from __future__ import annotations
 
+import json
 import logging
 from concurrent.futures import ThreadPoolExecutor
 from itertools import zip_longest
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, Iterator, List, Tuple
 from urllib.parse import unquote, urlparse
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 
 from ..deps import AppState, get_state
 from ..excerpts import extract_relevant_excerpt
-from ..generation import generate_answer, generate_small_talk
+from ..generation import generate_answer, generate_small_talk, stream_answer
 from ..query_rewrite import plan_search_queries
 from ..query_transform import transform_query
 from ..rate_limit import enforce_ask_rate_limit
@@ -258,6 +260,13 @@ def ask(
     if not question:
         raise HTTPException(status_code=400, detail="question must not be empty")
     chat_history = [turn.model_dump() for turn in payload.chat_history]
+    if payload.stream:
+        return StreamingResponse(
+            _ask_events(state=state, user_id=user_id, question=question, chat_history=chat_history),
+            media_type="text/event-stream",
+            # Proxies (ngrok, Vercel) must pass each event on as it is written.
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        )
 
     sub_questions = plan_search_queries(
         openai_client=state.openai,
@@ -309,7 +318,14 @@ def ask(
         logger.exception("generation failed")
         raise HTTPException(status_code=502, detail="generation failed")
 
-    sources = [
+    sources = _with_excerpts(sources, question=question, answer=answer, state=state)
+    answer = answer or NO_INFO_ANSWER
+    return AskResponse(answer=answer, sources=sources, answerable=not _is_no_info_answer(answer))
+
+
+def _with_excerpts(sources: List[Source], *, question: str, answer: str, state: AppState) -> List[Source]:
+    """Trim each source card's text to the part the answer used."""
+    return [
         source.model_copy(
             update={
                 "content": extract_relevant_excerpt(
@@ -324,5 +340,102 @@ def ask(
         for index, source in enumerate(sources, start=1)
     ]
 
+
+def _sse(event: Dict[str, Any]) -> str:
+    return f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+
+
+def _ask_events(
+    *,
+    state: AppState,
+    user_id: str,
+    question: str,
+    chat_history: List[Dict[str, str]],
+) -> Iterator[str]:
+    """ask() for the chat screen, as server-sent events.
+
+    Each step is announced when it actually starts ({"type": "status",
+    "stage": ...}; the screen picks the words), the answer arrives as
+    {"type": "token"} pieces, a failed number check sends "revising" and a
+    {"type": "replace"} with the rewritten answer, and {"type": "done"}
+    carries the same answer/sources/answerable as the JSON response. A
+    failure after the stream started can't change the HTTP status any more,
+    so it arrives as {"type": "error"}.
+    """
+    settings = state.settings
+    yield _sse({"type": "status", "stage": "planning"})
+    sub_questions = plan_search_queries(
+        openai_client=state.openai,
+        model=settings.openai_model,
+        question=question,
+        chat_history=chat_history,
+    )
+    if not sub_questions:
+        logger.info("ask: user=%s question=%r small_talk", user_id, question)
+        try:
+            reply = generate_small_talk(
+                openai_client=state.openai,
+                model=settings.openai_model,
+                question=question,
+                timeout=settings.openai_timeout_seconds,
+                chat_history=chat_history,
+            )
+        except Exception:
+            logger.exception("small talk generation failed")
+            yield _sse({"type": "error", "detail": "generation failed"})
+            return
+        yield _sse({"type": "done", "answer": reply or NO_INFO_ANSWER, "sources": [], "answerable": bool(reply)})
+        return
+
+    yield _sse({"type": "status", "stage": "searching", "count": len(sub_questions)})
+    try:
+        rows, sources = _retrieve(
+            state=state,
+            user_id=user_id,
+            question=question,
+            chat_history=chat_history,
+            sub_questions=sub_questions,
+        )
+    except HTTPException as exc:
+        yield _sse({"type": "error", "detail": exc.detail})
+        return
+    if not sources:
+        yield _sse({"type": "done", "answer": NO_INFO_ANSWER, "sources": [], "answerable": False})
+        return
+
+    yield _sse({"type": "status", "stage": "writing"})
+    answer = ""
+    try:
+        for kind, text in stream_answer(
+            openai_client=state.openai,
+            model=settings.openai_model,
+            system_prompt=state.system_prompt,
+            question=question,
+            rows=rows,
+            max_chars_per_chunk=settings.max_chars_per_chunk,
+            timeout=settings.openai_timeout_seconds,
+            temperature=settings.openai_temperature,
+            max_tokens=settings.openai_max_tokens,
+            chat_history=chat_history,
+        ):
+            if kind == "token":
+                yield _sse({"type": "token", "text": text})
+            elif kind == "revising":
+                yield _sse({"type": "status", "stage": "revising"})
+            elif kind == "replace":
+                yield _sse({"type": "replace", "text": text})
+            else:
+                answer = text
+    except Exception:
+        logger.exception("generation failed")
+        yield _sse({"type": "error", "detail": "generation failed"})
+        return
+
+    sources = _with_excerpts(sources, question=question, answer=answer, state=state)
     answer = answer or NO_INFO_ANSWER
-    return AskResponse(answer=answer, sources=sources, answerable=not _is_no_info_answer(answer))
+    yield _sse({
+        "type": "done",
+        "answer": answer,
+        "sources": [source.model_dump() for source in sources],
+        "answerable": not _is_no_info_answer(answer),
+    })
