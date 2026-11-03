@@ -14,7 +14,8 @@
 | 백엔드 코드 | `D:\unira-backend` (운영 전용 clone, `main`) |
 | 가상환경 | `D:\unira-backend\backend\.venv` (Python 3.12, torch CUDA) |
 | 설정 | `D:\unira-backend\backend\.env` (`EMBEDDING_DEVICE=cuda`, `RERANKER_DEVICE=cuda`) |
-| 실행 스크립트 | `run_backend.ps1`, `run_ngrok.ps1` — 꺼지면 10초 뒤 다시 켜는 무한 반복, 로그는 `backend.log`·`ngrok.log` |
+| 실행 스크립트 | `run_backend.ps1`, `run_ngrok.ps1` — 꺼지면 10초 뒤 다시 켜는 무한 반복 |
+| 로그 | `D:\unira-backend\logs\backend_날짜.log`·`ngrok_날짜.log` — 하루 한 파일, 30일 지난 파일은 자동 삭제(`write_daily_log.ps1`, 원본 `backend/deploy/`) |
 | 자동 시작 | 작업 스케줄러 `unira-backend`, `unira-ngrok` (부팅 시, 관리자 권한) |
 
 크롤링 작업 폴더(`D:\Github\campus-rag\campus-rag`)와는 별개다. 백엔드 반영 때 그 폴더와
@@ -50,7 +51,7 @@
 3. **확인** (1분 뒤)
 
    ```powershell
-   Get-Content D:\unira-backend\backend.log -Tail 300 | Select-String "startup complete|warmup"
+   Get-Content "D:\unira-backend\logs\backend_$(Get-Date -Format yyyy-MM-dd).log" -Tail 300 | Select-String "startup complete|warmup"
    ```
 
    오늘 시각의 `Backend startup complete.` 다음에 `warmup: search rows=…`가 보이면 새 코드로 켜진 것이다.
@@ -64,5 +65,5 @@ Vercel 프로젝트 → Settings → Environment Variables → `BACKEND_URL`을 
 ## 주의
 
 - 서버를 재부팅하면 작업 스케줄러가 백엔드·ngrok을 다시 켠다(부팅 후 확인 필요).
-- `backend.log`에는 학생 질문 원문이 남는다. 공용 서버이므로 로그 보관 기간을 정해 지운다.
+- 백엔드 로그에는 학생 질문 원문이 남는다. 공용 서버라 30일만 보관한다(2026-11-03 결정).
 - 관리자 PowerShell 창이나 원격 접속을 닫아도 백엔드는 계속 돈다(작업 스케줄러가 실행).
