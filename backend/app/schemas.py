@@ -18,7 +18,10 @@ class AskRequest(BaseModel):
     # (10 exchanges) so a long-running chat can't unboundedly grow the prompt
     # sent to OpenAI on every request.
     chat_history: List[ChatMessage] = Field(default_factory=list, max_length=20)
-    # Legacy `stream` request fields are ignored; /ask always returns JSON.
+    # true: text/event-stream with step updates and answer text as it is
+    # written (the chat screen). false (default): one JSON AskResponse, which
+    # eval and comparison scripts rely on.
+    stream: bool = False
 
 
 

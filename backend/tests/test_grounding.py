@@ -81,3 +81,39 @@ class GenerateAnswerRetryTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class StreamAnswerTests(unittest.TestCase):
+    def client(self, streamed, retry=None):
+        calls = []
+
+        def create(**kwargs):
+            calls.append(kwargs)
+            if kwargs.get("stream"):
+                return iter(
+                    SimpleNamespace(choices=[SimpleNamespace(delta=SimpleNamespace(content=piece))]) for piece in streamed
+                )
+            return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=retry))], usage=None)
+
+        return SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create))), calls
+
+    def run_stream(self, client):
+        return list(generation.stream_answer(
+            openai_client=client, model="m", system_prompt="s", question="졸업하려면 몇 학점?",
+            rows=[{"content": SOURCES[1]}], max_chars_per_chunk=1000, timeout=5,
+        ))
+
+    def test_grounded_answer_streams_and_ends_with_final(self):
+        client, calls = self.client(["**3.50 ", "이상**입니다[1]."])
+        self.assertEqual(
+            [("token", "**3.50 "), ("token", "이상**입니다[1]."), ("final", "**3.50 이상**입니다[1].")],
+            self.run_stream(client),
+        )
+        self.assertEqual(1, len(calls))
+
+    def test_invented_figure_is_rewritten_after_streaming(self):
+        client, calls = self.client(["총 **130", "학점**입니다."], retry="졸업 학점은 학과별로 다릅니다.")
+        events = self.run_stream(client)
+        self.assertEqual(["token", "token", "revising", "replace", "final"], [kind for kind, _ in events])
+        self.assertEqual("졸업 학점은 학과별로 다릅니다.", events[-1][1])
+        self.assertIn("130학점", calls[1]["messages"][-1]["content"])
