@@ -204,6 +204,35 @@ def generate_answer(
     return _complete(openai_client, model, retry, temperature, max_tokens, timeout)
 
 
+SMALL_TALK_PROMPT = (
+    "당신은 국립부경대학교 학생을 돕는 학사 도우미 UNIRA입니다. 사용자가 인사·감사·잡담처럼 "
+    "찾아볼 정보가 없는 말을 했습니다. 한국어 존댓말(해요체)로 1–2문장, 친근하고 짧게 답하세요.\n"
+    "- 사용자가 인사했을 때만 인사로 시작하세요. 필요하면 학사일정·장학·휴학·졸업 요건 같은 "
+    "학교생활 질문을 도울 수 있다고 알려 주세요.\n"
+    "- 학교 자료 밖의 정보(맛집, 날씨, 일반 상식 등)는 모른다고 솔직히 말하고 지어내지 마세요. "
+    "가게 이름·숫자·날짜 같은 구체 정보는 절대 만들지 마세요.\n"
+    "- 출처 번호나 '관련 정보를 찾을 수 없습니다' 문장은 쓰지 마세요."
+)
+
+
+def generate_small_talk(
+    *,
+    openai_client: OpenAI,
+    model: str,
+    question: str,
+    timeout: float,
+    chat_history: Optional[List[Dict[str, str]]] = None,
+) -> str:
+    """Short reply for messages query planning found nothing to look up in."""
+    messages: List[Dict[str, str]] = [{"role": "system", "content": SMALL_TALK_PROMPT}]
+    for turn in (chat_history or [])[-4:]:
+        if turn.get("role") in ("user", "assistant") and turn.get("content"):
+            messages.append({"role": turn["role"], "content": turn["content"]})
+    messages.append({"role": "user", "content": question})
+    logger.info("generation: small talk model=%s", model)
+    return _complete(openai_client, model, messages, 0.5, 150, timeout)
+
+
 def _complete(
     openai_client: OpenAI,
     model: str,

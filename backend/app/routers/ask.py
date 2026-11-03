@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from ..deps import AppState, get_state
 from ..excerpts import extract_relevant_excerpt
-from ..generation import generate_answer
+from ..generation import generate_answer, generate_small_talk
 from ..query_rewrite import plan_search_queries
 from ..query_transform import transform_query
 from ..rate_limit import enforce_ask_rate_limit
@@ -190,8 +190,9 @@ def _retrieve(
     user_id: str,
     question: str,
     chat_history: List[Dict[str, str]],
+    sub_questions: List[str],
 ) -> Tuple[List[Dict[str, Any]], List[Source]]:
-    """Query planning and retrieval for the JSON answer response.
+    """Retrieval for the JSON answer response, one search per planned sub-query.
 
     `question` alone is frequently not enough to search with well:
     - with prior conversation, a follow-up like "그럼 거기 대표 전화번호는요?"
@@ -207,12 +208,6 @@ def _retrieve(
     answer generation unchanged (see ask()/generate_answer
     below), so none of this touches generation or the JSON response.
     """
-    sub_questions = plan_search_queries(
-        openai_client=state.openai,
-        model=state.settings.openai_model,
-        question=question,
-        chat_history=chat_history,
-    )
     search_queries = [transform_query(q) or q for q in sub_questions]
     logger.info(
         "ask: user=%s question=%r sub_questions=%r search_queries=%r history_turns=%d",
@@ -264,11 +259,34 @@ def ask(
         raise HTTPException(status_code=400, detail="question must not be empty")
     chat_history = [turn.model_dump() for turn in payload.chat_history]
 
+    sub_questions = plan_search_queries(
+        openai_client=state.openai,
+        model=state.settings.openai_model,
+        question=question,
+        chat_history=chat_history,
+    )
+    if not sub_questions:
+        # 인사·잡담: 찾아볼 게 없으니 검색 없이 짧게 답한다(전에는 "관련 정보를 찾을 수 없습니다").
+        logger.info("ask: user=%s question=%r small_talk", user_id, question)
+        try:
+            reply = generate_small_talk(
+                openai_client=state.openai,
+                model=state.settings.openai_model,
+                question=question,
+                timeout=state.settings.openai_timeout_seconds,
+                chat_history=chat_history,
+            )
+        except Exception:
+            logger.exception("small talk generation failed")
+            raise HTTPException(status_code=502, detail="generation failed")
+        return AskResponse(answer=reply or NO_INFO_ANSWER, sources=[], answerable=bool(reply))
+
     rows, sources = _retrieve(
         state=state,
         user_id=user_id,
         question=question,
         chat_history=chat_history,
+        sub_questions=sub_questions,
     )
 
     if not sources:
