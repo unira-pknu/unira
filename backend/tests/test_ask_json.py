@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 
 from app.deps import get_state
 from app.rate_limit import enforce_ask_rate_limit
-from app.routers.ask import router
+from app.routers.ask import _search_all, router
 from app.schemas import Source
 
 
@@ -74,3 +74,63 @@ class AskJsonTests(unittest.TestCase):
             response = self.client.post("/ask", json={"question": "Question"})
         self.assertEqual(response.status_code, 502)
         self.assertEqual(response.json(), {"detail": "generation failed"})
+
+
+class SearchAllTests(unittest.TestCase):
+    def test_sub_queries_run_together_and_keep_their_order(self):
+        import threading
+
+        # 세 검색이 모두 동시에 들어와야 통과하는 문 — 차례로 돌면 1초 뒤 BrokenBarrierError
+        gate = threading.Barrier(3, timeout=1)
+
+        def search_one(_state, query):
+            gate.wait()
+            return [{"id": query}]
+
+        with patch("app.routers.ask._search_one", side_effect=search_one):
+            rows = _search_all(None, ["a", "b", "c"])
+        self.assertEqual([[{"id": "a"}], [{"id": "b"}], [{"id": "c"}]], rows)
+
+    def test_single_query_skips_the_thread_pool(self):
+        with patch("app.routers.ask._search_one", return_value=[{"id": 1}]) as search_one:
+            self.assertEqual([[{"id": 1}]], _search_all(None, ["q"]))
+        search_one.assert_called_once()
+
+
+class SmallTalkTests(unittest.TestCase):
+    def setUp(self):
+        app = FastAPI()
+        app.include_router(router)
+        settings = SimpleNamespace(openai_model="test", openai_timeout_seconds=10)
+        app.dependency_overrides[get_state] = lambda: SimpleNamespace(settings=settings, openai=None)
+        app.dependency_overrides[enforce_ask_rate_limit] = lambda: "test-user"
+        self.client = TestClient(app)
+
+    def test_greeting_is_answered_without_searching(self):
+        with patch("app.routers.ask.plan_search_queries", return_value=[]), patch(
+            "app.routers.ask.generate_small_talk", return_value="안녕하세요! 학사 도우미 UNIRA예요."
+        ), patch("app.routers.ask._retrieve") as retrieve:
+            body = self.client.post("/ask", json={"question": "안녕"}).json()
+        retrieve.assert_not_called()
+        self.assertEqual({"answer": "안녕하세요! 학사 도우미 UNIRA예요.", "sources": [], "answerable": True}, body)
+
+
+def _planner(content):
+    message = SimpleNamespace(content=content)
+    create = lambda **_: SimpleNamespace(choices=[SimpleNamespace(message=message)])  # noqa: E731
+    return SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
+
+
+class PlanSearchQueriesTests(unittest.TestCase):
+    def plan(self, content):
+        from app.query_rewrite import plan_search_queries
+
+        return plan_search_queries(openai_client=_planner(content), model="m", question="q", chat_history=[])
+
+    def test_empty_queries_mean_small_talk(self):
+        self.assertEqual([], self.plan('{"queries": []}'))
+
+    def test_unusable_output_still_searches_the_question(self):
+        for content in ["not json", '{"other": 1}', '{"queries": "q"}']:
+            with self.subTest(content=content):
+                self.assertEqual(["q"], self.plan(content))

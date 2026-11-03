@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional
 from openai import OpenAI
 
 from .freshness import current_term_label, today_kst
+from .grounding import miscited_numbers, unsupported_numbers
 
 logger = logging.getLogger(__name__)
 
@@ -176,6 +177,70 @@ def generate_answer(
         max_chars_per_chunk,
         len(chat_history or []),
     )
+    answer = _complete(openai_client, model, messages, temperature, max_tokens, timeout)
+    # What the model was shown: each chunk as truncated in the prompt.
+    shown = [_truncate(str(row.get("content") or ""), max_chars_per_chunk) for row in rows]
+    missing = unsupported_numbers(answer, [question] + shown)
+    miscited = miscited_numbers(answer, question, shown)
+    if not missing and not miscited:
+        return answer
+    logger.info("generation: retry unsupported_numbers=%s miscited_numbers=%s", missing, miscited)
+    problems = []
+    if missing:
+        problems.append(f"수치 {', '.join(missing)}는 참고 자료 본문에 없습니다")
+    if miscited:
+        problems.append(f"수치 {', '.join(miscited)}는 그 문장이 단 출처 번호의 자료에 없고 다른 자료에 있습니다")
+    retry = messages + [
+        {"role": "assistant", "content": answer},
+        {
+            "role": "user",
+            "content": (
+                f"방금 답변에서 {'; '.join(problems)}. "
+                "자료에 없는 수치는 빼고 없다고 밝히며, 다른 자료의 수치는 그 자료가 질문과 같은 대상·조건일 때만 "
+                "그 자료 번호를 달아 쓰세요. 이 점만 고쳐서 다시 답하세요."
+            ),
+        },
+    ]
+    return _complete(openai_client, model, retry, temperature, max_tokens, timeout)
+
+
+SMALL_TALK_PROMPT = (
+    "당신은 국립부경대학교 학생을 돕는 학사 도우미 UNIRA입니다. 사용자가 인사·감사·잡담처럼 "
+    "찾아볼 정보가 없는 말을 했습니다. 한국어 존댓말(해요체)로 1–2문장, 친근하고 짧게 답하세요.\n"
+    "- 사용자가 인사했을 때만 인사로 시작하세요. 필요하면 학사일정·장학·휴학·졸업 요건 같은 "
+    "학교생활 질문을 도울 수 있다고 알려 주세요.\n"
+    "- 학교 자료 밖의 정보(맛집, 날씨, 일반 상식 등)는 모른다고 솔직히 말하고 지어내지 마세요. "
+    "가게 이름·숫자·날짜 같은 구체 정보는 절대 만들지 마세요.\n"
+    "- 출처 번호나 '관련 정보를 찾을 수 없습니다' 문장은 쓰지 마세요."
+)
+
+
+def generate_small_talk(
+    *,
+    openai_client: OpenAI,
+    model: str,
+    question: str,
+    timeout: float,
+    chat_history: Optional[List[Dict[str, str]]] = None,
+) -> str:
+    """Short reply for messages query planning found nothing to look up in."""
+    messages: List[Dict[str, str]] = [{"role": "system", "content": SMALL_TALK_PROMPT}]
+    for turn in (chat_history or [])[-4:]:
+        if turn.get("role") in ("user", "assistant") and turn.get("content"):
+            messages.append({"role": turn["role"], "content": turn["content"]})
+    messages.append({"role": "user", "content": question})
+    logger.info("generation: small talk model=%s", model)
+    return _complete(openai_client, model, messages, 0.5, 150, timeout)
+
+
+def _complete(
+    openai_client: OpenAI,
+    model: str,
+    messages: List[Dict[str, str]],
+    temperature: float,
+    max_tokens: int,
+    timeout: float,
+) -> str:
     started = time.perf_counter()
     response = openai_client.chat.completions.create(
         model=model,

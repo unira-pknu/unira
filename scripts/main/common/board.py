@@ -50,9 +50,10 @@ def parse_list_page(html: str, cd: str, label: str) -> list[ListItem]:
 
         num_el = tr.select_one("td.bdlNum")
         num_text = num_el.get_text(strip=True) if num_el else ""
-        is_notice = bool(
-            num_text.upper() == "NOTICE"
-            or (num_el and "noti" in (num_el.get("class") or []))
+        # 학교 공지 게시판은 일반 글 번호 칸에도 class="noti"를 붙인다(2026-11-02 확인:
+        # 24행 모두 'bdlNum noti', 일반 글은 숫자). 그래서 class는 번호가 숫자가 아닐 때(아이콘 등)만 본다.
+        is_notice = num_text.upper() == "NOTICE" or bool(
+            num_el and "noti" in (num_el.get("class") or []) and not num_text.isdigit()
         )
         notice_no: int | None = None
         if not is_notice:

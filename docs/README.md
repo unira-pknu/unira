@@ -17,6 +17,7 @@
 | 크롤러 | [학과·단과대학](crawlers/DEPARTMENTS.md) | 전체 대상, 실행, 저장 구조, TLS, 보류 사유 |
 | 크롤러 | [TLS 인증서](crawlers/TLS_CERTIFICATES.md) | 중간 인증서 출처와 호스트 정책 |
 | 백엔드 | [백엔드 가이드](backend/README.md) | 환경변수, API 실행과 동작 |
+| 백엔드 | [학교 서버 운영](backend/SCHOOL_SERVER.md) | 운영 백엔드 업데이트·재시작·되돌리기 |
 | 프론트엔드 | [프론트엔드 가이드](frontend/README.md) | 개발 서버와 Supabase 공개 설정 |
 | 데이터 | [데이터 구조](data/STRUCTURE.md) | 수집 스키마, 저장 구조와 마이그레이션 |
 | 평가 | [평가 데이터·절차](evaluation/README.md) | 질문 세트, 라벨 검수와 평가 결과 |

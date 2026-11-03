@@ -55,7 +55,11 @@ _SYSTEM_PROMPT = (
     "말이 있으면 '컴퓨터·인공지능공학부'라는 표현도 함께 넣으세요). 원래 의미를 "
     "바꾸거나 대화에 없는 새로운 사실을 추가하지 마세요.\n"
     "4. 질문 자체가 이미 독립적이고 단일 의도이며 줄임말이 없으면 그대로 하나의 "
-    "하위 질의로 돌려주세요.\n\n"
+    "하위 질의로 돌려주세요.\n"
+    "5. 인사·감사·작별·챗봇에 대한 질문(누구야, 뭐 할 수 있어)·학교와 무관한 잡담처럼 "
+    "찾아볼 정보가 없는 말이면 queries를 빈 목록으로 두세요. 학교·학과·수업·장학·"
+    "시설·일정·규정 등 대학 생활과 조금이라도 관련된 정보를 묻는다면 반드시 하위 질의를 "
+    "만드세요. 애매하면 하위 질의를 만드세요.\n\n"
     '다음 JSON 형식으로만 답하세요: {"queries": ["...", "..."]}'
 )
 
@@ -78,6 +82,9 @@ def plan_search_queries(
     message too, not just follow-ups. Falls back to `[question]` unchanged
     whenever the call fails, times out, or returns something unusable --
     a broken planning step must never block the request.
+
+    An empty list means small talk ("안녕", "고마워") with nothing to look
+    up; the caller answers it without searching (rule 5 of the prompt).
     """
     history_lines = [
         f"{'사용자' if turn.get('role') == 'user' else '어시스턴트'}: {turn.get('content', '')}"
@@ -103,13 +110,17 @@ def plan_search_queries(
         )
         raw = (response.choices[0].message.content or "").strip()
         parsed = json.loads(raw)
-        queries = [str(q).strip() for q in parsed.get("queries", []) if str(q).strip()]
+        raw_queries = parsed["queries"]
+        if not isinstance(raw_queries, list):
+            raise ValueError(f"queries is not a list: {raw_queries!r}")
+        queries = [str(q).strip() for q in raw_queries if str(q).strip()]
     except Exception:
         logger.warning("query planning failed, falling back to raw question", exc_info=True)
         return [question]
 
     if not queries:
-        return [question]
+        logger.info("query planning: %r -> small talk", question)
+        return []
 
     queries = queries[:MAX_SUB_QUERIES]
     logger.info("query planning: %r -> %r", question, queries)

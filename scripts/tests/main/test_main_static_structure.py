@@ -320,6 +320,17 @@ class MainStaticStructureTests(unittest.TestCase):
                          [("712", "2025-01-02"), ("713", "2025-02-03")])
         self.assertTrue(all(item.categories == {"Speeches"} for item in items))
 
+    def test_numbered_rows_are_not_pinned_even_with_the_noti_class(self) -> None:
+        # The notice board marks every number cell class="bdlNum noti" (checked 2026-11-02).
+        html = """<table class="brdList"><tbody>
+          <tr><td class="bdlNum noti">NOTICE</td><td><a href="?action=view&amp;no=900">Pinned</a></td></tr>
+          <tr><td class="bdlNum noti"><img alt="pinned"></td><td><a href="?action=view&amp;no=901">Icon</a></td></tr>
+          <tr><td class="bdlNum noti">6936</td><td><a href="?action=view&amp;no=726900">Regular</a></td></tr>
+          </tbody></table>"""
+        items = parse_list_page(html, "1", "Notice")
+        self.assertEqual([(i.no, i.is_notice, i.notice_no) for i in items],
+                         [("900", True, None), ("901", True, None), ("726900", False, 6936)])
+
     def test_system_chart_preserves_paired_lists_side_branches_and_notes(self) -> None:
         html = """<div class="system_conts">
           <div class="system_step1"><a href="/main/276">President<i>i</i></a></div>
