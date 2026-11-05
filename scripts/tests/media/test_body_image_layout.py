@@ -1,11 +1,11 @@
 import unittest
 from pathlib import Path
 
-from scripts.rag.body_image_layout import enrich_entry, review_template, validate_review
-from scripts.rag.body_image_review import compile_body_image_blocks
-from scripts.rag.classify_body_image_layout import classify
-from scripts.rag.generate_body_image_layout_labels import balanced_sample, summary
-from scripts.rag.vectorization import extract_chunk_records
+from scripts.preprocessing.body_image_layout import enrich_entry, review_template, validate_review
+from scripts.preprocessing.body_image_review import compile_body_image_blocks
+from scripts.preprocessing.classify_body_image_layout import classify
+from scripts.preprocessing.generate_body_image_layout_labels import balanced_sample, summary
+from scripts.vectorization.vectorization import extract_chunk_records
 
 
 class BodyImageLayoutTests(unittest.TestCase):

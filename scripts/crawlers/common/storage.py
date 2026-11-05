@@ -154,7 +154,7 @@ def iter_dataset_roots(project_root: Path):
                         else:
                             yield from leaves(child)
                 yield from leaves(root)
-            elif root.is_dir() and not root.name.startswith("_"):
+            elif root.is_dir() and not root.name.startswith("_") and root.name != "preprocessed":
                 yield root
 
 
@@ -164,7 +164,7 @@ def get_dataset_paths(
 ) -> DatasetPaths:
     dataset_name = safe_component(dataset, "dataset")
     if dataset_name in {"pknu_notice", "pknu_student_life"}:
-        from scripts.main.paths import get_main_dataset_paths
+        from scripts.crawlers.main.paths import get_main_dataset_paths
         return get_main_dataset_paths(project_root, dataset_name)
     root = get_dataset_root(project_root, dataset_name, group=group, storage_path=storage_path)
     output = root / "output"
@@ -314,7 +314,7 @@ def write_document(
     paths: DatasetPaths, doc: dict[str, Any], category: str, slug: str,
     raw_html: str | None = None,
 ) -> tuple[Path, Path | None]:
-    from scripts.main.paths import MainDatasetPaths, document_kind
+    from scripts.crawlers.main.paths import MainDatasetPaths, document_kind
     kind = document_kind(doc) if isinstance(paths, MainDatasetPaths) else None
     json_path = paths.document_json(category, slug, kind=kind)
     json_path.parent.mkdir(parents=True, exist_ok=True)

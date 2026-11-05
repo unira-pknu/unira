@@ -1,4 +1,4 @@
-'Compatibility CLI for student-life collection; use scripts.main.run for all main-site categories.'
+'Compatibility CLI for student-life collection; use scripts.crawlers.main.run for all main-site categories.'
 
 from __future__ import annotations
 
@@ -14,8 +14,8 @@ if str(PROJECT_ROOT) not in sys.path:
 from scripts.crawlers.common.schema import RunResult, log_run_result
 from scripts.crawlers.common.logging import log_event, set_run_id
 from scripts.crawlers.common.storage import empty_state, save_state_atomic
-from scripts.main.common.storage import STATE_FILE, log, log_context
-from scripts.main.categories.student_life import LEGACY_PAGE_IDS as CONFIGURED_PAGE_IDS, run
+from scripts.crawlers.main.common.storage import STATE_FILE, log, log_context
+from scripts.crawlers.main.categories.student_life import LEGACY_PAGE_IDS as CONFIGURED_PAGE_IDS, run
 
 
 def parse_args() -> argparse.Namespace:

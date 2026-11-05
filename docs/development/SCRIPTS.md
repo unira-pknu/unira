@@ -7,8 +7,8 @@
 `scripts` is organized by responsibility. New code should import and execute the canonical paths below.
 
 Evaluation commands and datasets live under `eval/`; see the [evaluation guide](../evaluation/README.md).
-Main-site page routes and discovery tools live under `scripts/main/`; see [메인 홈페이지 크롤링 명령어](../crawlers/MAIN.md) for full, category, page and limited-board runs.
-Main-site collection settings are in `scripts/main/pages.json`. Its results share
+Main-site page routes and discovery tools live under `scripts/crawlers/main/`; see [메인 홈페이지 크롤링 명령어](../crawlers/MAIN.md) for full, category, page and limited-board runs.
+Main-site collection settings are in `scripts/crawlers/main/pages.json`. Its results share
 `files/pknu_main/`, organized by site category and then file format. Incremental
 state is in `_state/`; RAG intermediates are in `_derived/<logical-dataset>/`.
 
@@ -19,8 +19,8 @@ Levels without a separate organization/site are omitted; a website shared by
 multiple majors stays at the faculty level and is stored once. Independent
 faculties use their own name as the first level. The existing dataset alias
 (for example, `ce`) remains the leaf folder and document identity is preserved.
-Each dataset keeps `output/{json,html,files,images,runs}`, `state.json`,
-`preprocessed/`, and `vectorized/` inside that folder.
+Each dataset keeps `output/{json,html,files,images,runs}` and `state.json` inside that folder.
+Derived data lives centrally in `files/preprocessed/<dataset>/` and `files/vectorized/<dataset>/`.
 
 ```text
 files/department/
@@ -51,18 +51,21 @@ scripts/
 │  │  ├─ engine.py       # shared PKNU department CMS parser/downloader
 │  │  ├─ sites.csv       # source catalog of colleges, departments, majors, and homepages
 │  │  └─ registry.json   # crawl-ready datasets and verified sections
-│  ├─ ce.py              # CE entry point backed by the shared engine
+│  ├─ main/              # main-site routes, collectors, configuration, and discovery
+│  ├─ syllabus/          # syllabus catalog and PDF collection
 │  ├─ pknu_notice.py
 │  ├─ pknu_student_life.py
 │  └─ pknu_rule.py
 ├─ migrations/
 │  ├─ crawler_documents.py
-│  └─ crawler_storage.py
-├─ extractors/           # attachment/file format extractors
-├─ rag/                  # preprocessing, vectorization, loading, and search
-├─ ce/                   # CE preprocessing and priority commands
-├─ main/                 # main-site category entry points, collectors and shared logic
-├─ rule/                 # rule preprocessing and priority commands
+│  ├─ crawler_storage.py
+│  └─ main_storage.py
+├─ preprocessing/        # text cleaning, chunking, OCR review, and preprocessing CLIs
+│  └─ extractors/        # attachment/file format extractors
+├─ vectorization/        # embeddings, vector files, DB ingestion/search, and pipelines
+├─ rag/                  # retrieval priority scoring and priority updates
+├─ ce/                   # CE priority commands
+├─ rule/                 # rule priority commands
 └─ tests/
 ```
 
@@ -111,9 +114,9 @@ python scripts/crawlers/departments/cli.py discover --dataset ce
 Layout-aware OCR RAG evaluation (isolated test store, never touches Supabase):
 
 ```powershell
-python -m scripts.rag.ingest_layout_data            # files/_reviewed/body_image_ocr/*.reviewed.jsonl -> files/_test_db/test_layout_rag_YYYYMMDD/
-python -m eval.tools.generate_testset               # <= 50 QA pairs -> tests/eval_dataset.csv (--mode rule: no API cost)
-python -m eval.tools.run_evaluation                 # -> eval_report.md (+ .json)   (--retrieval-only: no API cost)
+python -m scripts.vectorization.ingest_layout_data            # files/_reviewed/body_image_ocr/*.reviewed.jsonl -> files/_test_db/test_layout_rag_YYYYMMDD/
+python -m eval.tools.generate_testset               # <= 50 QA pairs -> eval/results/layout_eval_dataset.csv (--mode rule: no API cost)
+python -m eval.tools.run_evaluation                 # -> eval/results/layout_eval_report.md (+ .json) (--retrieval-only: no API cost)
 ```
 
 Tables are chunked as markdown (header repeated per chunk), diagrams are rewritten as sentences, and every chunk keeps `provenance` (source path, image hash, review/extraction origin). Test store names must match `test_layout_rag_YYYYMMDD[_suffix]`. LLM calls go through `eval/tools/llm_budget.py`: at most 3 attempts per call, a hard per-run request cap, and no retry on 400/401/403/404. `scripts/tests/fixtures/layout_rag/` holds a synthetic fixture with the same schema for smoke runs.

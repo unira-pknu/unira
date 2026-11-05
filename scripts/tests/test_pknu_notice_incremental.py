@@ -6,7 +6,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from scripts.crawlers import pknu_notice as pn
-from scripts.main.common.board import ListItem
+from scripts.crawlers.main.common.board import ListItem
 
 CD = "10001"
 LABEL = pn.CD_TO_LABEL[CD]

@@ -10,17 +10,17 @@ from dataclasses import replace
 from contextlib import nullcontext
 from bs4 import BeautifulSoup
 
-from scripts.main.collectors import tuition as crawler
+from scripts.crawlers.main.collectors import tuition as crawler
 from scripts.crawlers.common.schema import attachment_text, validate_common_document
-from scripts.main.collectors.guides import parse_guide_items_from_html
-from scripts.main.collectors.academic_calendar import _site_id, parse_month
-from scripts.main.collectors.curriculum_files import _clean_page_text, _is_visually_blank, parse_curriculum_attachments
-from scripts.main.collectors.major_program import collect_major_program, parse_major_program_page
-from scripts.main.collectors.campus_buildings import parse_campus_buildings, parse_building_details
-from scripts.main.collectors.facility_rental import parse_building_options, parse_room_options, parse_facility_detail
-from scripts.main.collectors.navigation import crawl_linked_pages, parse_page_choices
-from scripts.main.routes import ROUTES
-from scripts.main.collectors import boards
+from scripts.crawlers.main.collectors.guides import parse_guide_items_from_html
+from scripts.crawlers.main.collectors.academic_calendar import _site_id, parse_month
+from scripts.crawlers.main.collectors.curriculum_files import _clean_page_text, _is_visually_blank, parse_curriculum_attachments
+from scripts.crawlers.main.collectors.major_program import collect_major_program, parse_major_program_page
+from scripts.crawlers.main.collectors.campus_buildings import parse_campus_buildings, parse_building_details
+from scripts.crawlers.main.collectors.facility_rental import parse_building_options, parse_room_options, parse_facility_detail
+from scripts.crawlers.main.collectors.navigation import crawl_linked_pages, parse_page_choices
+from scripts.crawlers.main.routes import ROUTES
+from scripts.crawlers.main.collectors import boards
 
 
 class BoardSampleTests(unittest.TestCase):
@@ -133,7 +133,7 @@ class NoticeBoardArchiveTests(unittest.TestCase):
         orphans.assert_not_called()
 
     def test_community_passes_all_pages_to_notice_crawler(self) -> None:
-        from scripts.main.categories import community
+        from scripts.crawlers.main.categories import community
         from scripts.crawlers.common.schema import CrawlStats
 
         with patch("scripts.crawlers.pknu_notice.run_crawl", return_value=CrawlStats()) as crawl:
@@ -171,9 +171,9 @@ class LinkedPageTests(unittest.TestCase):
             directory.mkdir(parents=True)
             child = directory / "child.json"
             child.write_text(json.dumps({"url": ROUTES[498].url, "type": "page", "content": "Forest description"}), encoding="utf-8")
-            with (patch("scripts.main.collectors.navigation.PROJECT_ROOT", root),
-                  patch("scripts.main.collectors.navigation.fetch", return_value=response) as fetch,
-                  patch("scripts.main.collectors.navigation.crawl_static_pages") as collect,
+            with (patch("scripts.crawlers.main.collectors.navigation.PROJECT_ROOT", root),
+                  patch("scripts.crawlers.main.collectors.navigation.fetch", return_value=response) as fetch,
+                  patch("scripts.crawlers.main.collectors.navigation.crawl_static_pages") as collect,
                   patch.dict(ROUTES, {495: route})):
                 from scripts.crawlers.common.schema import CrawlStats
                 collect.return_value = CrawlStats()
@@ -322,9 +322,9 @@ class MajorProgramTests(unittest.TestCase):
         session.get.return_value = nullcontext(response)
         image = {"order": 1, "status": "saved", "source_url": "https://www.pknu.ac.kr/upload/guide.jpg",
                  "saved_path": "files/guide.jpg", "sha256": "original"}
-        with (patch("scripts.main.routes.COLLECTION_POLICY", {"body_image_ocr": False}),
-              patch("scripts.main.collectors.major_program.save_body_images", return_value=[image]),
-              patch("scripts.main.collectors.major_program.extract_image") as ocr):
+        with (patch("scripts.crawlers.main.routes.COLLECTION_POLICY", {"body_image_ocr": False}),
+              patch("scripts.crawlers.main.collectors.major_program.save_body_images", return_value=[image]),
+              patch("scripts.crawlers.main.collectors.major_program.extract_image") as ocr):
             document = collect_major_program(session, 233)
         ocr.assert_not_called()
         self.assertEqual(document["status"], "collected")
@@ -350,11 +350,11 @@ class MajorProgramTests(unittest.TestCase):
 
 class MainGuideTests(unittest.TestCase):
     def test_discovery_policy_does_not_run_ocr_or_image_layout_analysis(self) -> None:
-        from scripts.main.discovery import process_pknu_main_content as discovery
+        from scripts.crawlers.main.discovery import process_pknu_main_content as discovery
         root = BeautifulSoup('<div><img src="/upload/guide.jpg"></div>', 'lxml').div
         record = {"status": "saved", "source_url": "https://www.pknu.ac.kr/upload/guide.jpg",
                   "saved_path": "files/guide.jpg", "sha256": "original"}
-        with (patch("scripts.main.routes.COLLECTION_POLICY", {"body_image_ocr": False}),
+        with (patch("scripts.crawlers.main.routes.COLLECTION_POLICY", {"body_image_ocr": False}),
               patch.object(discovery, "ROOT", Path("never-written-discovery").resolve()),
               patch.object(discovery, "save_body_images", return_value=[record]),
               patch.object(discovery, "extract_image") as ocr,
@@ -375,7 +375,7 @@ class MainGuideTests(unittest.TestCase):
           <li>우수작 2번(PDF) 보기</li><div class="uploadPdf" data-id="6262"></div></ul>
           </div></div>"""
         with patch(
-            "scripts.main.collectors.guides.resolve_media_pdf_url",
+            "scripts.crawlers.main.collectors.guides.resolve_media_pdf_url",
             side_effect=lambda _session, media_id: f"https://www.pknu.ac.kr/upload/{media_id}.pdf",
         ):
             items = parse_guide_items_from_html(None, html)

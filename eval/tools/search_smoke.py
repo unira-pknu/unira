@@ -14,7 +14,7 @@ QUESTIONS = [
 ]
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-QUERY_SCRIPT = PROJECT_ROOT / "scripts" / "rag" / "query_supabase.py"
+QUERY_SCRIPT = PROJECT_ROOT / "scripts" / "vectorization" / "query_supabase.py"
 
 
 def main() -> None:
@@ -34,7 +34,7 @@ def main() -> None:
                 "0.35",
             ],
             cwd=PROJECT_ROOT,
-            check=False,
+            check=True,
         )
 
 

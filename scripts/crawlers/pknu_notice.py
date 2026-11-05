@@ -59,21 +59,21 @@ from scripts.crawlers.common.storage import (
     save_state_atomic,
     write_document,
 )
-from scripts.main.common.attachments import (
+from scripts.crawlers.main.common.attachments import (
     extract_filename,
     local_path_exists,
     reusable_attachments_by_url,
     sanitize_filename,
     save_attachments as _save_attachments,
 )
-from scripts.main.common.board import (
+from scripts.crawlers.main.common.board import (
     ListItem,
     extract_body_text,
     parse_detail_page,
     parse_list_page,
     parse_page_indicator,
 )
-from scripts.main.common.http import LegacySSLAdapter as _LegacySSLAdapter
+from scripts.crawlers.main.common.http import LegacySSLAdapter as _LegacySSLAdapter
 from typing import Any
 from urllib.parse import unquote, urljoin, urlparse
 import argparse

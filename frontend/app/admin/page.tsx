@@ -1,9 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import adminData from "@/data/routes/admin.json";
 import {
   AdminApiError,
   fetchAdminDashboard,
@@ -19,20 +18,12 @@ const DOWN_RED = "#c0392b";
 
 // ── 타입 ─────────────────────────────────────────────────────────────────────
 // 피드백·질문 데이터는 백엔드 /admin/dashboard 실데이터 (message_feedback, chat_messages).
-// 파일 업로드만 아직 백엔드 API가 없어 admin.json mock 을 쓴다.
 type ThumbsEntry = AdminThumbsEntry;
 type CommentEntry = AdminCommentEntry;
 type TopQuestion = AdminTopQuestion;
 const EMPTY_THUMBS: ThumbsEntry[] = [];
 const EMPTY_COMMENTS: CommentEntry[] = [];
 const EMPTY_TOP_QUESTIONS: TopQuestion[] = [];
-type UploadEntry = {
-  id: string;
-  filename: string;
-  size: string;
-  uploadedAt: string;
-};
-
 const THUMBS_FILTER_OPTIONS = [
   { value: "all" as const, label: "전체" },
   { value: "up" as const, label: "좋아요" },
@@ -84,12 +75,6 @@ const IconUpload = ({ size = 14 }: { size?: number }) => (
     <path d="M2 11v2a1 1 0 001 1h10a1 1 0 001-1v-2" />
   </svg>
 );
-const IconFile = () => (
-  <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M3 1h6l3 3v9a1 1 0 01-1 1H3a1 1 0 01-1-1V2a1 1 0 011-1z" />
-    <polyline points="9,1 9,4 12,4" />
-  </svg>
-);
 const IconCheckCircle = () => (
   <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="8" cy="8" r="6" />
@@ -105,12 +90,6 @@ const IconStat = () => (
   <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="2,12 6,7 9,9 14,3" />
     <polyline points="10,3 14,3 14,7" />
-  </svg>
-);
-const IconX = () => (
-  <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-    <line x1="2.5" y1="2.5" x2="9.5" y2="9.5" />
-    <line x1="9.5" y1="2.5" x2="2.5" y2="9.5" />
   </svg>
 );
 const IconChevronLeft = () => (
@@ -132,12 +111,6 @@ function formatDateTime(iso: string): string {
   const d = new Date(iso);
   if (isNaN(d.getTime())) return iso;
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 // ── 공용 컴포넌트 ────────────────────────────────────────────────────────────
@@ -556,12 +529,6 @@ export default function AdminPage() {
     setThumbsPage(1);
   };
 
-  const [uploads, setUploads] = useState<UploadEntry[]>(
-    () => adminData.uploads.recent as UploadEntry[],
-  );
-  const [pendingFile, setPendingFile] = useState<{ name: string; size: string } | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
   const filteredThumbs = useMemo(
     () =>
       thumbsFilter === "all"
@@ -583,7 +550,6 @@ export default function AdminPage() {
   );
 
   // 인기 질문은 서버가 최근 질문 표본(questionSampleSize)으로 집계한다.
-  // (예전 mock 의 기간 필터는 동작하지 않는 표시용이라 제거)
   const visibleTopQuestions = topQuestions;
   const maxQuestionCount = visibleTopQuestions.reduce(
     (acc, q) => (q.count > acc ? q.count : acc),
@@ -592,31 +558,6 @@ export default function AdminPage() {
 
   const satisfactionPct =
     summary && summary.satisfactionRate !== null ? `${Math.round(summary.satisfactionRate * 100)}%` : "-";
-
-  const handleFileButtonClick = () => fileInputRef.current?.click();
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setPendingFile({ name: file.name, size: formatBytes(file.size) });
-    }
-    // 같은 파일 다시 선택 가능하도록 input value 초기화
-    e.target.value = "";
-  };
-
-  const handleClearPending = () => setPendingFile(null);
-
-  const handleUpload = () => {
-    if (!pendingFile) return;
-    const newEntry: UploadEntry = {
-      id: `up-${Date.now()}`,
-      filename: pendingFile.name,
-      size: pendingFile.size,
-      uploadedAt: new Date().toISOString(),
-    };
-    setUploads([newEntry, ...uploads]);
-    setPendingFile(null);
-  };
 
   return (
     <div className="bg-app min-h-[100dvh] flex flex-col">
@@ -814,149 +755,18 @@ export default function AdminPage() {
 
         {/* ── 5. 파일 업로드 ── */}
         <SectionCard icon={<IconUpload />} title="파일 업로드">
-          <div className="flex flex-col gap-3">
-            {/* 드롭존 / 파일 선택 박스 */}
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs sm:text-sm" style={{ color: NAVY_MUTED }}>
+              파일 업로드 기능을 준비 중입니다.
+            </p>
             <button
               type="button"
-              onClick={handleFileButtonClick}
-              className="w-full rounded-2xl px-4 py-6 sm:py-8 flex flex-col items-center justify-center gap-1.5 transition-colors"
-              style={{
-                background: pendingFile ? "rgba(37,52,139,0.06)" : "rgba(255,255,255,0.32)",
-                border: pendingFile
-                  ? `2px solid rgba(37,52,139,0.45)`
-                  : `2px dashed rgba(37,52,139,0.25)`,
-              }}
+              disabled
+              className="px-4 py-1.5 rounded-lg text-xs font-semibold text-white opacity-40 cursor-not-allowed"
+              style={{ background: NAVY }}
             >
-              <span
-                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center"
-                style={{ background: "rgba(37,52,139,0.10)", color: NAVY }}
-              >
-                <IconUpload size={18} />
-              </span>
-
-              {pendingFile ? (
-                <>
-                  <p
-                    className="text-xs sm:text-sm font-semibold mt-1 max-w-full truncate px-2"
-                    style={{ color: NAVY }}
-                  >
-                    {pendingFile.name}
-                  </p>
-                  <p
-                    className="text-[10px] sm:text-[11px]"
-                    style={{ color: NAVY_MUTED }}
-                  >
-                    {pendingFile.size} · 다른 파일을 선택하려면 클릭하세요
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p
-                    className="text-xs sm:text-sm font-semibold mt-1"
-                    style={{ color: NAVY }}
-                  >
-                    파일을 클릭해서 선택하세요
-                  </p>
-                  <p
-                    className="text-[10px] sm:text-[11px]"
-                    style={{ color: NAVY_MUTED }}
-                  >
-                    PDF · HWP · DOCX 형식 지원 (mock)
-                  </p>
-                </>
-              )}
+              업로드 준비 중
             </button>
-
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".pdf,.hwp,.hwpx,.doc,.docx"
-              onChange={handleFileSelect}
-              className="hidden"
-            />
-
-            {/* 파일 선택/업로드 버튼 영역 */}
-            <div className="flex items-center justify-end gap-2">
-              {pendingFile && (
-                <button
-                  type="button"
-                  onClick={handleClearPending}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-opacity hover:opacity-75"
-                  style={{
-                    color: NAVY_MUTED,
-                    background: "rgba(255,255,255,0.6)",
-                    border: "1px solid rgba(255,255,255,0.85)",
-                  }}
-                >
-                  <IconX />
-                  선택 취소
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={handleFileButtonClick}
-                className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-opacity hover:opacity-75"
-                style={{
-                  color: NAVY,
-                  background: "rgba(255,255,255,0.6)",
-                  border: `1.5px solid ${NAVY}`,
-                }}
-              >
-                {pendingFile ? "파일 변경" : "파일 선택"}
-              </button>
-              <button
-                type="button"
-                onClick={handleUpload}
-                disabled={!pendingFile}
-                className="px-4 py-1.5 rounded-lg text-xs font-semibold text-white transition-opacity disabled:opacity-40"
-                style={{ background: NAVY }}
-              >
-                업로드
-              </button>
-            </div>
-
-            {/* 최근 업로드 리스트 */}
-            {uploads.length > 0 && (
-              <div className="flex flex-col gap-2 mt-2">
-                <p
-                  className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wide"
-                  style={{ color: NAVY_MUTED }}
-                >
-                  최근 업로드
-                </p>
-                {uploads.map((u) => (
-                  <div
-                    key={u.id}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
-                    style={{
-                      background: "rgba(255,255,255,0.55)",
-                      border: "1px solid rgba(255,255,255,0.88)",
-                    }}
-                  >
-                    <div
-                      className="flex-shrink-0 w-7 h-7 rounded-md flex items-center justify-center"
-                      style={{ background: "rgba(37,52,139,0.08)", color: NAVY }}
-                    >
-                      <IconFile />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p
-                        className="text-xs sm:text-sm font-semibold truncate"
-                        style={{ color: NAVY }}
-                      >
-                        {u.filename}
-                      </p>
-                      <p
-                        className="text-[10px] sm:text-[11px]"
-                        style={{ color: NAVY_MUTED }}
-                      >
-                        {u.size} · {formatDateTime(u.uploadedAt)}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         </SectionCard>
         </>

@@ -84,8 +84,9 @@ class Settings(BaseSettings):
     rpc_names: Annotated[List[str], NoDecode] = [
         "match_rule_documents",
         "match_pknu_notice_documents",
-        "match_pknu_student_life_documents",
+        "match_pknu_main_documents",
         "match_rag_documents",
+        "match_pknu_syllabus_documents",
     ]
     # Chunks average ~870 chars; at 500 the answer model missed facts past
     # the cut (2026-10-19: 멘토 장학금 at char 590). 1000 + title anchor:

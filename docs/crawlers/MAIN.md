@@ -2,7 +2,7 @@
 
 메인 홈페이지(`https://www.pknu.ac.kr/main/…`)의 수집 명령어를 정리한 문서입니다.
 모든 명령은 프로젝트 루트(`campus-rag/`)에서 실행합니다.
-수집 대상과 저장 경로는 [pages.json](../../scripts/main/pages.json), 실행 진입점은 [run.py](../../scripts/main/run.py)입니다.
+수집 대상과 저장 경로는 [pages.json](../../scripts/crawlers/main/pages.json), 실행 진입점은 [run.py](../../scripts/crawlers/main/run.py)입니다.
 
 ## 실행 준비
 
@@ -14,7 +14,7 @@
 .\.venv\Scripts\Activate.ps1
 
 # 지원 옵션 확인
-python -m scripts.main.run --help
+python -m scripts.crawlers.main.run --help
 ```
 
 가상환경을 활성화하지 않을 경우 아래 예시의 `python`을
@@ -24,13 +24,13 @@ python -m scripts.main.run --help
 
 ```powershell
 # 활성 등록된 페이지 목록과 담당 수집기 확인
-python -m scripts.main.run --list
+python -m scripts.crawlers.main.run --list
 
 # 지정한 페이지의 실행 계획 확인
-python -m scripts.main.run --page-ids 31 92 95 --dry-run
+python -m scripts.crawlers.main.run --page-ids 31 92 95 --dry-run
 
 # 특정 카테고리의 실행 계획 확인
-python -m scripts.main.run --category "대학소개" --dry-run
+python -m scripts.crawlers.main.run --category "대학소개" --dry-run
 ```
 
 `--dry-run`은 수집 요청이나 결과 저장 없이 등록 정보만 확인합니다.
@@ -47,19 +47,19 @@ python -m scripts.main.run --category "대학소개" --dry-run
 
 ```powershell
 # 한 페이지 수집
-python -m scripts.main.run --page-ids 481
+python -m scripts.crawlers.main.run --page-ids 481
 
 # 여러 페이지 수집
-python -m scripts.main.run --page-ids 224 225
+python -m scripts.crawlers.main.run --page-ids 224 225
 
 # 일반 게시판의 첫 번째 목록 페이지와 그 목록의 게시글 수집
-python -m scripts.main.run --page-ids 32 --board-pages 1
+python -m scripts.crawlers.main.run --page-ids 32 --board-pages 1
 
 # 학사일정: 지정 연도의 전체 월 수집
-python -m scripts.main.run --page-ids 31 --year 2026
+python -m scripts.crawlers.main.run --page-ids 31 --year 2026
 
 # 학사일정: 지정한 월만 수집
-python -m scripts.main.run --page-ids 31 --year 2026 --months 9 10
+python -m scripts.crawlers.main.run --page-ids 31 --year 2026 --months 9 10
 ```
 
 `--board-pages 1`은 **게시글 1개가 아니라 목록 1페이지**입니다.
@@ -71,13 +71,13 @@ python -m scripts.main.run --page-ids 31 --year 2026 --months 9 10
 
 ```powershell
 # 실제 요청 없이 대상 페이지 ID 확인
-python -m scripts.main.run --boards --all-board-pages --dry-run
+python -m scripts.crawlers.main.run --boards --all-board-pages --dry-run
 
 # 등록된 게시판만 선택해 모든 목록 페이지와 게시글 수집
-python -m scripts.main.run --boards --all-board-pages --report files/pknu_main/_runs/main_boards_run_report.json
+python -m scripts.crawlers.main.run --boards --all-board-pages --report files/pknu_main/_runs/main_boards_run_report.json
 
 # 지정 게시판 하나의 전체 목록 수집
-python -m scripts.main.run --page-ids 95 --all-board-pages
+python -m scripts.crawlers.main.run --page-ids 95 --all-board-pages
 ```
 
 `--boards`는 활성 `board`·`notice`·`tuition` 수집기 페이지를 선택합니다.
@@ -91,17 +91,17 @@ python -m scripts.main.run --page-ids 95 --all-board-pages
 
 ```powershell
 # 활성 등록된 모든 페이지 수집
-python -m scripts.main.run --all
+python -m scripts.crawlers.main.run --all
 ```
 
 | 상단 카테고리 | 실행 명령어 |
 | --- | --- |
-| 대학/대학원 | `python -m scripts.main.run --category "대학/대학원"` |
-| 연구/산학 | `python -m scripts.main.run --category "연구/산학"` |
-| 대학생활 | `python -m scripts.main.run --category "대학생활"` |
-| 입학/취업 | `python -m scripts.main.run --category "입학/취업"` |
-| 커뮤니티 | `python -m scripts.main.run --category "커뮤니티"` |
-| 대학소개 | `python -m scripts.main.run --category "대학소개"` |
+| 대학/대학원 | `python -m scripts.crawlers.main.run --category "대학/대학원"` |
+| 연구/산학 | `python -m scripts.crawlers.main.run --category "연구/산학"` |
+| 대학생활 | `python -m scripts.crawlers.main.run --category "대학생활"` |
+| 입학/취업 | `python -m scripts.crawlers.main.run --category "입학/취업"` |
+| 커뮤니티 | `python -m scripts.crawlers.main.run --category "커뮤니티"` |
+| 대학소개 | `python -m scripts.crawlers.main.run --category "대학소개"` |
 | 개교 80주년 | 현재 사용자 제외 상태. 활성 수집 대상 없음 |
 
 카테고리 이름은 상단 메뉴 표기(`/` 포함)를 사용합니다.
@@ -154,16 +154,16 @@ python -m scripts.crawlers.pknu_student_life --mode ebook
 
 이 CLI는 대학생활 전용입니다. `--limit`은 가이드 PDF 개수에만 적용되며
 E-하나로의 페이지 수를 제한하지 않습니다.
-일반 페이지 수집에는 `scripts.main.run --page-ids …`를 사용합니다.
+일반 페이지 수집에는 `scripts.crawlers.main.run --page-ids …`를 사용합니다.
 
 ### 재수집과 보고서 경로 지정
 
 ```powershell
 # 기존 결과 재사용을 해제하고 지정 페이지 갱신
-python -m scripts.main.run --page-ids 481 --full-resync
+python -m scripts.crawlers.main.run --page-ids 481 --full-resync
 
 # 실행 보고서를 프로젝트 내부의 별도 경로에 저장
-python -m scripts.main.run --page-ids 481 --report files/pknu_main/_runs/parking_run.json
+python -m scripts.crawlers.main.run --page-ids 481 --report files/pknu_main/_runs/parking_run.json
 ```
 
 기본 실행은 각 수집기의 증분 처리·캐시 정책에 따라 기존 결과를 재사용합니다.
@@ -235,7 +235,7 @@ by department crawlers.
 
 `scripts/crawlers/pknu_student_life.py` remains a small compatibility CLI for
 student-life pages, guides and E-하나로. It does not collect university-introduction
-or community pages; use `scripts.main.run` for those categories.
+or community pages; use `scripts.crawlers.main.run` for those categories.
 Existing state keys, document IDs and logical RAG dataset names are preserved.
 Tests are separate from normal crawler execution.
 
@@ -284,7 +284,6 @@ files/pknu_main/
   _state/                     # incremental crawler state and backups
   _derived/<dataset>/
     preprocessed/             # RAG extraction and chunks
-    vectorized/               # embeddings and indexes
   _archive/<dataset>/         # retired, deleted and interrupted results
   _discovery/                 # inventory and page compatibility evidence
 ```
@@ -323,17 +322,17 @@ PDF/eBook documents retain cleaned text by page.
 
 | 수집 대상 | 페이지별 실행 예시 | 등록된 수집 범위 |
 | --- | --- | --- |
-| 조직도 | `python -m scripts.main.run --page-ids 39` | 조직도 노드와 연결된 소개·안내, 홈페이지 바로가기 제외 |
-| 총장실 | `python -m scripts.main.run --page-ids 40 41 42 374 --board-pages 1` | 본문과 연설모음 목록 1페이지 |
-| 역대총장 카드 | `python -m scripts.main.run --page-ids 212 213 214 215` | 카드 구조와 텍스트, 이미지 제외 |
-| 연혁 | `python -m scripts.main.run --page-ids 217 492` | 날짜별 연혁 |
-| 대학통계 | `python -m scripts.main.run --page-ids 16` | 본문 표와 최근 3개년 통계연보 |
-| 캠퍼스맵 | `python -m scripts.main.run --page-ids 133 134` | 건물번호와 공개 상세정보, 지도 제외 |
-| 시설대관 | `python -m scripts.main.run --page-ids 385 386` | 안내·첨부와 건물/시설 선택 결과 |
-| 주차요금 | `python -m scripts.main.run --page-ids 481` | 표와 본문 |
-| 교육과정 | `python -m scripts.main.run --page-ids 106 362` | PDF 첨부파일 |
-| 강의편람 | `python -m scripts.main.run --page-ids 110` | 강의편람 PDF만 수집, #28의 대표 페이지 |
-| 식당 주간식단표 | `python -m scripts.main.run --page-ids 399 --board-pages 1` | 목록 1페이지, 별도 하위 폴더 저장 |
+| 조직도 | `python -m scripts.crawlers.main.run --page-ids 39` | 조직도 노드와 연결된 소개·안내, 홈페이지 바로가기 제외 |
+| 총장실 | `python -m scripts.crawlers.main.run --page-ids 40 41 42 374 --board-pages 1` | 본문과 연설모음 목록 1페이지 |
+| 역대총장 카드 | `python -m scripts.crawlers.main.run --page-ids 212 213 214 215` | 카드 구조와 텍스트, 이미지 제외 |
+| 연혁 | `python -m scripts.crawlers.main.run --page-ids 217 492` | 날짜별 연혁 |
+| 대학통계 | `python -m scripts.crawlers.main.run --page-ids 16` | 본문 표와 최근 3개년 통계연보 |
+| 캠퍼스맵 | `python -m scripts.crawlers.main.run --page-ids 133 134` | 건물번호와 공개 상세정보, 지도 제외 |
+| 시설대관 | `python -m scripts.crawlers.main.run --page-ids 385 386` | 안내·첨부와 건물/시설 선택 결과 |
+| 주차요금 | `python -m scripts.crawlers.main.run --page-ids 481` | 표와 본문 |
+| 교육과정 | `python -m scripts.crawlers.main.run --page-ids 106 362` | PDF 첨부파일 |
+| 강의편람 | `python -m scripts.crawlers.main.run --page-ids 110` | 강의편람 PDF만 수집, #28의 대표 페이지 |
+| 식당 주간식단표 | `python -m scripts.crawlers.main.run --page-ids 399 --board-pages 1` | 목록 1페이지, 별도 하위 폴더 저장 |
 
 Pages 51, 52 and 53 retain their earlier first-list-page samples with image/link
 URLs; image binaries were not downloaded. Their routes are currently disabled.
@@ -508,8 +507,8 @@ Linked pages and attachments are not collected.
 To move a legacy checkout's data, first preview and then apply:
 
 ```powershell
-python -m scripts.main.migrate_storage
-python -m scripts.main.migrate_storage --apply
+python -m scripts.migrations.main_storage
+python -m scripts.migrations.main_storage --apply
 ```
 
 The migration validates destination collisions before moving files, verifies
@@ -560,7 +559,7 @@ are evidence for review, not automatic crawl targets. Reusing an existing parser
 does not require a new test file; follow `scripts/AGENTS.md` for regression tests.
 
 ```text
-scripts/main/
+scripts/crawlers/main/
   pages.json                  # collection configuration
   routes.py                   # validated routes and compatibility constants
   paths.py                    # category and file-format storage paths

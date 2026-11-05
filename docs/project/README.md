@@ -25,11 +25,11 @@ fallback policy.
 ## 프로젝트 구조
 
 - `scripts/crawlers/departments/engine.py`: registry 기반 학과 사이트의 게시글과 첨부파일을 수집합니다.
-- `scripts/ce/preprocessing.py`: 수집된 문서를 RAG에 사용할 수 있는 텍스트 형태로 전처리합니다.
-- `scripts/rag/vectorization.py`: 전처리된 텍스트를 임베딩 벡터로 변환합니다.
-- `scripts/rag/load_to_supabase.py`: 벡터화된 데이터를 Supabase PostgreSQL에 적재합니다.
-- `scripts/rag/query_supabase.py`: Supabase에 저장된 데이터를 대상으로 검색을 테스트합니다.
-- `scripts/rag/pipelining.py`: 크롤링, 전처리, 벡터화, Supabase 적재 과정을 한 번에 실행하거나 스케줄링합니다.
+- `scripts/preprocessing/file_preprocessing.py`: 수집된 문서를 RAG에 사용할 수 있는 텍스트 형태로 전처리합니다.
+- `scripts/vectorization/vectorization.py`: 전처리된 텍스트를 임베딩 벡터로 변환합니다.
+- `scripts/vectorization/load_to_supabase.py`: 벡터화된 데이터를 Supabase PostgreSQL에 적재합니다.
+- `scripts/vectorization/query_supabase.py`: Supabase에 저장된 데이터를 대상으로 검색을 테스트합니다.
+- `scripts/vectorization/pipelining.py`: 크롤링, 전처리, 벡터화, Supabase 적재 과정을 한 번에 실행하거나 스케줄링합니다.
 - `frontend/`: Next.js 기반 사용자 인터페이스입니다.
 - `supabase/migrations/`: Supabase 데이터베이스 스키마 마이그레이션 SQL 파일입니다.
 - `logs/`: 파이프라인 실행 로그가 저장되는 디렉터리입니다.
@@ -106,42 +106,42 @@ Supabase Dashboard에서 SQL을 실행하는 방법은 다음과 같습니다.
 전체 RAG 파이프라인은 다음 순서로 실행됩니다.
 
 1. `scripts/crawlers/departments/engine.py --dataset ce`: CE 게시글과 첨부파일 수집
-2. `scripts/ce/preprocessing.py`: 수집 문서 전처리
-3. `scripts/rag/vectorization.py`: 텍스트 임베딩 생성
-4. `scripts/rag/load_to_supabase.py`: Supabase에 데이터 적재
+2. `scripts/preprocessing/file_preprocessing.py`: 수집 문서 전처리
+3. `scripts/vectorization/vectorization.py`: 텍스트 임베딩 생성
+4. `scripts/vectorization/load_to_supabase.py`: Supabase에 데이터 적재
 
 각 단계를 개별로 실행할 수 있습니다.
 
 ```bash
 python scripts/crawlers/departments/engine.py --dataset ce --once
-python scripts/ce/preprocessing.py --input-root files/ce/output/json --output-root files/ce/preprocessed/json --output-json-root files/ce/output/json --layout flat
-python scripts/ce/preprocessing.py --input-root files/ce/output/files --output-root files/ce/preprocessed/files --output-json-root files/ce/output/json
-python scripts/rag/vectorization.py --dataset ce --backend sentence-transformers
-python scripts/rag/load_to_supabase.py --dataset ce
+python scripts/preprocessing/file_preprocessing.py --input-root files/ce/output/json --output-root files/preprocessed/ce/json --output-json-root files/ce/output/json --layout flat
+python scripts/preprocessing/file_preprocessing.py --input-root files/ce/output/files --output-root files/preprocessed/ce/files --output-json-root files/ce/output/json
+python scripts/vectorization/vectorization.py --dataset ce --backend sentence-transformers
+python scripts/vectorization/load_to_supabase.py --dataset ce
 ```
 
 전체 파이프라인을 한 번만 실행하려면 다음 명령어를 사용합니다.
 
 ```bash
-python scripts/rag/pipelining.py --once
+python scripts/vectorization/pipelining.py --once
 ```
 
 스케줄러를 실행하면 기본적으로 시작 즉시 한 번 실행한 뒤 매일 오전 09:00에 파이프라인을 다시 실행합니다.
 
 ```bash
-python scripts/rag/pipelining.py
+python scripts/vectorization/pipelining.py
 ```
 
 실행 시간을 변경하려면 `--run-at` 옵션을 사용합니다.
 
 ```bash
-python scripts/rag/pipelining.py --run-at 10:30
+python scripts/vectorization/pipelining.py --run-at 10:30
 ```
 
 Supabase에 적재된 데이터 검색을 테스트하려면 다음 명령어를 사용합니다.
 
 ```bash
-python scripts/rag/query_supabase.py "검색할 질문"
+python scripts/vectorization/query_supabase.py "검색할 질문"
 ```
 
 ## 프론트엔드 실행

@@ -1,7 +1,7 @@
 # Evaluation datasets
 
 아래 데이터 경로(`cases/`, `baselines/`, `results/` 등)는 코드·데이터 폴더
-[`eval/`](../../eval) 기준입니다. 기준점 관리 방법은 [BASELINES.md](BASELINES.md)를 참고하세요.
+[`eval/`](../../eval) 기준입니다. `baselines/`는 기준점 보관을 위한 계획 경로이며, 현재 별도 기준점 관리 문서는 없습니다.
 
 Evaluation commands are in `eval/tools/` and run from the repository root with
 `python -m eval.tools.<command>`.
@@ -15,6 +15,46 @@ Evaluation commands are in `eval/tools/` and run from the repository root with
 - `baselines/`: 코드와 모델 및 RAG 설정별 기준 점수를 보관합니다.
 - `results/`: 로컬 평가 실행 결과를 저장합니다. 생성 결과는 Git에 커밋하지 않습니다.
 - `drafts/question_bank_100.jsonl`: 유형 균형을 맞춘 100개 질문 초안입니다. 정답 출처와 사실 라벨을 검수하기 전에는 실행용 회귀 세트로 사용하지 않습니다.
+
+## 다섯 테이블 분리 이후의 호환성
+
+`018_split_dataset_tables.sql`은 출처·청크 ID, 본문, 원본 벡터, URL과 원본 데이터셋 metadata를 보존합니다.
+기존 질문·정답 문장을 테이블명 변경만으로 다시 만들 필요는 없습니다. 다만 검색 후보 범위가 달라졌으므로
+기존 평가 점수와 동일하다고 가정하지 말고, 새 DB 구조와 백엔드 버전에서 기준 점수를 다시 측정해야 합니다.
+
+| 검색 대상 | 출처 / 청크 테이블 | RPC |
+|---|---|---|
+| 학과·단과대 | `rag_sources` / `rag_chunks` | `match_rag_documents` |
+| 본교 공지·첨부 | `pknu_notice_sources` / `pknu_notice_chunks` | `match_pknu_notice_documents` |
+| 본교 공지 외·대학생활 | `pknu_main_sources` / `pknu_main_chunks` | `match_pknu_main_documents` |
+| 규정집 | `rule_sources` / `rule_chunks` | `match_rule_documents` |
+| 강의계획서 | `pknu_syllabus_sources` / `pknu_syllabus_chunks` | `match_pknu_syllabus_documents` |
+
+`eval_ask`와 LLM 채점기는 `/ask` 응답을 사용하며 물리 테이블명을 직접 참조하지 않습니다.
+백엔드의 `RPC_NAMES` 환경 변수도 위 다섯 RPC로 설정되어 있어야 합니다.
+로컬 layout 평가는 별도의 `test_layout_rag_*` 저장소를 사용하므로 운영 DB 분리와 독립적입니다.
+`search_smoke`는 이동된 `scripts/vectorization/query_supabase.py`를 호출합니다.
+이 도구의 기본 데이터셋은 `ce`이므로 다섯 분류 전체의 평가를 대체하지 않습니다.
+
+향후 학습·평가 체계에서 구분해야 할 사항:
+
+- 물리 테이블 계열, 원본 `metadata.source_dataset`, 적재 ID의 기반인 `metadata.ingestion_dataset`은 서로 다른 값입니다.
+  예를 들어 본교 공지는 테이블 계열이 `pknu_notice`, 원본 데이터셋이 `pknu_notice`, 적재 데이터셋이 `pknu_main`일 수 있습니다.
+  `pknu_student_life` 원본 라벨은 자료가 `pknu_main_*`으로 이동해도 유효합니다. 이를 일괄 치환하면 원본 분류를 잃습니다.
+- 현재 `expected_source.dataset`은 smoke에서는 `rule`·`ce` 같은 수집 데이터셋 별칭을,
+  regression에서는 `학칙`·`학과공지` 같은 사람이 작성한 분류를 사용합니다.
+  향후 데이터셋 일치율을 자동 채점하기 전에 라벨 의미를 통일하고 기존 라벨을 출처와 대조해 검수해야 합니다.
+  `ready`의 현재 구조 검사는 DB 출처 일치나 검색 정확도 검사가 아닙니다.
+- 현재 `/ask.sources`에는 `source_id`, `chunk_id`, 데이터셋 및 학과 식별자가 포함되지 않습니다.
+  `expected_source` 조건도 현재 채점기에서 자동 판정하지 않습니다. 분류별 Recall@k·MRR 및 학과별 정확도를
+  측정하려면 검색 결과의 ID·계열·원본 데이터셋·`department_id`를 평가 경로에 전달하는 기능이 필요합니다.
+- 현재 smoke 8문항과 regression 100문항에는 강의계획서용 명시적 분류가 없습니다.
+  공지 외 본교 자료 및 여러 학과를 포함한 분류별 평가 질문을 출처 검수 후 보강해야 합니다.
+- 현재 repo에는 별도 모델 파인튜닝 실행 파이프라인이 없습니다. 향후 학습셋을 만들 때는 이관 후 출처 ID를
+  검증하고 같은 출처의 여러 청크가 학습·평가 양쪽에 섞이지 않도록 출처 단위로 분리해야 합니다.
+
+평가 도구의 단위 테스트와 라벨 형식 검사만으로 실제 검색·답변 품질을 판단할 수는 없습니다.
+새 구조의 기준 점수는 백엔드 배포 및 출처 라벨 검수 후 별도로 측정합니다.
 
 ## 실행 예시
 
@@ -83,9 +123,9 @@ Evaluation commands are in `eval/tools/` and run from the repository root with
 이 평가는 격리된 로컬 테스트 저장소를 사용하며 Supabase를 변경하지 않습니다.
 
 ```powershell
-python -m scripts.rag.ingest_layout_data      # files/_reviewed/body_image_ocr/*.reviewed.jsonl -> files/_test_db/test_layout_rag_YYYYMMDD/
-python -m eval.tools.generate_testset         # 최대 50개 QA 쌍 -> tests/eval_dataset.csv (--mode rule: API 비용 없음)
-python -m eval.tools.run_evaluation           # eval_report.md (+ .json) (--retrieval-only: API 비용 없음)
+python -m scripts.vectorization.ingest_layout_data      # files/_reviewed/body_image_ocr/*.reviewed.jsonl -> files/_test_db/test_layout_rag_YYYYMMDD/
+python -m eval.tools.generate_testset         # 최대 50개 QA 쌍 -> eval/results/layout_eval_dataset.csv (--mode rule: API 비용 없음)
+python -m eval.tools.run_evaluation           # eval/results/layout_eval_report.md (+ .json) (--retrieval-only: API 비용 없음)
 ```
 
 표는 각 청크에 헤더를 반복하는 Markdown으로 나누고, 다이어그램은 문장으로 바꿉니다.

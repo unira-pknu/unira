@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-# Same invocations as scripts/rag/preprocessing_pipeline_recent.py:crawl_dataset().
+# Same invocations as scripts/vectorization/preprocessing_pipeline_recent.py:crawl_dataset().
 # 2026-10-24~26 the daily crawl failed because pknu_notice.py imported
 # `scripts.*` before adding the project root to sys.path.
 CRAWLERS = (

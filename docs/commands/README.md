@@ -10,7 +10,8 @@
 ## 명령 문서
 
 - [크롤러](CRAWLERS.md): 문서 마이그레이션, 본교·학과·규정 크롤링, 학과 registry 검증과 discovery
-- [전처리](PREPROCESSING.md): CE·공통 첨부파일·규정 전처리
+- [전체 전처리](../preprocessing/PREPROCESSING.md): 전체 수집 자료 점검·실행·재처리
+- [개별 전처리 옵션](PREPROCESSING.md): 학과·공통 첨부파일·규정 전처리
 - [벡터 DB와 RAG](VECTOR_DATABASE.md): 벡터화, Supabase 적재·검색, 우선순위, 파이프라인
 - [평가](EVALUATION.md): 질문 세트를 이용한 API 평가
 
@@ -19,7 +20,7 @@
 ### CE 전체 파이프라인
 
 ```powershell
-.\.venv\Scripts\python.exe scripts\rag\pipelining.py --once
+.\.venv\Scripts\python.exe scripts\vectorization\pipelining.py --once
 ```
 
 ### 크롤러 설정 검증

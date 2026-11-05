@@ -92,22 +92,22 @@ Get-Content logs\main_student_life_crawler.log -Wait -Tail 30
 - `--reset-state`: `state_pknu_student_life.json`을 삭제합니다.
 - `--limit N`: `guide` 모드에서 처리할 PDF 개수를 제한합니다. smoke test용입니다.
 
-### `scripts/main/run.py`
+### `scripts/crawlers/main/run.py`
 
-검증된 메인 홈페이지 페이지 ID와 수집 경로는 `scripts/main/routes.py`에서 관리합니다.
+검증된 메인 홈페이지 페이지 ID와 수집 경로는 `scripts/crawlers/main/routes.py`에서 관리합니다.
 미등록 ID는 `needs_review`로 표시하고 자동 크롤링하지 않습니다.
 
 ```powershell
-.\.venv\Scripts\python.exe -m scripts.main.run --list
-.\.venv\Scripts\python.exe -m scripts.main.run --page-ids 31 92 95 --dry-run
-.\.venv\Scripts\python.exe -m scripts.main.run --page-ids 31 --year 2026
-.\.venv\Scripts\python.exe -m scripts.main.run --page-ids 92 230 231 232
-.\.venv\Scripts\python.exe -m scripts.main.run --page-ids 233 234 235
-.\.venv\Scripts\python.exe -m scripts.main.run --page-ids 94
-.\.venv\Scripts\python.exe -m scripts.main.run --page-ids 101 104 247
-.\.venv\Scripts\python.exe -m scripts.main.run --page-ids 242 243 244
-.\.venv\Scripts\python.exe -m scripts.main.run --page-ids 245 246
-.\.venv\Scripts\python.exe -m scripts.main.run --page-ids 95
+.\.venv\Scripts\python.exe -m scripts.crawlers.main.run --list
+.\.venv\Scripts\python.exe -m scripts.crawlers.main.run --page-ids 31 92 95 --dry-run
+.\.venv\Scripts\python.exe -m scripts.crawlers.main.run --page-ids 31 --year 2026
+.\.venv\Scripts\python.exe -m scripts.crawlers.main.run --page-ids 92 230 231 232
+.\.venv\Scripts\python.exe -m scripts.crawlers.main.run --page-ids 233 234 235
+.\.venv\Scripts\python.exe -m scripts.crawlers.main.run --page-ids 94
+.\.venv\Scripts\python.exe -m scripts.crawlers.main.run --page-ids 101 104 247
+.\.venv\Scripts\python.exe -m scripts.crawlers.main.run --page-ids 242 243 244
+.\.venv\Scripts\python.exe -m scripts.crawlers.main.run --page-ids 245 246
+.\.venv\Scripts\python.exe -m scripts.crawlers.main.run --page-ids 95
 ```
 
 전체 등록 페이지 실행은 `--all`을 명시합니다. 자세한 구조는 [메인 홈페이지 가이드](../crawlers/MAIN.md)를 참고하세요.
@@ -124,15 +124,15 @@ OCR은 오인식 가능성이 있어 `needs_review`로 저장하며, 결과는
 기존 PDF 파일 크롤러도 실행합니다. 원본 PDF와 추출 텍스트는
 `files/pknu_student_life/output/` 아래에 저장됩니다.
 
-### `scripts/main/collectors/academic_calendar.py`
+### `scripts/crawlers/main/collectors/academic_calendar.py`
 
 학사일정(`/main/31`)의 월별 JSON API를 조회합니다. 기본값은 현재 연도의 12개월이며,
 `--months`로 필요한 달만 지정할 수 있습니다. 같은 일정이 여러 달에 나타나면
 `source_record_id`로 합치고 조회된 달을 `source_months`에 남깁니다.
 
 ```powershell
-.\.venv\Scripts\python.exe -m scripts.main.collectors.academic_calendar --year 2026
-.\.venv\Scripts\python.exe -m scripts.main.collectors.academic_calendar --year 2026 --months 9 10
+.\.venv\Scripts\python.exe -m scripts.crawlers.main.collectors.academic_calendar --year 2026
+.\.venv\Scripts\python.exe -m scripts.crawlers.main.collectors.academic_calendar --year 2026 --months 9 10
 ```
 
 결과는 `files/pknu_main/output/academic_calendar/main_31_<year>.json`에 저장됩니다.
@@ -141,7 +141,7 @@ OCR은 오인식 가능성이 있어 `needs_review`로 저장하며, 결과는
 
 ### Main 분석/점검 스크립트
 
-- `scripts/main/student_life_stats.py`: `files/pknu_student_life/output/json` 결과의 PDF 텍스트 추출 상태를 요약합니다.
+- `scripts/crawlers/main/student_life_stats.py`: `files/pknu_student_life/output/json` 결과의 PDF 텍스트 추출 상태를 요약합니다.
 
 ## Department Crawler
 

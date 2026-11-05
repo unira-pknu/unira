@@ -13,13 +13,13 @@ from bs4 import BeautifulSoup
 from scripts.crawlers.common.main_static import (
     extract_structure, linked_file_ids, parse_flow, parse_table, parse_system_organization_chart,
 )
-from scripts.main.collectors.boards import parse_board_intro_html
-from scripts.main.collectors.static_pages import (
+from scripts.crawlers.main.collectors.boards import parse_board_intro_html
+from scripts.crawlers.main.collectors.static_pages import (
     crawl_static_pages, extract_static_attachment_text, image_text_sections, parse_static_page_html,
 )
-from scripts.main.collectors.organization import collect_organization_chart, crawl_intro_page
-from scripts.main.common.board import parse_list_page
-from scripts.main.routes import ROUTES
+from scripts.crawlers.main.collectors.organization import collect_organization_chart, crawl_intro_page
+from scripts.crawlers.main.common.board import parse_list_page
+from scripts.crawlers.main.routes import ROUTES
 
 
 class MainStaticStructureTests(unittest.TestCase):
@@ -39,10 +39,10 @@ class MainStaticStructureTests(unittest.TestCase):
         paths.attachment_dir.return_value = Path(__file__).resolve().parents[3] / "never-written-card-assets"
         session = Mock()
         with (patch.dict(ROUTES, {114: replace(ROUTES[114], options=options, download_attachments=False)}),
-              patch("scripts.main.collectors.static_pages.PATHS", paths),
-              patch("scripts.main.collectors.static_pages.save_body_images") as download,
-              patch("scripts.main.collectors.static_pages.recognize_static_body_images") as ocr,
-              patch("scripts.main.collectors.static_pages.save_json", return_value=paths.document_json.return_value) as save):
+              patch("scripts.crawlers.main.collectors.static_pages.PATHS", paths),
+              patch("scripts.crawlers.main.collectors.static_pages.save_body_images") as download,
+              patch("scripts.crawlers.main.collectors.static_pages.recognize_static_body_images") as ocr,
+              patch("scripts.crawlers.main.collectors.static_pages.save_json", return_value=paths.document_json.return_value) as save):
             parsed = parse_static_page_html(html, 114)
             self.assertEqual(parsed.status, "ready")
             self.assertFalse(parsed.body_images)
@@ -93,8 +93,8 @@ class MainStaticStructureTests(unittest.TestCase):
     def test_audio_downloads_keep_originals_without_document_text_extraction(self) -> None:
         record = {"downloaded": True, "saved_path": "files/audio/duet.mp3"}
         image = {"downloaded": True, "saved_path": "files/images/wallpaper.png"}
-        with (patch("scripts.main.collectors.static_pages.extract_blocks") as extract,
-              patch("scripts.main.routes.COLLECTION_POLICY", {"body_image_ocr": False})):
+        with (patch("scripts.crawlers.main.collectors.static_pages.extract_blocks") as extract,
+              patch("scripts.crawlers.main.routes.COLLECTION_POLICY", {"body_image_ocr": False})):
             extract_static_attachment_text([record, image])
         extract.assert_not_called()
         self.assertEqual(record["text"]["status"], "skipped")
@@ -113,11 +113,11 @@ class MainStaticStructureTests(unittest.TestCase):
         paths = Mock()
         paths.document_json.return_value = Path(__file__).resolve().parents[3] / "never-written-pdf-link-sample.json"
         with (patch.dict(ROUTES, {114: replace(ROUTES[114], options=options)}),
-              patch("scripts.main.collectors.static_pages.PATHS", paths),
-              patch("scripts.main.collectors.static_pages.resolve_static_embedded_pdfs", return_value=[
+              patch("scripts.crawlers.main.collectors.static_pages.PATHS", paths),
+              patch("scripts.crawlers.main.collectors.static_pages.resolve_static_embedded_pdfs", return_value=[
                   {"name": "Setup instructions", "url": "https://www.pknu.ac.kr/upload/setup.pdf", "media_id": "123"}]),
-              patch("scripts.main.collectors.static_pages.cms_board.save_attachments", return_value=[]) as download,
-              patch("scripts.main.collectors.static_pages.save_json", return_value=paths.document_json.return_value) as save):
+              patch("scripts.crawlers.main.collectors.static_pages.cms_board.save_attachments", return_value=[]) as download,
+              patch("scripts.crawlers.main.collectors.static_pages.save_json", return_value=paths.document_json.return_value) as save):
             parsed = parse_static_page_html(html, 114)
             self.assertEqual(parsed.status, "ready")
             self.assertFalse(parsed.attachments)
@@ -145,9 +145,9 @@ class MainStaticStructureTests(unittest.TestCase):
                  "name": "Not displayed", "email": "hidden@example.org"}
         with TemporaryDirectory() as temporary:
             root = Path(temporary)
-            with (patch("scripts.main.collectors.organization.PROJECT_ROOT", root),
-                  patch("scripts.main.collectors.organization.fetch", return_value=response) as fetch,
-                  patch("scripts.main.collectors.organization._widget_rows", return_value=[staff]) as widget):
+            with (patch("scripts.crawlers.main.collectors.organization.PROJECT_ROOT", root),
+                  patch("scripts.crawlers.main.collectors.organization.fetch", return_value=response) as fetch,
+                  patch("scripts.crawlers.main.collectors.organization._widget_rows", return_value=[staff]) as widget):
                 stats, detail = crawl_intro_page(Mock(), 531)
                 doc = json.loads((root / detail["output"]).read_text(encoding="utf-8"))
                 self.assertEqual(detail["status"], "success")
@@ -187,7 +187,7 @@ class MainStaticStructureTests(unittest.TestCase):
                    "image_section_title_selector": ".section-nav a.active",
                    "exclude_body_selectors": [".section-nav"]}
         with (patch.dict(ROUTES, {114: replace(ROUTES[114], options=options)}),
-              patch("scripts.main.routes.COLLECTION_POLICY", {"body_image_ocr": True})):
+              patch("scripts.crawlers.main.routes.COLLECTION_POLICY", {"body_image_ocr": True})):
             parsed = parse_static_page_html(html, 114)
         self.assertEqual(parsed.status, "ready")
         self.assertEqual([image["section_title"] for image in parsed.body_images], ["First path", "Second path"])
@@ -218,11 +218,11 @@ class MainStaticStructureTests(unittest.TestCase):
                  "saved_path": "files/guide.png", "sha256": "original", "status": "saved"}
         options = {"content_from_images": True, "ocr_body_images": True}
         with (patch.dict(ROUTES, {114: replace(ROUTES[114], options=options)}),
-              patch("scripts.main.routes.COLLECTION_POLICY", {"body_image_ocr": False}),
-              patch("scripts.main.collectors.static_pages.PATHS", paths),
-              patch("scripts.main.collectors.static_pages.download_static_body_images", return_value=[image]),
-              patch("scripts.main.collectors.static_pages.recognize_static_body_images") as ocr,
-              patch("scripts.main.collectors.static_pages.save_json", return_value=output) as save):
+              patch("scripts.crawlers.main.routes.COLLECTION_POLICY", {"body_image_ocr": False}),
+              patch("scripts.crawlers.main.collectors.static_pages.PATHS", paths),
+              patch("scripts.crawlers.main.collectors.static_pages.download_static_body_images", return_value=[image]),
+              patch("scripts.crawlers.main.collectors.static_pages.recognize_static_body_images") as ocr,
+              patch("scripts.crawlers.main.collectors.static_pages.save_json", return_value=output) as save):
             parsed = parse_static_page_html(html, 114)
             self.assertEqual(parsed.status, "ready")
             stats = crawl_static_pages(Mock(), {"items": {}}, False, (114,), prepared={114: parsed})

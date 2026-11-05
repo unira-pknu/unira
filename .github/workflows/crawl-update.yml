@@ -47,7 +47,7 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         # Scheduled runs have no inputs, so they fall back to 3 pages.
-        run: python scripts/rag/preprocessing_pipeline_recent.py --dataset all --recent-pages "${{ inputs.recent_pages || '3' }}"
+        run: python scripts/vectorization/preprocessing_pipeline_recent.py --dataset all --recent-pages "${{ inputs.recent_pages || '3' }}"
 
       - name: Recompute priority scores
         env:
@@ -55,7 +55,7 @@ jobs:
         run: |
           python scripts/ce/update_priorities.py
           python scripts/rule/update_priorities.py
-          python scripts/main/update_priorities.py --dataset all
+          python scripts/rag/update_main_priorities.py --dataset all
 
       - name: Commit updated crawl state
         run: |

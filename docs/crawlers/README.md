@@ -34,7 +34,7 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 
 ```powershell
 # 메인 홈페이지: 활성 등록 페이지 전체
-python -m scripts.main.run --all
+python -m scripts.crawlers.main.run --all
 
 # 단과대학·학부·학과·전공: 활성 상태이며 수집 section이 있는 데이터셋 전체
 python -m scripts.crawlers.departments.engine --all --once
@@ -54,10 +54,10 @@ python -m scripts.crawlers.pknu_rule --laws --bylaws
 
 ```powershell
 # 대상 페이지 ID와 전체 목록 수집 설정 확인
-python -m scripts.main.run --boards --all-board-pages --dry-run
+python -m scripts.crawlers.main.run --boards --all-board-pages --dry-run
 
 # 활성 게시판·공지사항·등록금 FAQ 전체 목록과 게시글 수집
-python -m scripts.main.run --boards --all-board-pages --report files/pknu_main/_runs/main_boards_run_report.json
+python -m scripts.crawlers.main.run --boards --all-board-pages --report files/pknu_main/_runs/main_boards_run_report.json
 ```
 
 `--boards`는 활성 등록된 일반 게시판·공지사항과 FAQ를 포함한 등록금 안내 페이지만 선택합니다.
@@ -75,20 +75,20 @@ python -m scripts.main.run --boards --all-board-pages --report files/pknu_main/_
 
 ```powershell
 # 목록 및 실행 계획 확인: 실제 수집하지 않음
-python -m scripts.main.run --list
-python -m scripts.main.run --all --dry-run
-python -m scripts.main.run --page-ids 31 92 95 --dry-run
+python -m scripts.crawlers.main.run --list
+python -m scripts.crawlers.main.run --all --dry-run
+python -m scripts.crawlers.main.run --page-ids 31 92 95 --dry-run
 
 # 개별 페이지 / 여러 페이지
-python -m scripts.main.run --page-ids 481
-python -m scripts.main.run --page-ids 224 225
+python -m scripts.crawlers.main.run --page-ids 481
+python -m scripts.crawlers.main.run --page-ids 224 225
 
 # 일반 게시판 목록 1페이지 / 학사일정 지정 연월
-python -m scripts.main.run --page-ids 32 --board-pages 1
-python -m scripts.main.run --page-ids 31 --year 2026 --months 9 10
+python -m scripts.crawlers.main.run --page-ids 32 --board-pages 1
+python -m scripts.crawlers.main.run --page-ids 31 --year 2026 --months 9 10
 
 # 기존 결과 재사용을 해제하는 개별 재수집
-python -m scripts.main.run --page-ids 481 --full-resync
+python -m scripts.crawlers.main.run --page-ids 481 --full-resync
 ```
 
 `--page-ids`, `--category`, `--all`, `--boards`, `--list`는 하나만 선택합니다.
@@ -98,12 +98,12 @@ python -m scripts.main.run --page-ids 481 --full-resync
 
 | 메인 카테고리 | 명령 |
 | --- | --- |
-| 대학/대학원 | `python -m scripts.main.run --category "대학/대학원"` |
-| 연구/산학 | `python -m scripts.main.run --category "연구/산학"` |
-| 대학생활 | `python -m scripts.main.run --category "대학생활"` |
-| 입학/취업 | `python -m scripts.main.run --category "입학/취업"` |
-| 커뮤니티 | `python -m scripts.main.run --category "커뮤니티"` |
-| 대학소개 | `python -m scripts.main.run --category "대학소개"` |
+| 대학/대학원 | `python -m scripts.crawlers.main.run --category "대학/대학원"` |
+| 연구/산학 | `python -m scripts.crawlers.main.run --category "연구/산학"` |
+| 대학생활 | `python -m scripts.crawlers.main.run --category "대학생활"` |
+| 입학/취업 | `python -m scripts.crawlers.main.run --category "입학/취업"` |
+| 커뮤니티 | `python -m scripts.crawlers.main.run --category "커뮤니티"` |
+| 대학소개 | `python -m scripts.crawlers.main.run --category "대학소개"` |
 
 현재 커뮤니티는 공지사항만 활성화되어 있습니다. 사용자 제외 페이지, 대학소개/홍보관,
 개교 80주년 등 비활성 등록은 전체 실행에도 포함되지 않습니다.
@@ -220,7 +220,7 @@ python -m scripts.crawlers.pknu_student_life --mode guide --limit 1
 python -m scripts.crawlers.pknu_student_life --mode ebook
 ```
 
-이 호환 CLI의 `all`은 대학생활 전용 범위입니다. 메인 전체 수집은 `scripts.main.run --all`을 사용합니다.
+이 호환 CLI의 `all`은 대학생활 전용 범위입니다. 메인 전체 수집은 `scripts.crawlers.main.run --all`을 사용합니다.
 `--limit 1`은 가이드 PDF 1개이며 E-하나로 페이지 수를 제한하지 않습니다.
 
 ### 학칙·규정·지침·내규
@@ -291,7 +291,7 @@ Get-Content logs/crawlers/ce.log -Tail 20 -Wait
 ```
 
 출력을 다른 프로그램으로 전달할 때 Python 출력 버퍼링도 해제하려면
-`python -u -m scripts.main.run --all`처럼 `-u`를 사용할 수 있습니다.
+`python -u -m scripts.crawlers.main.run --all`처럼 `-u`를 사용할 수 있습니다.
 
 | 수집 범위 | 결과 위치 |
 | --- | --- |

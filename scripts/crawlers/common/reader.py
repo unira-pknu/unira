@@ -29,6 +29,8 @@ def infer_dataset_from_path(path: Path) -> str | None:
     if "files" in folded:
         index = folded.index("files")
         if index + 1 < len(parts):
+            if folded[index + 1] == "preprocessed":
+                return parts[index + 2] if index + 2 < len(parts) else None
             if folded[index + 1] == "department":
                 from scripts.crawlers.common.storage import department_storage_paths
                 tail = parts[index + 2:]

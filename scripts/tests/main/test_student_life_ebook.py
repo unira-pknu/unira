@@ -4,8 +4,8 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from scripts.main.collectors import ebook as crawler
-from scripts.main.common.storage import PROJECT_ROOT
+from scripts.crawlers.main.collectors import ebook as crawler
+from scripts.crawlers.main.common.storage import PROJECT_ROOT
 from scripts.crawlers.common.schema import validate_common_document
 
 

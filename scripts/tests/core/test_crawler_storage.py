@@ -14,7 +14,7 @@ from scripts.crawlers.common.storage import (
 )
 from scripts.crawlers.common.reader import infer_dataset_from_path
 from scripts.migrations.crawler_storage import migrate_department_layout
-from scripts.main.paths import page_root
+from scripts.crawlers.main.paths import page_root
 
 
 class CrawlerStorageTests(unittest.TestCase):
@@ -32,8 +32,8 @@ class CrawlerStorageTests(unittest.TestCase):
         document.parent.mkdir(parents=True)
         document.write_text('{"type":"notice","url":"https://www.pknu.ac.kr/main/999"}', encoding="utf-8")
         settings = {999: {"enabled": False, "category_path": ["커뮤니티", "Stored board"]}}
-        with (patch("scripts.main.routes.ROUTES", {}),
-              patch("scripts.main.routes.PAGE_SETTINGS", settings)):
+        with (patch("scripts.crawlers.main.routes.ROUTES", {}),
+              patch("scripts.crawlers.main.routes.PAGE_SETTINGS", settings)):
             paths = get_dataset_paths(self.root, "pknu_student_life")
             self.assertEqual(expected_root, page_root(self.root, 999))
             self.assertEqual(document, paths.document_json("Stored board", "existing"))

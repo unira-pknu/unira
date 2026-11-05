@@ -12,8 +12,8 @@ from eval.tools import llm_budget
 from eval.tools.generate_testset import rule_based_qa, select_chunks
 from eval.tools.llm_budget import BudgetedLLM, BudgetExceeded, FatalLLMError
 from eval.tools.run_evaluation import answer_in_context
-from scripts.rag import layout_rag
-from scripts.rag.layout_rag import (
+from scripts.vectorization import layout_rag
+from scripts.vectorization.layout_rag import (
     LocalVectorStore,
     build_image_chunks,
     collect_chunks,

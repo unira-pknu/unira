@@ -19,7 +19,7 @@ backend/
 │   ├── config.py          pydantic-settings 기반 환경변수
 │   ├── schemas.py         AskRequest / AskResponse / Source
 │   ├── deps.py            싱글턴 AppState 주입
-│   ├── embeddings.py      sentence-transformers 래퍼
+│   ├── embeddings.py      질문 임베딩용 sentence-transformers 래퍼
 │   ├── retrieval.py       Supabase RPC 호출
 │   ├── generation.py      OpenAI 프롬프트 + 답변 생성
 │   └── routers/ask.py     POST /ask 핸들러
@@ -27,6 +27,9 @@ backend/
 ├── requirements.txt
 └── .env.example
 ```
+
+질문 임베딩 래퍼는 [`backend/app/embeddings.py`](../../backend/app/embeddings.py)에서
+관리합니다. 수집 문서의 배치 벡터화 도구는 `scripts/vectorization/`에 있습니다.
 
 ## 사전 조건
 
@@ -131,3 +134,18 @@ curl -X POST http://localhost:8000/ask `
 - 회수된 청크가 0건이면 즉시 fallback. 청크가 있으면 LLM은 관련 근거가 있는 범위까지 답하고, 질문의 핵심에 대한 근거가 전혀 없을 때만 "관련 정보를 찾을 수 없습니다."라고 답함. 검색 임계값은 `RAG_MIN_SIMILARITY`로 조정.
 - 스트리밍 응답, 대화 히스토리, 피드백 엔드포인트는 미구현. 추후 `routers/` 에 추가하면 됨.
 - 모델 자동 워밍업 외 헬스체크는 `/health` (단순 ok) 만 제공.
+# 데이터셋별 검색 테이블
+
+`018_split_dataset_tables.sql` 적용 이후 기본 검색은 다섯 독립 테이블 계열을 사용합니다.
+`RPC_NAMES`를 환경 변수로 지정했다면 기본값보다 우선하므로 다음 목록으로 변경하고 백엔드를 재시작·재배포합니다.
+
+```dotenv
+RPC_NAMES=match_rule_documents,match_pknu_notice_documents,match_pknu_main_documents,match_rag_documents,match_pknu_syllabus_documents
+```
+
+각 RPC에는 같은 이름의 `_lexical` 검색 함수도 있습니다. 학과 검색 응답의 metadata에는
+`department_id`, `department_name`, `college_name`, `department_homepage` 및 전공 정보가 포함됩니다.
+`match_rag_documents`의 `metadata_filter`에 `department_id`를 지정하면 학과를 제한할 수 있습니다.
+기존 `match_pknu_student_life_documents`와 `_lexical` RPC는 배포 전환 기간에도 호출할 수 있도록
+본교 공지 외 테이블을 조회합니다. `pknu_student_life_*` 물리 테이블은 제거되었습니다.
+질문 임베딩 모델과 384차원 입력 형식은 유지합니다.

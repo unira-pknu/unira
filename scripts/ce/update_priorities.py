@@ -29,15 +29,16 @@ from scripts.ce.priority import (  # noqa: E402
     calculate_ce_priority,
 )
 from scripts.db import connect_postgres  # noqa: E402
-from scripts.crawlers.common.storage import get_dataset_root
+from scripts.vectorization.datasets import get_vector_paths
 
 LOG_DIR = PROJECT_ROOT / "logs"
 LOG_FILE = LOG_DIR / "update_ce_priorities.log"
-DEFAULT_CE_INDEX = get_dataset_root(PROJECT_ROOT, "ce") / "vectorized" / "index.jsonl"
-DEFAULT_RULE_INDEX = PROJECT_ROOT / "files" / "rule" / "vectorized" / "index.jsonl"
+DEFAULT_CE_INDEX = get_vector_paths(PROJECT_ROOT, "ce")["output_root"] / "index.jsonl"
+DEFAULT_RULE_INDEX = get_vector_paths(PROJECT_ROOT, "rule")["output_root"] / "index.jsonl"
 DEFAULT_MAIN_INDEXES = (
-    PROJECT_ROOT / "files" / "pknu_main" / "_derived" / "pknu_notice" / "vectorized" / "index.jsonl",
-    PROJECT_ROOT / "files" / "pknu_main" / "_derived" / "pknu_student_life" / "vectorized" / "index.jsonl",
+    get_vector_paths(PROJECT_ROOT, "pknu_main")["output_root"] / "index.jsonl",
+    get_vector_paths(PROJECT_ROOT, "pknu_notice")["output_root"] / "index.jsonl",
+    get_vector_paths(PROJECT_ROOT, "pknu_student_life")["output_root"] / "index.jsonl",
 )
 
 log = logging.getLogger(__name__)
@@ -123,8 +124,8 @@ def fetch_main_contents(conn: Any) -> list[str]:
         where s.status = 'active'
         union all
         select c.content
-        from public.pknu_student_life_chunks as c
-        join public.pknu_student_life_sources as s on s.id = c.source_id
+        from public.pknu_main_chunks as c
+        join public.pknu_main_sources as s on s.id = c.source_id
         where s.status = 'active'
     """
     with conn.cursor() as cur:

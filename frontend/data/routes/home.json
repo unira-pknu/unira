@@ -1,14 +1,7 @@
 {
-  "__mock": {
-    "mode": "success"
-  },
   "page": {
     "header": {
-      "logo": "부경대학교",
-      "buttons": [
-        "Sign Up",
-        "Login"
-      ]
+      "logo": "부경대학교"
     },
     "hero": {
       "title": "학과 문서와 학사 정보를\n신속하게 찾아보세요!",

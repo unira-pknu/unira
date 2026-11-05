@@ -13,9 +13,9 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from scripts.main.paths import main_root
-from scripts.main.routes import ROUTES, plan
-from scripts.main.run import execute
+from scripts.crawlers.main.paths import main_root
+from scripts.crawlers.main.routes import ROUTES, plan
+from scripts.crawlers.main.run import execute
 
 INSTITUTE_CATEGORY = ("연구_산학", "연구기관")
 DEFAULT_REPORT = main_root(PROJECT_ROOT) / "_runs" / "research_institutes_run_report.json"

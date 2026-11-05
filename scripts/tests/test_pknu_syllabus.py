@@ -33,7 +33,7 @@ class SyllabusDownloadTests(unittest.TestCase):
     """Catalog scope, durable originals and restart behavior of HTTP downloads."""
 
     def task(self):
-        from scripts.syllabus.catalog import tasks_from_rows
+        from scripts.crawlers.syllabus.catalog import tasks_from_rows
 
         rows = [{
             "YY": "2026", "SHTM_CD": "U0003001", "UNIV_GRSC_CLSF": "학부",
@@ -50,7 +50,7 @@ class SyllabusDownloadTests(unittest.TestCase):
             document.save(path)
 
     def test_catalog_preserves_graduate_and_all_report_variants(self):
-        from scripts.syllabus.catalog import read_sections, tasks_from_rows
+        from scripts.crawlers.syllabus.catalog import read_sections, tasks_from_rows
 
         rows = read_sections(RESPONSE)
         rows[-1].update({"KOR_YN": "Y", "ENG_YN": "Y", "TECH_YN": "Y"})
@@ -61,7 +61,7 @@ class SyllabusDownloadTests(unittest.TestCase):
         self.assertEqual(len(tasks), len({task["id"] for task in tasks}))
 
     def test_catalog_rejects_error_or_missing_dataset_but_accepts_empty(self):
-        from scripts.syllabus.catalog import read_sections
+        from scripts.crawlers.syllabus.catalog import read_sections
 
         for xml in (
             '<Root><Parameter id="ErrorCode">-1</Parameter><Dataset id="output1" /></Root>',
@@ -74,7 +74,7 @@ class SyllabusDownloadTests(unittest.TestCase):
         self.assertEqual([{"A": "C&C++"}], read_sections(xml))
 
     def test_seasonal_term_and_three_calendar_years(self):
-        from scripts.syllabus.catalog import recent_years, request_body
+        from scripts.crawlers.syllabus.catalog import recent_years, request_body
 
         self.assertEqual([2024, 2025, 2026], recent_years(2026))
         self.assertIn(b'<Parameter id="SHTM_CD">U0003003</Parameter>', request_body(2025, "summer"))
@@ -82,7 +82,7 @@ class SyllabusDownloadTests(unittest.TestCase):
 
     def test_catalog_request_escapes_search_inputs_and_uses_term_code(self):
         import xml.etree.ElementTree as ET
-        from scripts.syllabus.catalog import build_request, read_sections
+        from scripts.crawlers.syllabus.catalog import build_request, read_sections
 
         body = build_request(2026, "2", course_name="C&C++", staff_name="A < B")
         self.assertIn('<Parameter id="SHTM_CD">U0003002</Parameter>', body)
@@ -93,7 +93,7 @@ class SyllabusDownloadTests(unittest.TestCase):
 
     def test_different_terms_can_run_together_but_overlapping_runs_cannot(self):
         from contextlib import ExitStack
-        from scripts.syllabus.storage import collection_run
+        from scripts.crawlers.syllabus.storage import collection_run
 
         with tempfile.TemporaryDirectory() as tmp:
             output = Path(tmp)
@@ -112,7 +112,7 @@ class SyllabusDownloadTests(unittest.TestCase):
     def test_parallel_progress_merges_receipts_and_preserves_other_term_errors(self):
         from concurrent.futures import ThreadPoolExecutor
         from threading import Barrier
-        from scripts.syllabus.storage import commit_progress, load_state
+        from scripts.crawlers.syllabus.storage import commit_progress, load_state
 
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "downloads.json"
@@ -134,7 +134,7 @@ class SyllabusDownloadTests(unittest.TestCase):
             self.assertEqual(error, state["last_error"])
 
     def test_atomic_json_retries_transient_windows_replace_denial(self):
-        from scripts.syllabus.storage import atomic_json
+        from scripts.crawlers.syllabus.storage import atomic_json
 
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "downloads.json"
@@ -149,14 +149,14 @@ class SyllabusDownloadTests(unittest.TestCase):
                     self.assertEqual({"original": True}, json.loads(path.read_text(encoding="utf-8")))
                     raise denied
                 return original_replace(source, target)
-            with patch.object(Path, "replace", replace), patch("scripts.syllabus.storage.time.sleep") as sleep:
+            with patch.object(Path, "replace", replace), patch("scripts.crawlers.syllabus.storage.time.sleep") as sleep:
                 atomic_json(path, {"saved": True})
             self.assertEqual({"saved": True}, json.loads(path.read_text(encoding="utf-8")))
             self.assertEqual(2, sleep.call_count)
             self.assertFalse(path.with_name(path.name + ".tmp").exists())
 
     def test_atomic_json_persistent_denial_preserves_original_and_pending_receipt(self):
-        from scripts.syllabus.storage import atomic_json
+        from scripts.crawlers.syllabus.storage import atomic_json
 
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "downloads.json"
@@ -165,7 +165,7 @@ class SyllabusDownloadTests(unittest.TestCase):
             denied.winerror = 5
             with (
                 patch.object(Path, "replace", side_effect=denied),
-                patch("scripts.syllabus.storage.time.monotonic", side_effect=[0, 10]),
+                patch("scripts.crawlers.syllabus.storage.time.monotonic", side_effect=[0, 10]),
                 self.assertRaises(PermissionError),
             ):
                 atomic_json(path, {"pending": True})
@@ -173,7 +173,7 @@ class SyllabusDownloadTests(unittest.TestCase):
             self.assertEqual({"pending": True}, json.loads(path.with_name(path.name + ".tmp").read_text(encoding="utf-8")))
 
     def test_pdf_identity_rejects_wrong_course_year_term_and_section(self):
-        from scripts.syllabus.documents import inspect_pdf
+        from scripts.crawlers.syllabus.documents import inspect_pdf
 
         task = self.task()
         with tempfile.TemporaryDirectory() as tmp:
@@ -193,7 +193,7 @@ class SyllabusDownloadTests(unittest.TestCase):
             inspect_pdf(valid.read_bytes(), task)
 
     def test_save_preserves_source_refuses_overwrite_and_detects_tampering(self):
-        from scripts.syllabus.storage import is_complete, save_pdf, target_path
+        from scripts.crawlers.syllabus.storage import is_complete, save_pdf, target_path
 
         task = self.task()
         with tempfile.TemporaryDirectory() as tmp:
@@ -211,8 +211,8 @@ class SyllabusDownloadTests(unittest.TestCase):
                 is_complete(output, task, state)
 
     def test_catalog_and_destination_reject_paths_outside_output(self):
-        from scripts.syllabus.catalog import load_catalog, task_id
-        from scripts.syllabus.storage import atomic_json, target_path
+        from scripts.crawlers.syllabus.catalog import load_catalog, task_id
+        from scripts.crawlers.syllabus.storage import atomic_json, target_path
 
         task = self.task()
         task["year"] = "../../outside"
@@ -243,12 +243,12 @@ class SyllabusDownloadTests(unittest.TestCase):
         }
 
     def test_crawl_prepares_catalog_once_and_preserves_it_on_restart(self):
-        from scripts.syllabus.__main__ import prepare_crawl
-        from scripts.syllabus.storage import atomic_json
+        from scripts.crawlers.syllabus.__main__ import prepare_crawl
+        from scripts.crawlers.syllabus.storage import atomic_json
 
         with tempfile.TemporaryDirectory() as tmp:
             output = Path(tmp)
-            with patch("scripts.syllabus.__main__.collect_catalog", return_value=self.crawl_catalog()) as collect:
+            with patch("scripts.crawlers.syllabus.__main__.collect_catalog", return_value=self.crawl_catalog()) as collect:
                 first = self.crawl_args(output)
                 prepare_crawl(first)
                 before = first.manifest.read_bytes()
@@ -258,8 +258,8 @@ class SyllabusDownloadTests(unittest.TestCase):
                 self.assertEqual(before, second.manifest.read_bytes())
 
     def test_crawl_rejects_mismatched_cached_scope_without_replacing_it(self):
-        from scripts.syllabus.__main__ import prepare_crawl
-        from scripts.syllabus.storage import atomic_json
+        from scripts.crawlers.syllabus.__main__ import prepare_crawl
+        from scripts.crawlers.syllabus.storage import atomic_json
 
         with tempfile.TemporaryDirectory() as tmp:
             output = Path(tmp)
@@ -268,15 +268,15 @@ class SyllabusDownloadTests(unittest.TestCase):
             cached["terms"] = ["2"]
             atomic_json(manifest, cached)
             original = manifest.read_bytes()
-            with patch("scripts.syllabus.__main__.collect_catalog") as collect:
+            with patch("scripts.crawlers.syllabus.__main__.collect_catalog") as collect:
                 with self.assertRaisesRegex(ValueError, "범위"):
                     prepare_crawl(self.crawl_args(output))
                 collect.assert_not_called()
             self.assertEqual(original, manifest.read_bytes())
 
     def test_crawl_refresh_failure_keeps_cached_catalog_and_progress(self):
-        from scripts.syllabus.__main__ import prepare_crawl
-        from scripts.syllabus.storage import atomic_json
+        from scripts.crawlers.syllabus.__main__ import prepare_crawl
+        from scripts.crawlers.syllabus.storage import atomic_json
 
         with tempfile.TemporaryDirectory() as tmp:
             output = Path(tmp)
@@ -285,15 +285,15 @@ class SyllabusDownloadTests(unittest.TestCase):
             atomic_json(manifest, self.crawl_catalog())
             atomic_json(progress, {"version": 1, "downloads": {}})
             original = {path: path.read_bytes() for path in (manifest, progress)}
-            with patch("scripts.syllabus.__main__.collect_catalog", side_effect=ConnectionError("offline")):
+            with patch("scripts.crawlers.syllabus.__main__.collect_catalog", side_effect=ConnectionError("offline")):
                 with self.assertRaises(ConnectionError):
                     prepare_crawl(self.crawl_args(output, refresh_catalog=True))
             self.assertEqual(original, {path: path.read_bytes() for path in original})
             self.assertFalse(manifest.with_suffix(".lock").exists())
 
     def test_completed_crawl_exits_without_network(self):
-        from scripts.syllabus.__main__ import main
-        from scripts.syllabus.storage import atomic_json, save_pdf
+        from scripts.crawlers.syllabus.__main__ import main
+        from scripts.crawlers.syllabus.storage import atomic_json, save_pdf
 
         with tempfile.TemporaryDirectory(dir=ROOT / "files") as tmp:
             output = Path(tmp)
@@ -306,8 +306,8 @@ class SyllabusDownloadTests(unittest.TestCase):
                 "version": 1, "downloads": {catalog["tasks"][0]["id"]: entry},
             })
             with (
-                patch("scripts.syllabus.__main__.collect_catalog") as collect,
-                patch("scripts.syllabus.__main__.ReportClient") as client,
+                patch("scripts.crawlers.syllabus.__main__.collect_catalog") as collect,
+                patch("scripts.crawlers.syllabus.__main__.ReportClient") as client,
             ):
                 result = main(["crawl", "--year", "2026", "--term", "1", "--output", str(output)])
                 self.assertEqual(0, result)
@@ -325,7 +325,7 @@ class SyllabusHttpTests(unittest.TestCase):
     )
 
     def task(self):
-        from scripts.syllabus.catalog import task_id
+        from scripts.crawlers.syllabus.catalog import task_id
 
         task = {
             "year": 2026, "term": "2", "term_code": "U0003002", "variant": "eng",
@@ -365,7 +365,7 @@ class SyllabusHttpTests(unittest.TestCase):
 
     def test_public_mode3_vector_and_double_encoded_form(self):
         from urllib.parse import unquote
-        from scripts.syllabus.protocol import decode_mode3, report_form
+        from scripts.crawlers.syllabus.protocol import decode_mode3, report_form
 
         self.assertEqual(
             "https://irumi.pknu.ac.kr/mrd/uni/cour/open/LtPdocMngtPrn.mrd",
@@ -380,7 +380,7 @@ class SyllabusHttpTests(unittest.TestCase):
         self.assertEqual("", form["key"])
 
     def test_embed_rejects_other_hosts_modes_and_report_templates(self):
-        from scripts.syllabus.protocol import ProtocolError, parse_embed
+        from scripts.crawlers.syllabus.protocol import ProtocolError, parse_embed
 
         task = self.task()
         self.assertIn("LtPdocMngtPrn.mrd", parse_embed(self.embed(), task).path)
@@ -395,7 +395,7 @@ class SyllabusHttpTests(unittest.TestCase):
             parse_embed(self.embed(), {**task, "variant": "tech"})
 
     def test_export_rejects_error_bodies_and_external_or_traversing_filenames(self):
-        from scripts.syllabus.protocol import ProtocolError, export_filename, report_form
+        from scripts.crawlers.syllabus.protocol import ProtocolError, export_filename, report_form
 
         self.assertEqual("2026/10/29/sample.pdf", export_filename("1|2026/10/29/sample.pdf"))
         for body in ("0|export failed", "<html>error</html>", "1|../other.pdf", "1|https://example.com/other.pdf"):
@@ -405,8 +405,8 @@ class SyllabusHttpTests(unittest.TestCase):
             report_form({**self.task(), "staff_no": "' OR 1=1 --"})
 
     def test_http_pipeline_uses_export_receipt_then_validates_download_signature(self):
-        from scripts.syllabus.client import ReportClient
-        from scripts.syllabus.protocol import EMBED_URL, REPORT_BASE
+        from scripts.crawlers.syllabus.client import ReportClient
+        from scripts.crawlers.syllabus.protocol import EMBED_URL, REPORT_BASE
 
         pdf = self.pdf_bytes()
         with ReportClient() as client:
@@ -426,7 +426,7 @@ class SyllabusHttpTests(unittest.TestCase):
                 self.assertTrue(all(call.kwargs["allow_redirects"] is False for call in calls))
 
     def test_http_access_denial_stops_before_export(self):
-        from scripts.syllabus.client import AccessDenied, ReportClient
+        from scripts.crawlers.syllabus.client import AccessDenied, ReportClient
 
         with ReportClient() as client:
             with patch.object(client.session, "request", return_value=self.response("denied", 403)) as request:
@@ -437,8 +437,8 @@ class SyllabusHttpTests(unittest.TestCase):
                 self.assertEqual(403, client.http_status)
 
     def test_html_download_is_not_a_successful_pdf(self):
-        from scripts.syllabus.client import ReportClient
-        from scripts.syllabus.protocol import ProtocolError
+        from scripts.crawlers.syllabus.client import ReportClient
+        from scripts.crawlers.syllabus.protocol import ProtocolError
 
         with ReportClient() as client:
             responses = [
@@ -450,8 +450,8 @@ class SyllabusHttpTests(unittest.TestCase):
                 client.pdf(self.task())
 
     def test_english_class_number_and_wrong_pdf_identities(self):
-        from scripts.syllabus.documents import inspect_pdf
-        from scripts.syllabus.protocol import ProtocolError
+        from scripts.crawlers.syllabus.documents import inspect_pdf
+        from scripts.crawlers.syllabus.protocol import ProtocolError
 
         result = inspect_pdf(self.pdf_bytes(), self.task())
         self.assertEqual(1, result["pages"])
@@ -460,8 +460,8 @@ class SyllabusHttpTests(unittest.TestCase):
                 inspect_pdf(self.pdf_bytes(), {**self.task(), key: value})
 
     def test_saved_pdf_is_atomic_preserved_and_not_overwritten(self):
-        from scripts.syllabus.storage import save_pdf
-        from scripts.syllabus.storage import is_complete
+        from scripts.crawlers.syllabus.storage import save_pdf
+        from scripts.crawlers.syllabus.storage import is_complete
 
         with tempfile.TemporaryDirectory() as tmp:
             output = Path(tmp)
@@ -474,9 +474,9 @@ class SyllabusHttpTests(unittest.TestCase):
             self.assertEqual(data, (output / entry["path"]).read_bytes())
 
     def test_crawl_limit_then_unlimited_resume_preserves_receipts(self):
-        from scripts.syllabus.__main__ import main
-        from scripts.syllabus.catalog import task_id
-        from scripts.syllabus.storage import atomic_json, load_state
+        from scripts.crawlers.syllabus.__main__ import main
+        from scripts.crawlers.syllabus.catalog import task_id
+        from scripts.crawlers.syllabus.storage import atomic_json, load_state
 
         tasks = []
         for section in ("101", "102", "103"):
@@ -492,9 +492,9 @@ class SyllabusHttpTests(unittest.TestCase):
             atomic_json(output / "_state" / "catalog-2026-2.json", catalog)
             command = ["crawl", "--year", "2026", "--term", "2", "--variants", "eng", "--output", str(output)]
             with (
-                patch("scripts.syllabus.__main__.collect_catalog") as collect,
-                patch("scripts.syllabus.__main__.ReportClient") as factory,
-                patch("scripts.syllabus.__main__.time.sleep"),
+                patch("scripts.crawlers.syllabus.__main__.collect_catalog") as collect,
+                patch("scripts.crawlers.syllabus.__main__.ReportClient") as factory,
+                patch("scripts.crawlers.syllabus.__main__.time.sleep"),
             ):
                 client = factory.return_value.__enter__.return_value
                 client.pdf.side_effect = lambda task: self.pdf_bytes(
@@ -514,10 +514,10 @@ class SyllabusHttpTests(unittest.TestCase):
                 self.assertEqual([], list((output / "_incoming").glob("*.pdf")))
 
     def test_crawl_access_denial_is_deferred_and_stops_the_batch(self):
-        from scripts.syllabus.__main__ import main
-        from scripts.syllabus.catalog import task_id
-        from scripts.syllabus.client import AccessDenied
-        from scripts.syllabus.storage import atomic_json, load_state
+        from scripts.crawlers.syllabus.__main__ import main
+        from scripts.crawlers.syllabus.catalog import task_id
+        from scripts.crawlers.syllabus.client import AccessDenied
+        from scripts.crawlers.syllabus.storage import atomic_json, load_state
 
         first = self.task()
         second = {**first, "section": "102"}
@@ -529,7 +529,7 @@ class SyllabusHttpTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(dir=ROOT / "files") as tmp:
             output = Path(tmp)
             atomic_json(output / "_state" / "catalog-2026-2.json", catalog)
-            with patch("scripts.syllabus.__main__.ReportClient") as factory:
+            with patch("scripts.crawlers.syllabus.__main__.ReportClient") as factory:
                 client = factory.return_value.__enter__.return_value
                 client.stage, client.http_status = "embed", 403
                 client.pdf.side_effect = AccessDenied("HTTP 403")

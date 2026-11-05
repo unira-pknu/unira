@@ -11,7 +11,7 @@ from PIL import Image, ImageDraw
 from bs4 import BeautifulSoup
 
 from scripts.crawlers.common.body_images import collect_body_images, save_body_images, image_info
-from scripts.extractors.image_ocr import detect_grid, layout_blocks
+from scripts.preprocessing.extractors.image_ocr import detect_grid, layout_blocks
 
 
 def png():

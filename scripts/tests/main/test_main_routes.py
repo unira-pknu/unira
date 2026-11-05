@@ -6,8 +6,8 @@ import json
 from contextlib import nullcontext
 from unittest.mock import patch
 
-from scripts.main import run as main_run
-from scripts.main import routes
+from scripts.crawlers.main import run as main_run
+from scripts.crawlers.main import routes
 
 
 class MainRouteTests(unittest.TestCase):
@@ -81,9 +81,9 @@ class MainRouteTests(unittest.TestCase):
             return {"status": "completed"}
 
         with (patch.object(main_run, "_write_json") as write_json,
-              patch("scripts.main.categories.student_life.execute", side_effect=collected) as student_life,
-              patch("scripts.main.categories.community.execute", side_effect=collected) as community,
-              patch("scripts.main.categories.university_intro.execute", side_effect=collected) as intro):
+              patch("scripts.crawlers.main.categories.student_life.execute", side_effect=collected) as student_life,
+              patch("scripts.crawlers.main.categories.community.execute", side_effect=collected) as community,
+              patch("scripts.crawlers.main.categories.university_intro.execute", side_effect=collected) as intro):
             report = main_run.execute([95, 163, 434, 38, 39, 999], year=2026,
                                       months=list(range(1, 13)), full_resync=False,
                                       board_pages=1, report_path=main_run.DEFAULT_REPORT)
@@ -107,8 +107,8 @@ class MainRouteTests(unittest.TestCase):
             "attachments": [{"title": "안내서", "text_preview": "« OCR 결과", "text_status": "success"}],
         }
         with (patch.object(main_run, "_write_json"),
-              patch("scripts.main.categories.student_life.build_session", return_value=nullcontext(object())),
-              patch("scripts.main.collectors.curriculum_files.collect_curriculum_files",
+              patch("scripts.crawlers.main.categories.student_life.build_session", return_value=nullcontext(object())),
+              patch("scripts.crawlers.main.collectors.curriculum_files.collect_curriculum_files",
                     return_value=result)):
             report = main_run.execute([106], year=2026, months=list(range(1, 13)),
                                       full_resync=False, board_pages=1,

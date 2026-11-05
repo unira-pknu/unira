@@ -109,7 +109,7 @@ def keyword_hits(content: Optional[str], terms: Sequence[str]) -> int:
     return hits
 
 
-# Chunks are "<header lines>\n본문: <body>" (scripts/rag/vectorization.py).
+# Chunks are "<header lines>\n본문: <body>" (scripts/vectorization/vectorization.py).
 _BODY_MARKER = "\n본문:"
 
 
