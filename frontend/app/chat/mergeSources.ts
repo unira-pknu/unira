@@ -3,7 +3,8 @@
  *
  * - 백엔드는 검색한 조각을 최대 10개 돌려주지만 답변이 인용하는 건 그중 몇 개다. 인용하지 않은
  *   출처까지 ①–⑩로 다 보여 주면 답과 상관없는 자료가 섞여 보인다. 답변에 [n]이
- *   하나도 없으면 고를 근거가 없으니 전부 보여 준다.
+ *   하나도 없으면 자료를 근거로 답하지 못한 것이라 출처를 보여 주지 않는다(전부 보여
+ *   주던 때는 "자료에서 확인되지 않습니다" 답 아래 상관없는 규정 10개가 떴다).
  * - 긴 공지는 여러 조각으로 저장돼, 한 공지의 두 조각이 [1]·[2]로 따로 온다. 출처 카드는
  *   제목·링크·첨부만 보여 주므로(발췌는 길어서 뺐다) 똑같은 카드가 두 장 보였다(10-14 점검:
  *   답변의 92%). 같은 URL은 하나로 합친다.
@@ -46,7 +47,7 @@ export function prepareSources<S extends DisplaySource>(
     }
   }
 
-  // 2) 답변이 인용한 묶음만 남긴다(인용이 하나도 없으면 전부).
+  // 2) 답변이 인용한 묶음만 남긴다(인용이 하나도 없으면 아무것도).
   // 번호는 답변에 처음 나오는 순서대로 매겨, 답변이 [1]부터 읽히게 한다.
   const knownIds = new Set(sources.map((s) => s.id));
   const citationOrder = [...content.matchAll(MARKER_RE)]
@@ -54,9 +55,9 @@ export function prepareSources<S extends DisplaySource>(
     .filter((id) => knownIds.has(id));
   const firstCited = (group: { oldIds: number[] }) =>
     Math.min(...group.oldIds.map((id) => citationOrder.indexOf(id)).filter((i) => i >= 0));
-  const kept = citationOrder.length
-    ? groups.filter((g) => g.oldIds.some((id) => citationOrder.includes(id))).sort((a, b) => firstCited(a) - firstCited(b))
-    : groups;
+  const kept = groups
+    .filter((g) => g.oldIds.some((id) => citationOrder.includes(id)))
+    .sort((a, b) => firstCited(a) - firstCited(b));
 
   // 3) 다시 번호 매기고 첨부를 모은다(같은 파일은 한 번만).
   const newIdByOldId = new Map<number, number>();

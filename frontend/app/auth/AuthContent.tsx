@@ -184,7 +184,9 @@ function DomainCombobox({
   }
 
   const query = text.trim().toLowerCase();
-  const matches = query
+  // 이미 고른 도메인이 칸에 있으면 거르지 않는다. 걸렀더니 다시 눌러도 자기 하나만 떠서
+  // 다른 도메인으로 바꿀 수 없어 보였다.
+  const matches = query && !isSchoolDomain(query)
     ? [...SCHOOL_DOMAINS]
         .filter((d) => d.includes(query))
         .sort((a, b) => Number(!a.startsWith(query)) - Number(!b.startsWith(query)))
