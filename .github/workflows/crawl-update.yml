@@ -47,7 +47,7 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         # Scheduled runs have no inputs, so they fall back to 3 pages.
-        run: python scripts/preprocessing/preprocessing_pipeline_recent.py --dataset all --recent-pages "${{ inputs.recent_pages || '3' }}"
+        run: python scripts/vectorization/preprocessing_pipeline_recent.py --dataset all --recent-pages "${{ inputs.recent_pages || '3' }}"
 
       - name: Recompute priority scores
         env:

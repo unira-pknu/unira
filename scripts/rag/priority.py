@@ -51,6 +51,8 @@ APPENDIX_TABLE_PATTERN = re.compile(
 
 DATASET_BANDS = {
     "pknu_student_life": ("student_life", 0.60, 0.35),
+    "pknu_main": ("main", 0.60, 0.35),
+    "pknu_syllabus": ("syllabus", 0.35, 0.24),
     "pknu_notice": ("notice", 0.35, 0.24),
 }
 

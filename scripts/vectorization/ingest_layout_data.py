@@ -5,8 +5,8 @@ writes only to ``files/_test_db/test_layout_rag_YYYYMMDD[_suffix]/`` and
 embeds with the local sentence-transformers model (no API cost).
 
 Example:
-  python -m scripts.rag.ingest_layout_data
-  python -m scripts.rag.ingest_layout_data --input "files/_reviewed/body_image_ocr/*.reviewed.jsonl" --limit 50
+  python -m scripts.vectorization.ingest_layout_data
+  python -m scripts.vectorization.ingest_layout_data --input "files/_reviewed/body_image_ocr/*.reviewed.jsonl" --limit 50
 """
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from scripts.preprocessing.layout_rag import (  # noqa: E402
+from scripts.vectorization.layout_rag import (  # noqa: E402
     DEFAULT_CHUNK_CHARS,
     DEFAULT_CHUNK_OVERLAP,
     REVIEWED_ROOT,

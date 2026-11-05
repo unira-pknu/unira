@@ -117,7 +117,7 @@ def run_pipeline(args: argparse.Namespace) -> None:
             "vectorization",
             [
                 python,
-                "scripts/rag/vectorization.py",
+                "scripts/vectorization/vectorization.py",
                 "--dataset",
                 "ce",
                 "--backend",
@@ -130,7 +130,7 @@ def run_pipeline(args: argparse.Namespace) -> None:
             "load_to_supabase",
             [
                 python,
-                "scripts/rag/load_to_supabase.py",
+                "scripts/vectorization/load_to_supabase.py",
                 "--dataset",
                 "ce",
                 "--batch-size",
@@ -175,7 +175,7 @@ def parse_args() -> argparse.Namespace:
         description=(
             "Run scripts/crawlers/departments/engine.py --dataset ce -> "
             "scripts/preprocessing/file_preprocessing.py -> "
-            "scripts/rag/vectorization.py -> scripts/rag/load_to_supabase.py every day at 09:00."
+            "scripts/vectorization/vectorization.py -> scripts/vectorization/load_to_supabase.py every day at 09:00."
         )
     )
     parser.add_argument(
@@ -212,21 +212,21 @@ def parse_args() -> argparse.Namespace:
         choices=["sentence-transformers", "hash"],
         default="sentence-transformers",
         help=(
-            "Embedding backend for scripts/rag/vectorization.py. Default is sentence-transformers "
-            "because scripts/rag/load_to_supabase.py expects 384-dimensional embeddings."
+            "Embedding backend for scripts/vectorization/vectorization.py. Default is sentence-transformers "
+            "because scripts/vectorization/load_to_supabase.py expects 384-dimensional embeddings."
         ),
     )
     parser.add_argument(
         "--vector-batch-size",
         type=int,
         default=32,
-        help="Batch size passed to scripts/rag/vectorization.py. Default: 32.",
+        help="Batch size passed to scripts/vectorization/vectorization.py. Default: 32.",
     )
     parser.add_argument(
         "--load-batch-size",
         type=int,
         default=200,
-        help="Batch size passed to scripts/rag/load_to_supabase.py. Default: 200.",
+        help="Batch size passed to scripts/vectorization/load_to_supabase.py. Default: 200.",
     )
     return parser.parse_args()
 

@@ -5,7 +5,7 @@
 텍스트 추출(`extractors/`), 정제(`text_cleaning.py`), 청크 생성
 (`file_preprocessing.py`), 규정 처리(`rule.py`), 이미지 검토 및 레이아웃 구현을
 이 패키지에서 관리합니다. 이전 전처리 경로의 호환 파일은 제거했습니다. 벡터화와 DB 적재는
-`scripts/rag/`에 남아 있습니다.
+`scripts/vectorization/`에서 관리합니다.
 
 추출기의 정식 import 경로는 `scripts.preprocessing.extractors`입니다.
 이전 `scripts/extractors/` 폴더는 제거했으며 호환 모듈을 제공하지 않습니다.
@@ -38,11 +38,10 @@ JSON·HTML·첨부를 처리합니다. 독립 이미지 OCR은 별도 검토 대
 `image_separate_review`, `unsupported`로 구분합니다. `extractable`은 형식 지원을
 뜻하며 모든 파일의 내용 추출 성공을 보증하지 않습니다.
 
-학과 결과는 각 데이터셋의 `preprocessed/`, 본교 전체 결과는
-`files/preprocessed/pknu_main/`, 강의계획서는
-`files/preprocessed/pknu_syllabus/`에 저장합니다. 강의계획서는 PDF 경로 기반
-출처를 보존하며 과목 목록 메타데이터 조인은 아직 없습니다. 새 본교 전체 및
-강의계획서 결과의 벡터화·DB 등록은 별도 작업입니다.
+전처리 결과는 `files/preprocessed/<dataset>/`에 모읍니다. 본교 전체는
+`files/preprocessed/pknu_main/`, 강의계획서는 `files/preprocessed/pknu_syllabus/`입니다.
+강의계획서는 PDF 경로 기반 출처를 보존하며 과목 목록 메타데이터 조인은 아직 없습니다.
+이 결과의 벡터화·DB 등록은 `scripts/vectorization/`의 별도 명령으로 수행합니다.
 
 기존 `preprocessing_pipeline --dataset all`은 일일 수집 호환을 위해
 CE·공지사항·대학생활·규정 4개 범위를 유지합니다. 전체 수집에는 `collected`를

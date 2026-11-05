@@ -13,7 +13,6 @@ files/
       html/        # department crawler raw HTML
       files/       # CE downloaded attachments
     preprocessed/  # CE RAG chunks
-    vectorized/    # CE embeddings, index.jsonl, manifest.json
 
   rule/
     output/
@@ -21,7 +20,6 @@ files/
       html/        # Rule crawler raw HTML
       files/       # Rule downloaded attachments
     preprocessed/  # Rule RAG chunks
-    vectorized/    # Rule embeddings, index.jsonl, manifest.json
 
   pknu_notice/
     output/
@@ -211,7 +209,7 @@ files/preprocessed/ce/files/<ext>/<category>/<slug>/<attachment>.json
 Vectorized output:
 
 ```text
-files/ce/vectorized/
+files/vectorized/ce/
   index.jsonl
   manifest.json
   ...
@@ -262,7 +260,7 @@ Every chunk keeps `source_kind` metadata so JSON, HTML, and attachment-derived r
 Vectorized output:
 
 ```text
-files/rule/vectorized/
+files/vectorized/rule/
   index.jsonl
   manifest.json
   ...
@@ -325,19 +323,19 @@ Notes:
 - `/main/434` guide PDFs are downloaded into `output/files`.
 - Image-only or hard-to-extract PDFs may have short or skipped text content.
 - `scripts/crawlers/main/student_life_stats.py` summarizes text extraction status for this dataset.
-- This dataset does not currently have a dedicated preprocessing/vectorization preset in `scripts/rag/vectorization.py`.
+- This dataset has a dedicated vectorization preset in `scripts/vectorization/vectorization.py`.
 
 ## Vectorized Index Records
 
-`scripts/rag/vectorization.py` writes `index.jsonl` under each vectorized dataset root.
-Each line represents one chunk with content, metadata, embedding, and source identity used by `scripts/rag/load_to_supabase.py`.
+`scripts/vectorization/vectorization.py` writes `index.jsonl` under each vectorized dataset root.
+Each line represents one chunk with content, metadata, embedding, and source identity used by `scripts/vectorization/load_to_supabase.py`.
 
 Supported built-in dataset presets:
 
-- `ce`: `files/preprocessed/ce` -> `files/ce/vectorized`
-- `rule`: `files/preprocessed/rule` -> `files/rule/vectorized`
+- `ce`: `files/preprocessed/ce` -> `files/vectorized/ce`
+- `rule`: `files/preprocessed/rule` -> `files/vectorized/rule`
 
-`pknu_notice` and `pknu_student_life` are crawled datasets, but they are not yet included as built-in vectorization/load presets.
+All registered departments, `rule`, `pknu_notice`, `pknu_student_life`, `pknu_main`, and `pknu_syllabus` have vectorization presets. `--dataset all` discovers existing dataset directories under `files/preprocessed/`. See [vectorization paths](../../scripts/vectorization/README.md).
 
 ## Supabase Repository Files
 
@@ -363,7 +361,6 @@ Audit scripts:
 
 ```text
 supabase/audit/audit_db.py
-supabase/audit/audit_db_extra.py
 ```
 
 ## State And Logs
@@ -388,3 +385,21 @@ logs/main_notice_crawler.log
 logs/main_student_life_crawler.log
 logs/daily_pipeline.log
 ```
+# DB의 다섯 데이터 분류
+
+파일 저장 위치와 독립적으로 DB는 다음 출처·청크 테이블 계열로 나눕니다.
+
+| 분류 | 출처 테이블 | 청크 테이블 |
+|---|---|---|
+| 학과·단과대 홈페이지 | `rag_sources` | `rag_chunks` |
+| 메인 홈페이지 공지 및 첨부파일 | `pknu_notice_sources` | `pknu_notice_chunks` |
+| 메인 홈페이지 공지 외 전체·대학생활 | `pknu_main_sources` | `pknu_main_chunks` |
+| 규정집 | `rule_sources` | `rule_chunks` |
+| 강의계획서 | `pknu_syllabus_sources` | `pknu_syllabus_chunks` |
+
+학과 출처에는 `department_id`, `department_name`, `college_name`, `department_homepage`,
+`department_majors` 컬럼이 있고, 기존 `category`, `subcategory`, 상세 metadata도 유지합니다.
+학과 정보는 검색 응답 metadata에도 포함됩니다. 수집 단위에는 학과뿐 아니라 단과대 사이트도 포함됩니다.
+공지 분배는 원본 `metadata.source_dataset` 기준입니다. 공지 첨부파일도 공지 계열에 속합니다.
+이관은 원본 파일, 벡터, 출처 ID, `ingestion_dataset`을 보존합니다.
+기존 DB에는 [`018_split_dataset_tables.sql`](../../supabase/migrations/018_split_dataset_tables.sql)을 적용합니다.

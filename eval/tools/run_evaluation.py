@@ -5,7 +5,7 @@ Chain: local sentence-transformers query embedding -> cosine top-k over the
 system prompt + ``app.generation.build_messages``) -> OpenAI answer.
 Each answer is graded against the reference answer by an LLM judge, and
 retrieval is scored against the chunk the question was generated from.
-Writes ``eval_report.md`` (and a JSON with per-question details).
+Writes ``eval/results/layout_eval_report.md`` (and a JSON with per-question details).
 
 Safety: never queries Supabase. LLM requests are capped (<= 3 per question,
 retries included) and the question count is capped at 50.
@@ -32,12 +32,12 @@ for extra in (PROJECT_ROOT, PROJECT_ROOT / "backend"):
 
 from app.generation import build_messages, load_system_prompt  # noqa: E402
 from eval.tools.llm_budget import BudgetedLLM, BudgetExceeded, FatalLLMError  # noqa: E402
-from scripts.rag.layout_rag import LocalVectorStore, _relative, embed_texts, load_embedder  # noqa: E402
+from scripts.vectorization.layout_rag import LocalVectorStore, _relative, embed_texts, load_embedder  # noqa: E402
 
 HARD_MAX_QUESTIONS = 50
 NOT_FOUND = "관련 정보를 찾을 수 없습니다"
-DEFAULT_DATASET = PROJECT_ROOT / "tests" / "eval_dataset.csv"
-DEFAULT_REPORT = PROJECT_ROOT / "eval_report.md"
+DEFAULT_DATASET = PROJECT_ROOT / "eval" / "results" / "layout_eval_dataset.csv"
+DEFAULT_REPORT = PROJECT_ROOT / "eval" / "results" / "layout_eval_report.md"
 VERDICT_SCORE = {"correct": 1.0, "partial": 0.5, "incorrect": 0.0}
 
 JUDGE_PROMPT = """너는 RAG 답변 채점자다. 질문, 모범답안, 시스템 답변을 비교해 판정한다.

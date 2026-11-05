@@ -26,8 +26,8 @@ from scripts.preprocessing.preprocessing_pipeline import (  # noqa: E402
     selected_datasets,
 )
 from scripts.preprocessing.file_preprocessing import ARCHIVE_EXTS, ensure_output_path  # noqa: E402
-from scripts.rag.load_to_supabase import load as load_to_supabase  # noqa: E402
-from scripts.rag.vectorization import (  # noqa: E402
+from scripts.vectorization.load_to_supabase import load as load_to_supabase  # noqa: E402
+from scripts.vectorization.vectorization import (  # noqa: E402
     DATASET_PATHS,
     DEFAULT_BATCH_SIZE,
     DEFAULT_BACKEND,
@@ -371,6 +371,7 @@ def vectorize_recent(
     args: argparse.Namespace,
 ) -> list[str]:
     vectorized: list[str] = []
+    embedder = None
     for dataset in dataset_names:
         files = preprocessed_targets.get(dataset, [])
         if not files:
@@ -378,11 +379,13 @@ def vectorize_recent(
             continue
         roots = DATASET_PATHS[dataset]
         log.info("[%s] Vectorizing %d recently preprocessed files", dataset, len(files))
+        if embedder is None:
+            embedder = make_recent_embedder(args)
         run_vectorization(
             input_root=roots["input_root"],
             output_root=roots["output_root"],
             project_root=PROJECT_ROOT,
-            embedder=make_recent_embedder(args),
+            embedder=embedder,
             batch_size=args.vector_batch_size,
             dry_run=args.dry_run,
             dataset=dataset,

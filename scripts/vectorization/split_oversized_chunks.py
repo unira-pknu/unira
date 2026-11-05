@@ -10,11 +10,11 @@ INSERT 한다. sources 테이블은 건드리지 않는다.
 
 사용:
     # dry-run (변경 없음, 무엇을 어떻게 자를지 콘솔에 출력)
-    python scripts/preprocessing/split_oversized_chunks.py --dataset pknu_notice
-    python scripts/preprocessing/split_oversized_chunks.py --dataset pknu_student_life
+    python scripts/vectorization/split_oversized_chunks.py --dataset pknu_notice
+    python scripts/vectorization/split_oversized_chunks.py --dataset pknu_main
 
     # 실제 적용 (백업 자동, threshold 5000 기본)
-    python scripts/preprocessing/split_oversized_chunks.py --dataset pknu_notice --apply
+    python scripts/vectorization/split_oversized_chunks.py --dataset pknu_notice --apply
 """
 
 from __future__ import annotations
@@ -43,22 +43,20 @@ from scripts.preprocessing.file_preprocessing import (  # noqa: E402
     DEFAULT_CHUNK_SIZE,
     chunk_blocks,
 )
-from scripts.rag.vectorization import stable_id  # noqa: E402
+from scripts.vectorization.vectorization import stable_id  # noqa: E402
+from scripts.vectorization.datasets import TABLE_FAMILIES  # noqa: E402
 
 LOG_DIR = PROJECT_ROOT / "logs"
 LOG_FILE = LOG_DIR / "split_oversized_chunks.log"
 
 DATASET_TABLES = {
-    "pknu_notice": {"sources": "pknu_notice_sources", "chunks": "pknu_notice_chunks"},
-    "pknu_student_life": {"sources": "pknu_student_life_sources", "chunks": "pknu_student_life_chunks"},
-    "rule": {"sources": "rule_sources", "chunks": "rule_chunks"},
-    "rag": {"sources": "rag_sources", "chunks": "rag_chunks"},
+    family: {"sources": family + "_sources", "chunks": family + "_chunks"}
+    for family in TABLE_FAMILIES
 }
 
 DEFAULT_THRESHOLD = 5000
 DEFAULT_BACKUP_DIR = PROJECT_ROOT / "backups" / "split_oversized"
-EXPECTED_EMBEDDING_DIM = 384
-DEFAULT_EMBEDDING_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+from scripts.vectorization.common import EXPECTED_DIMENSIONS as EXPECTED_EMBEDDING_DIM, DEFAULT_SENTENCE_MODEL as DEFAULT_EMBEDDING_MODEL, load_sentence_model, encode_normalized
 
 log = logging.getLogger("split_oversized_chunks")
 
@@ -151,15 +149,9 @@ class EmbedderLazy:
 
     def encode(self, texts: list[str]) -> list[list[float]]:
         if self._model is None:
-            from sentence_transformers import SentenceTransformer  # type: ignore
-
             log.info("Loading embedder %s ...", self._model_name)
-            self._model = SentenceTransformer(self._model_name)
-        vectors = self._model.encode(
-            texts,
-            normalize_embeddings=True,
-            show_progress_bar=False,
-        )
+            self._model = load_sentence_model(self._model_name)
+        vectors = encode_normalized(self._model, texts)
         return [[round(float(v), 8) for v in row] for row in vectors]
 
 

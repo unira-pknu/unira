@@ -20,6 +20,39 @@ SPACED_HANGUL_RUN = re.compile(
 MULTISPACE = re.compile(r"[ \t]{2,}")
 
 
+def compact_metadata(value: dict) -> dict:
+    """Remove empty optional values, preserving false/zero and schema date/crawl keys."""
+    def clean(item):
+        if isinstance(item, dict):
+            result = {}
+            for key, child in item.items():
+                child = clean(child)
+                if child is None or (isinstance(child, str) and not child.strip()):
+                    continue
+                if isinstance(child, (dict, list)) and not child:
+                    continue
+                result[key] = child
+            return result
+        if isinstance(item, list):
+            # Preserve list positions (for example table cell alignment).
+            return [clean(child) for child in item]
+        return item
+    result = clean(value)
+    for key in ("published_at", "crawl"):
+        if key in value and key not in result:
+            result[key] = value[key]
+    return result
+
+
+def has_searchable_body(document: dict) -> bool:
+    """Metadata fallback is provenance, not extracted document content."""
+    if document.get("used_metadata_fallback") is True or document.get("metadata_only") is True:
+        return False
+    chunks = document.get("chunks") or []
+    return any(isinstance(chunk, dict) and str(chunk.get("text") or "").strip()
+               and chunk.get("type") != "metadata_fallback" for chunk in chunks)
+
+
 def _collapse_spaced_hangul(match: re.Match[str]) -> str:
     return match.group(0).replace(" ", "")
 

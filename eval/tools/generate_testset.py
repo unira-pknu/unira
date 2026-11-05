@@ -1,9 +1,9 @@
 """Generate a question/reference-answer testset from the layout TEST store.
 
-Reads chunks already ingested by ``scripts.rag.ingest_layout_data`` (so every
+Reads chunks already ingested by ``scripts.vectorization.ingest_layout_data`` (so every
 question is traceable to a stored chunk), samples at most 50 of them
 round-robin across layout types, and asks the LLM for one question + reference
-answer per chunk. Writes ``tests/eval_dataset.csv``.
+answer per chunk. Writes ``eval/results/layout_eval_dataset.csv``.
 
 Example:
   python -m eval.tools.generate_testset --limit 50
@@ -25,11 +25,11 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from eval.tools.llm_budget import BudgetedLLM, BudgetExceeded, FatalLLMError  # noqa: E402
-from scripts.rag.layout_rag import LocalVectorStore, _relative, default_store_name  # noqa: E402
+from scripts.vectorization.layout_rag import LocalVectorStore, _relative, default_store_name  # noqa: E402
 
 HARD_MAX_QUESTIONS = 50
 MIN_CONTENT_CHARS = 30
-DEFAULT_OUTPUT = PROJECT_ROOT / "tests" / "eval_dataset.csv"
+DEFAULT_OUTPUT = PROJECT_ROOT / "eval" / "results" / "layout_eval_dataset.csv"
 CSV_FIELDS = ["id", "question", "ground_truth", "layout_type", "chunk_id", "source_path",
               "image_sha256", "synthetic", "store", "generator_model"]
 

@@ -20,7 +20,7 @@
 ### CE 전체 파이프라인
 
 ```powershell
-.\.venv\Scripts\python.exe scripts\rag\pipelining.py --once
+.\.venv\Scripts\python.exe scripts\vectorization\pipelining.py --once
 ```
 
 ### 크롤러 설정 검증

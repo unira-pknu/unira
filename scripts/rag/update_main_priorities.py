@@ -1,4 +1,4 @@
-"""Update priority scores for PKNU notice and student_life RAG sources."""
+"""Update priority scores for main-site notice, main-site reference and syllabus sources."""
 
 from __future__ import annotations
 
@@ -27,20 +27,26 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from scripts.rag.priority import build_rule_feature_set, calculate_main_priority  # noqa: E402
 from scripts.db import connect_postgres  # noqa: E402
+from scripts.vectorization.datasets import get_vector_paths, table_family
 
 DATASET_TABLES = {
     "pknu_notice": {
         "sources": "pknu_notice_sources",
         "chunks": "pknu_notice_chunks",
-        "index": PROJECT_ROOT / "files" / "pknu_main" / "_derived" / "pknu_notice" / "vectorized" / "index.jsonl",
+        "index": get_vector_paths(PROJECT_ROOT, "pknu_notice")["output_root"] / "index.jsonl",
     },
-    "pknu_student_life": {
-        "sources": "pknu_student_life_sources",
-        "chunks": "pknu_student_life_chunks",
-        "index": PROJECT_ROOT / "files" / "pknu_main" / "_derived" / "pknu_student_life" / "vectorized" / "index.jsonl",
+    "pknu_main": {
+        "sources": "pknu_main_sources",
+        "chunks": "pknu_main_chunks",
+        "index": get_vector_paths(PROJECT_ROOT, "pknu_main")["output_root"] / "index.jsonl",
+    },
+    "pknu_syllabus": {
+        "sources": "pknu_syllabus_sources",
+        "chunks": "pknu_syllabus_chunks",
+        "index": get_vector_paths(PROJECT_ROOT, "pknu_syllabus")["output_root"] / "index.jsonl",
     },
 }
-DEFAULT_RULE_INDEX = PROJECT_ROOT / "files" / "rule" / "vectorized" / "index.jsonl"
+DEFAULT_RULE_INDEX = get_vector_paths(PROJECT_ROOT, "rule")["output_root"] / "index.jsonl"
 LOG_DIR = PROJECT_ROOT / "logs"
 LOG_FILE = LOG_DIR / "update_main_priorities.log"
 
@@ -210,7 +216,12 @@ def update_dataset_priorities(
 
 
 def preview_from_index(dataset: str, index_path: Path, rule_index_path: Path, preview_limit: int) -> int:
-    documents = aggregate_source_records(iter_index_records(index_path))
+    records = (
+        record for record in iter_index_records(index_path)
+        if table_family("pknu_main" if dataset in {"pknu_main", "pknu_notice"} else dataset,
+                        record.get("metadata") or {}) == dataset
+    )
+    documents = aggregate_source_records(records)
     rule_documents = aggregate_source_records(iter_index_records(rule_index_path))
     rule_features = build_rule_feature_set(str(doc.get("content") or "") for doc in rule_documents)
     updates = build_updates(dataset, documents, rule_features)
@@ -226,10 +237,10 @@ def preview_from_index(dataset: str, index_path: Path, rule_index_path: Path, pr
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Update PKNU notice/student_life priority scores.")
+    parser = argparse.ArgumentParser(description="Update main-site notice, reference and syllabus priority scores.")
     parser.add_argument(
         "--dataset",
-        choices=["pknu_notice", "pknu_student_life", "all"],
+        choices=[*DATASET_TABLES, "all"],
         default="all",
     )
     parser.add_argument("--dry-run", action="store_true")
@@ -259,6 +270,8 @@ def main() -> None:
         total = 0
         for dataset in datasets:
             index_path = args.index_path or DATASET_TABLES[dataset]["index"]
+            if dataset == "pknu_notice" and not index_path.exists() and not args.index_path:
+                index_path = DATASET_TABLES["pknu_main"]["index"]
             total += preview_from_index(dataset, index_path, args.rule_index_path, args.preview_limit)
     else:
         with connect() as conn:

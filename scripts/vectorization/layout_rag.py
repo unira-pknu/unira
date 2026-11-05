@@ -464,14 +464,14 @@ class LocalVectorStore:
 
 def load_embedder(model_name: str | None = None):
     """Same local sentence-transformers model as the backend (no API cost)."""
-    from sentence_transformers import SentenceTransformer
-
-    model = model_name or "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
-    return model, SentenceTransformer(model, device="cpu")
+    from scripts.vectorization.common import DEFAULT_SENTENCE_MODEL, load_sentence_model
+    model = model_name or DEFAULT_SENTENCE_MODEL
+    return model, load_sentence_model(model, device="cpu")
 
 
 def embed_texts(model: Any, texts: list[str]) -> Any:
-    return model.encode(texts, normalize_embeddings=True, show_progress_bar=False, batch_size=32)
+    from scripts.vectorization.common import encode_normalized
+    return encode_normalized(model, texts)
 
 
 def embedding_text(record: dict[str, Any]) -> str:

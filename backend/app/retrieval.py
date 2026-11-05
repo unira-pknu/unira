@@ -156,8 +156,9 @@ STRICT_QUERY_TERMS = {
 DATASET_PRIORITIES = {
     "match_rule_documents": 1.00,
     "match_pknu_notice_documents": 0.70,
-    "match_pknu_student_life_documents": 0.70,
+    "match_pknu_main_documents": 0.70,
     "match_rag_documents": 0.40,
+    "match_pknu_syllabus_documents": 0.40,
 }
 
 # Query-time dataset routing. 특정 키워드가 질문에 있으면 관련 dataset의
@@ -171,7 +172,7 @@ DATASET_BOOST_RULES: tuple[tuple[tuple[str, ...], Dict[str, float]], ...] = (
             "졸업요건", "복수전공", "부전공", "학사경고", "학점",
             "학사학위취득유예", "졸업유예",
         ),
-        {"match_rule_documents": 0.15, "match_pknu_student_life_documents": 0.10},
+        {"match_rule_documents": 0.15, "match_pknu_main_documents": 0.10},
     ),
     (
         (
@@ -184,7 +185,7 @@ DATASET_BOOST_RULES: tuple[tuple[tuple[str, ...], Dict[str, float]], ...] = (
         # 랭킹에서 밀어내는 사례가 실측으로 확인됨(예: "컴퓨터·인공지능공학부
         # 사무실 연락처" 질문에서 학칙 조항이 1~2위, 실제 연락처 문서가 6위).
         # 위쪽 boost와 대칭으로 규정 데이터셋에는 페널티를 줘서 상쇄한다.
-        {"match_pknu_student_life_documents": 0.15, "match_rule_documents": -0.35},
+        {"match_pknu_main_documents": 0.15, "match_rule_documents": -0.35},
     ),
     (
         ("캡스톤", "학부 사무실", "학과 사무실"),

@@ -284,7 +284,6 @@ files/pknu_main/
   _state/                     # incremental crawler state and backups
   _derived/<dataset>/
     preprocessed/             # RAG extraction and chunks
-    vectorized/               # embeddings and indexes
   _archive/<dataset>/         # retired, deleted and interrupted results
   _discovery/                 # inventory and page compatibility evidence
 ```

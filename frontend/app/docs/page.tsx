@@ -7,6 +7,17 @@ import docsData from "@/data/routes/docs.json";
 const NAVY = "#25348B";
 const NAVY_MUTED = "rgba(37,52,139,0.45)";
 
+type CollectedDocument = {
+  id: string;
+  title: string;
+  category: string;
+  date: string;
+  url: string;
+  attachments: { name: string; url: string }[];
+};
+
+const documents: CollectedDocument[] = docsData.documents;
+
 const CATEGORY_OPTIONS = ["공지사항", "학부안내", "학사안내"] as const;
 const ATTACHMENT_OPTIONS = ["전체", "첨부파일 있음", "첨부파일 없음"] as const;
 const SORT_OPTIONS = ["최신순", "오래된순"] as const;
@@ -421,7 +432,7 @@ export default function DocsPage() {
 
   const filtered = useMemo(() => {
     const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, "");
-    let docs = docsData.documents.filter((doc) => {
+    let docs = documents.filter((doc) => {
       if (filterCategories.size > 0 && !filterCategories.has(doc.category)) return false;
       if (query && !normalize(doc.title).includes(normalize(query))) return false;
       if (filterDateStart && doc.date && doc.date < filterDateStart) return false;
@@ -499,8 +510,12 @@ export default function DocsPage() {
               수집 문서 현황
             </h1>
             <p className="text-[11px] sm:text-xs" style={{ color: NAVY_MUTED }}>
-              마지막 업데이트: {formatDate(docsData.meta.lastCrawledAt)}
-              &nbsp;·&nbsp;총 {docsData.meta.totalCount}건
+              {docsData.meta.lastCrawledAt ? (
+                <>
+                  마지막 업데이트: {formatDate(docsData.meta.lastCrawledAt)}
+                  &nbsp;·&nbsp;총 {docsData.meta.totalCount}건
+                </>
+              ) : "문서 목록을 준비 중입니다."}
             </p>
           </div>
         </div>
@@ -605,7 +620,7 @@ export default function DocsPage() {
               className="rounded-2xl p-8 text-center text-sm"
               style={{ background: "rgba(255,255,255,0.45)", color: NAVY_MUTED }}
             >
-              검색 결과가 없습니다.
+              {documents.length === 0 ? "표시할 문서 목록을 준비 중입니다." : "검색 결과가 없습니다."}
             </div>
           ) : (
             filtered.map((doc) => (

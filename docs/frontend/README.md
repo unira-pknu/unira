@@ -1,52 +1,53 @@
 # 프론트엔드
 
-코드는 [`frontend/`](../../frontend)에 있습니다. 아래 명령은 `frontend/` 폴더에서 실행합니다.
+코드는 [`frontend/`](../../frontend)에 있습니다. Next.js App Router와 React를 사용하며,
+채팅 답변은 백엔드 API, 로그인과 채팅 이력은 Supabase에 연결합니다.
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## 실행
 
-## Getting Started
+Node.js와 npm이 설치된 환경에서 `frontend/` 폴더를 기준으로 실행합니다.
 
-First, run the development server:
-
-```bash
+```powershell
+npm ci
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Supabase auth/chat history needs public Supabase client settings. The frontend
-loads them from `frontend/.env.local`, or from `../backend/.env` when running
-inside this repository:
+개발 화면은 `http://localhost:3000`에서 확인합니다.
+
+```powershell
+npm run lint
+npm run build
+npm start
+```
+
+## 연결 설정
+
+Supabase 설정은 `frontend/.env.local`에서 읽으며, 저장소 안에서 실행할 때는
+`backend/.env`의 공개 클라이언트 설정도 사용할 수 있습니다.
 
 ```env
 SUPABASE_URL=https://<project-ref>.supabase.co
 SUPABASE_ANON_KEY=<project anon public key>
 ```
 
-`DATABASE_URL` is only for PostgreSQL scripts and must not be exposed to the
-browser. Do not use `SUPABASE_SERVICE_ROLE_KEY` in the frontend.
+브라우저에는 공개 URL과 anon key만 전달합니다. `DATABASE_URL`과 service role key는
+프론트엔드에 설정하지 않습니다. 백엔드 연결 방식은
+[`app/lib/api.ts`](../../frontend/app/lib/api.ts)와
+[`app/api/ask/route.ts`](../../frontend/app/api/ask/route.ts)에서 관리합니다.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 화면과 데이터
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| 경로 | 데이터 |
+|---|---|
+| `/` | 안내 문구와 추천 질문. 인기 질문은 API에서 조회 |
+| `/auth` | Supabase 로그인·회원가입 |
+| `/chat` | 백엔드 답변, Supabase 채팅 이력·피드백 |
+| `/admin` | 관리자 API의 실제 피드백·질문 통계 |
+| `/docs` | 문서 목록 연동 전 준비 화면. 예시 문서는 표시하지 않음 |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+관리자 파일 업로드는 아직 실제 저장 API가 없으므로 준비 중으로 표시하고 버튼을 비활성화합니다.
+로컬 상태만 바꾸어 업로드가 완료된 것처럼 표시하지 않습니다.
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+`data/routes/home.json`과 `chat.json`은 화면 문구를 관리합니다. `docs.json`은 문서 목록과
+수집 시각을 제공할 연결 지점이며, 현재 목록은 비어 있습니다. 실제 채팅 답변·피드백·문서를
+가짜 데이터로 대체하지 않습니다.

@@ -55,8 +55,9 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from scripts.rule.priority import aggregate_source_records, calculate_rule_priority  # noqa: E402
+from scripts.vectorization.datasets import get_vector_paths
 
-DEFAULT_INDEX_PATH = PROJECT_ROOT / "files" / "rule" / "vectorized" / "index.jsonl"
+DEFAULT_INDEX_PATH = get_vector_paths(PROJECT_ROOT, "rule")["output_root"] / "index.jsonl"
 LOG_DIR = PROJECT_ROOT / "logs"
 LOG_FILE = LOG_DIR / "update_rule_priorities.log"
 
@@ -212,7 +213,7 @@ def main() -> None:
     parser.add_argument(
         "--from-index",
         action="store_true",
-        help="Read local files/rule/vectorized/index.jsonl for preview. Requires --dry-run.",
+        help="Read local files/vectorized/rule/index.jsonl for preview. Requires --dry-run.",
     )
     parser.add_argument("--index-path", type=Path, default=DEFAULT_INDEX_PATH)
     parser.add_argument("--preview-limit", type=int, default=20)

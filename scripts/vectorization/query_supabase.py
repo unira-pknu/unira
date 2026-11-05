@@ -21,32 +21,20 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from scripts.db import connect_postgres  # noqa: E402
 
-DEFAULT_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
-EXPECTED_DIMENSIONS = 384
+from scripts.vectorization.common import DEFAULT_SENTENCE_MODEL as DEFAULT_MODEL, EXPECTED_DIMENSIONS, load_sentence_model, encode_normalized
 DATASET_MATCH_FUNCTIONS = {
     "ce": "match_rag_documents",
     "pknu_notice": "match_pknu_notice_documents",
-    "pknu_student_life": "match_pknu_student_life_documents",
+    "pknu_student_life": "match_pknu_main_documents",
+    "pknu_main": "match_pknu_main_documents",
+    "pknu_syllabus": "match_pknu_syllabus_documents",
     "rule": "match_rule_documents",
 }
-DATASET_TABLES = {
-    "ce": {
-        "sources": "rag_sources",
-        "chunks": "rag_chunks",
-    },
-    "pknu_notice": {
-        "sources": "pknu_notice_sources",
-        "chunks": "pknu_notice_chunks",
-    },
-    "pknu_student_life": {
-        "sources": "pknu_student_life_sources",
-        "chunks": "pknu_student_life_chunks",
-    },
-    "rule": {
-        "sources": "rule_sources",
-        "chunks": "rule_chunks",
-    },
-}
+from scripts.vectorization.datasets import database_tables
+DATASET_TABLES = database_tables(PROJECT_ROOT)
+for _dataset, _tables in DATASET_TABLES.items():
+    DATASET_MATCH_FUNCTIONS.setdefault(_dataset, "match_rag_documents")
+
 FORM_REQUEST_KEYWORDS = (
     "서식",
     "양식",
@@ -82,9 +70,7 @@ def connect() -> Any:
 
 
 def embed_query(question: str, model_name: str) -> list[float]:
-    from sentence_transformers import SentenceTransformer
-
-    model = SentenceTransformer(model_name)
+    model = load_sentence_model(model_name)
     if hasattr(model, "get_embedding_dimension"):
         get_dimensions = model.get_embedding_dimension
     else:
@@ -95,7 +81,7 @@ def embed_query(question: str, model_name: str) -> list[float]:
             f"Model {model_name} produces {dimensions} dimensions, expected {EXPECTED_DIMENSIONS}."
         )
 
-    vector = model.encode([question], normalize_embeddings=True, show_progress_bar=False)[0]
+    vector = encode_normalized(model, [question])[0]
     return [round(float(value), 8) for value in vector]
 
 
@@ -131,7 +117,7 @@ def query_intent_boosts(question: str, dataset: str) -> dict[str, Any]:
                 notice_topic = topic
                 notice_topic_boost = 0.08
                 break
-    if dataset not in {"rule", "pknu_notice", "pknu_student_life"}:
+    if dataset not in {"rule", "pknu_notice", "pknu_main", "pknu_student_life"}:
         form_boost = 0.0
         appendix_table_boost = 0.0
     return {

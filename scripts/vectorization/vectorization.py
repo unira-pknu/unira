@@ -1,22 +1,7 @@
-"""preprocessed JSON을 RAG 검색용 벡터 파일로 변환하는 스크립트.
+"""Vectorize files/preprocessed/<dataset> chunk JSON; --dataset all covers existing datasets.
 
-동작 요약:
-1. /files/department/정보융합대학/컴퓨터·인공지능공학부/ce/preprocessed 아래의 전처리 JSON 파일을 모두 찾는다.
-2. 각 JSON의 chunks 배열에서 검색 단위 텍스트와 출처 메타데이터를 꺼낸다.
-3. 기본값으로 추가 패키지 없이 동작하는 해시 기반 임베딩을 생성한다.
-   sentence-transformers가 설치되어 있으면 옵션으로 의미 기반 임베딩도 사용할 수 있다.
-4. 파일별 벡터 결과는 /files/department/정보융합대학/컴퓨터·인공지능공학부/ce/vectorized에 같은 폴더 구조로 저장한다.
-5. 전체 청크를 한 번에 불러오기 쉬운 /files/department/정보융합대학/컴퓨터·인공지능공학부/ce/vectorized/index.jsonl과
-   실행 요약인 /files/department/정보융합대학/컴퓨터·인공지능공학부/ce/vectorized/manifest.json을 함께 만든다.
-
-기본 실행:
-    python scripts/rag/vectorization.py
-
-실행 전 파일 확인:
-    python scripts/rag/vectorization.py --dry-run
-
-sentence-transformers 사용:
-    python scripts/rag/vectorization.py --backend sentence-transformers
+Uses normalized sentence-transformers embeddings by default. Hash embeddings are
+for local tests. Writes per-file vectors, a complete index.jsonl, and manifest.json.
 """
 
 from __future__ import annotations
@@ -29,6 +14,8 @@ import math
 import re
 import sys
 from collections import Counter
+import tempfile
+import os
 from datetime import datetime
 from pathlib import Path
 from typing import Iterable, Protocol
@@ -39,51 +26,34 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from scripts.preprocessing.storage import get_preprocessed_root
-from scripts.crawlers.common.storage import department_datasets, get_dataset_root
+from scripts.crawlers.common.reader import infer_dataset_from_path
+from scripts.preprocessing.text_cleaning import compact_metadata, has_searchable_body
 LOG_DIR = PROJECT_ROOT / "logs"
 LOG_FILE = LOG_DIR / "vectorization.log"
 
 
-def configure_logging() -> None:
+def configure_logging(log_file: Path | None = None) -> None:
     LOG_DIR.mkdir(parents=True, exist_ok=True)
+    log_file = log_file or LOG_FILE
+    log_file.parent.mkdir(parents=True, exist_ok=True)
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s",
         handlers=[
             logging.StreamHandler(sys.stdout),
-            logging.FileHandler(LOG_FILE, encoding="utf-8"),
+            logging.FileHandler(log_file, encoding="utf-8"),
         ],
     )
 
 # CLI 기본값: 입력/출력 경로와 임베딩 방식 설정.
-DATASET_PATHS = {
-    # Every registry department, ce included (same layout under files/department/...).
-    **{
-        name: {
-            "input_root": get_preprocessed_root(PROJECT_ROOT, name),
-            "output_root": get_dataset_root(PROJECT_ROOT, name) / "vectorized",
-        }
-        for name in sorted(department_datasets())
-    },
-    "pknu_notice": {
-        "input_root": get_preprocessed_root(PROJECT_ROOT, "pknu_notice"),
-        "output_root": PROJECT_ROOT / "files" / "pknu_main" / "_derived" / "pknu_notice" / "vectorized",
-    },
-    "pknu_student_life": {
-        "input_root": get_preprocessed_root(PROJECT_ROOT, "pknu_student_life"),
-        "output_root": PROJECT_ROOT / "files" / "pknu_main" / "_derived" / "pknu_student_life" / "vectorized",
-    },
-    "rule": {
-        "input_root": get_preprocessed_root(PROJECT_ROOT, "rule"),
-        "output_root": PROJECT_ROOT / "files" / "rule" / "vectorized",
-    },
-}
+from scripts.vectorization.datasets import dataset_paths, get_vector_paths
+from scripts.vectorization.common import (DEFAULT_SENTENCE_MODEL, EXPECTED_DIMENSIONS, SentenceTransformerEmbedder, validate_vectors)
+
+DATASET_PATHS = dataset_paths(PROJECT_ROOT)
 DEFAULT_DATASET = "ce"
 DEFAULT_BACKEND = "sentence-transformers"
-DEFAULT_DIMENSIONS = 768
+DEFAULT_DIMENSIONS = EXPECTED_DIMENSIONS
 DEFAULT_BATCH_SIZE = 32
-DEFAULT_SENTENCE_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 MIN_CHUNK_CHARS = 40
 MIN_UNIQUE_TOKENS = 4
 MIN_META_STUB_CHARS = 100
@@ -287,9 +257,42 @@ def output_path_for(input_file: Path, input_root: Path, output_root: Path) -> Pa
     return output_root / rel
 
 
-def is_vectorized_current(input_file: Path, input_root: Path, output_root: Path) -> bool:
-    out_path = output_path_for(input_file, input_root, output_root)
-    return out_path.exists() and out_path.stat().st_mtime >= input_file.stat().st_mtime
+def source_signature(path: Path) -> dict:
+    stat = path.stat()
+    return {"size": stat.st_size, "mtime_ns": stat.st_mtime_ns}
+
+
+def atomic_json(path: Path, payload: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent, delete=False) as handle:
+            temporary = Path(handle.name)
+            json.dump(payload, handle, ensure_ascii=False, indent=2)
+        os.replace(temporary, path)
+    finally:
+        if temporary:
+            temporary.unlink(missing_ok=True)
+
+
+def current_payload(input_file: Path, input_root: Path, output_root: Path, embedder=None):
+    try:
+        payload = json.loads(output_path_for(input_file, input_root, output_root).read_text(encoding="utf-8"))
+        if payload.get("source_signature") != source_signature(input_file) or payload.get("policy_version") != 1:
+            return None
+        if embedder and (payload.get("embedding_backend") != embedder.name or (embedder.dimensions is not None and payload.get("embedding_dimensions") != embedder.dimensions)):
+            return None
+        records = payload["records"]
+        if payload.get("num_chunks") != len(records):
+            return None
+        validate_vectors([r["embedding"] for r in records], len(records), payload["embedding_dimensions"])
+        return payload
+    except (OSError, ValueError, TypeError, KeyError):
+        return None
+
+
+def is_vectorized_current(input_file: Path, input_root: Path, output_root: Path, embedder=None) -> bool:
+    return current_payload(input_file, input_root, output_root, embedder) is not None
 
 
 def batched(items: list[str], batch_size: int) -> Iterable[list[str]]:
@@ -366,37 +369,6 @@ class HashEmbedder:
         return vector
 
 
-class SentenceTransformerEmbedder:
-    """sentence-transformers를 사용하는 선택형 의미 기반 임베딩 백엔드."""
-
-    def __init__(self, model_name: str) -> None:
-        """지정한 SentenceTransformer 모델을 로드한다."""
-
-        try:
-            from sentence_transformers import SentenceTransformer  # type: ignore
-        except Exception as exc:
-            raise RuntimeError(
-                "sentence-transformers is not installed. "
-                "Install it or run with --backend hash."
-            ) from exc
-
-        self.model_name = model_name
-        self.model = SentenceTransformer(model_name)
-        self.name = f"sentence-transformers:{model_name}"
-        dim = self.model.get_sentence_embedding_dimension()
-        self.dimensions = int(dim) if dim else 0
-
-    def embed_texts(self, texts: list[str]) -> list[list[float]]:
-        """텍스트 청크 묶음을 모델 기반 정규화 벡터로 변환한다."""
-
-        vectors = self.model.encode(
-            texts,
-            normalize_embeddings=True,
-            show_progress_bar=False,
-        )
-        return [[round(float(value), 8) for value in row] for row in vectors]
-
-
 def make_embedder(args: argparse.Namespace) -> Embedder:
     """CLI 옵션에 따라 사용할 임베딩 백엔드를 생성한다."""
 
@@ -419,6 +391,8 @@ def resolve_vector_roots(args: argparse.Namespace) -> tuple[Path, Path]:
 def extract_chunk_records(doc: dict, input_file: Path, project_root: Path) -> list[dict]:
     """전처리 청크를 아직 embedding이 없는 검색 record로 변환한다."""
 
+    if not has_searchable_body(doc):
+        return []
     chunks = doc.get("chunks") or []
     if not isinstance(chunks, list):
         return []
@@ -432,7 +406,7 @@ def extract_chunk_records(doc: dict, input_file: Path, project_root: Path) -> li
     base_metadata = {
         "schema_version": provenance.get("schema_version", ""),
         "document_id": provenance.get("document_id", ""),
-        "source_dataset": provenance.get("source_dataset", ""),
+        "source_dataset": provenance.get("source_dataset") or infer_dataset_from_path(input_file) or "",
         "source_id": provenance.get("source_id", ""),
         "content_hash": provenance.get("content_hash", ""),
         "source_slug": source_slug,
@@ -488,7 +462,7 @@ def extract_chunk_records(doc: dict, input_file: Path, project_root: Path) -> li
 
         chunk_id = chunk.get("chunk_id", position)
         chunk_index = position - 1
-        record_id = stable_id(source_slug, chunk_index)
+        record_id = stable_id(base_metadata["source_dataset"], source_slug, chunk_index)
         # 이 record 하나가 벡터 인덱스에서 검색되는 최소 단위가 된다.
         records.append(
             {
@@ -497,7 +471,7 @@ def extract_chunk_records(doc: dict, input_file: Path, project_root: Path) -> li
                 "chunk_id": chunk_id,
                 "chunk_index": chunk_index,
                 "text": text,
-                "metadata": {
+                "metadata": compact_metadata({
                     **base_metadata,
                     "num_chars": chunk.get("num_chars", len(raw_text)),
                     "indexed_num_chars": len(text),
@@ -506,7 +480,7 @@ def extract_chunk_records(doc: dict, input_file: Path, project_root: Path) -> li
                     "quality_context_prefix": bool(
                         build_context_prefix(base_metadata, doc.get("source_file", ""))
                     ),
-                },
+                }),
             }
         )
     if skipped_quality:
@@ -529,6 +503,7 @@ def vectorize_file(
 ) -> tuple[int, Path]:
     """전처리 JSON 파일 하나를 벡터화하고 파일별 결과와 JSONL 인덱스를 저장한다."""
 
+    before = source_signature(input_file)
     doc = json.loads(input_file.read_text(encoding="utf-8-sig"))
     records = extract_chunk_records(doc, input_file, project_root)
     if not records:
@@ -540,8 +515,13 @@ def vectorize_file(
         # 모델 기반 임베딩에서는 배치 처리가 성능에 중요하다.
         vectors.extend(embedder.embed_texts(batch))
 
+    validate_vectors(vectors, len(records), embedder.dimensions)
+    if before != source_signature(input_file):
+        raise RuntimeError("Preprocessed input changed while embedding; retry after preprocessing finishes")
     for record, vector in zip(records, vectors):
         record["embedding"] = vector
+        record["embedding_model"] = embedder.name
+        record["embedding_dim"] = embedder.dimensions
 
     # vectorized 폴더 아래에도 preprocessed와 같은 하위 경로 구조를 유지한다.
     out_path = output_path_for(input_file, input_root, output_root)
@@ -553,12 +533,15 @@ def vectorize_file(
         "embedding_dimensions": embedder.dimensions,
         "num_chunks": len(records),
         "records": records,
+        "source_signature": before,
+        "policy_version": 1,
     }
-    out_path.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+    atomic_json(out_path, result)
 
     # 평평한 JSONL 인덱스는 DB 삽입이나 벡터 스토어 적재에 편하다.
-    for record in records:
-        index_handle.write(json.dumps(record, ensure_ascii=False) + "\n")
+    if index_handle is not None:
+        for record in records:
+            index_handle.write(json.dumps(record, ensure_ascii=False) + "\n")
 
     return len(records), out_path
 
@@ -573,110 +556,96 @@ def run_batch(
     dataset: str,
     changed_only: bool = False,
     target_files: list[Path] | None = None,
-) -> None:
+) -> dict:
     """입력 폴더 아래의 모든 전처리 JSON 파일을 벡터화한다."""
 
+    if batch_size <= 0:
+        raise ValueError("batch_size must be positive")
+    input_root, output_root = input_root.resolve(), output_root.resolve()
+    if input_root == output_root or output_root.is_relative_to(input_root):
+        raise ValueError("Vector output must be outside the preprocessing input tree")
+    all_files = iter_json_files(input_root)
     if target_files is None:
-        files = iter_json_files(input_root)
+        files = all_files
     else:
-        files = []
-        for path in target_files:
-            resolved = path.resolve()
-            if not resolved.exists() or resolved.suffix.lower() != ".json":
-                continue
-            try:
-                resolved.relative_to(input_root)
-            except ValueError:
-                continue
-            files.append(resolved)
-        files = sorted(dict.fromkeys(files))
-    if not files:
-        log.info("No preprocessed JSON files found under %s", input_root)
-        return
-
+        selected = {path.resolve() for path in target_files}
+        files = [path for path in all_files if path.resolve() in selected]
     total_files = len(files)
+    if not all_files:
+        log.info("No preprocessed JSON files found under %s", input_root)
+        if not input_root.is_dir():
+            return {}
     if changed_only:
-        unchanged_files = [
-            path
-            for path in files
-            if is_vectorized_current(path, input_root, output_root)
-        ]
-        files = [path for path in files if path not in set(unchanged_files)]
-        log.info(
-            "Found %d preprocessed files (%d changed, %d unchanged)",
-            total_files,
-            len(files),
-            len(unchanged_files),
-        )
-    else:
-        log.info("Found %d preprocessed files", len(files))
+        files = [path for path in files if not is_vectorized_current(path, input_root, output_root, embedder)]
+    log.info("[%s] files=%d selected=%d pending=%d", dataset, len(all_files), total_files, len(files))
     if dry_run:
         for path in files:
             log.info("[DRY-RUN] %s", rel_project_path(path, project_root))
-        return
-
+        return {}
     output_root.mkdir(parents=True, exist_ok=True)
+    ok = skipped = failed = embedded_chunks = 0
+    skipped_files, failures = [], []
+    excluded = set()
+    for position, file_path in enumerate(files, 1):
+        rel = rel_project_path(file_path, project_root)
+        try:
+            # The complete index is rebuilt below, not truncated to this run's subset.
+            count, out_path = vectorize_file(file_path, input_root, output_root, project_root,
+                                             embedder, batch_size, None)
+            ok += 1
+            embedded_chunks += count
+            log.info("[OK %d/%d] %s (%d chunks)", position, len(files), rel, count)
+        except NoChunksError as exc:
+            skipped += 1
+            excluded.add(file_path)
+            skipped_files.append({"path": rel, "reason": str(exc)})
+            log.info("[SKIP] %s (%s)", rel, exc)
+        except Exception as exc:
+            failed += 1
+            excluded.add(file_path)
+            failures.append({"path": rel, "error": str(exc)})
+            log.warning("[FAIL] %s (%s)", rel, exc)
     index_path = output_root / "index.jsonl"
-    manifest_path = output_root / "manifest.json"
-
-    ok = 0
-    skipped = 0
-    failed = 0
-    total_chunks = 0
-    skipped_files: list[dict] = []
-    failures: list[dict] = []
-
-    with index_path.open("w", encoding="utf-8") as index_handle:
-        for file_path in files:
-            rel = rel_project_path(file_path, project_root)
-            try:
-                chunk_count, out_path = vectorize_file(
-                    input_file=file_path,
-                    input_root=input_root,
-                    output_root=output_root,
-                    project_root=project_root,
-                    embedder=embedder,
-                    batch_size=batch_size,
-                    index_handle=index_handle,
-                )
-                ok += 1
-                total_chunks += chunk_count
-                log.info("[OK] %s -> %s (%d chunks)", rel, out_path.as_posix(), chunk_count)
-            except NoChunksError as exc:
-                # 이미지 기반 PDF처럼 텍스트 추출 결과가 비어 있는 파일은 skip으로 기록한다.
-                skipped += 1
-                skipped_files.append({"path": rel, "reason": str(exc)})
-                log.info("[SKIP] %s (%s)", rel, exc)
-            except Exception as exc:
-                # 예상하지 못한 오류는 skip과 구분해 failed로 기록한다.
-                failed += 1
-                failures.append({"path": rel, "error": str(exc)})
-                log.warning("[FAIL] %s (%s)", rel, exc)
-
-    # manifest는 이번 벡터화 실행 결과를 추적하기 위한 요약 파일이다.
+    temporary = None
+    indexed_chunks = indexed_files = 0
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=output_root, delete=False) as index:
+            temporary = Path(index.name)
+            for source in all_files:
+                if source in excluded:
+                    continue
+                payload = current_payload(source, input_root, output_root, embedder)
+                if payload is None:
+                    continue
+                indexed_files += 1
+                for record in payload["records"]:
+                    index.write(json.dumps(record, ensure_ascii=False) + "\n")
+                    indexed_chunks += 1
+        os.replace(temporary, index_path)
+    finally:
+        if temporary:
+            temporary.unlink(missing_ok=True)
     manifest = {
-        "vectorized_at": datetime.now().isoformat(),
-        "dataset": dataset,
+        "vectorized_at": datetime.now().isoformat(), "dataset": dataset,
         "input_root": rel_project_path(input_root, project_root),
         "output_root": rel_project_path(output_root, project_root),
-        "embedding_backend": embedder.name,
-        "embedding_dimensions": embedder.dimensions,
-        "num_files": len(files),
-        "num_files_seen": total_files,
-        "num_files_vectorized": ok,
-        "num_files_skipped": skipped,
-        "num_files_failed": failed,
-        "num_chunks": total_chunks,
+        "embedding_backend": embedder.name, "embedding_dimensions": embedder.dimensions,
+        "num_files": len(files), "num_files_seen": len(all_files),
+        "num_files_vectorized": ok, "num_files_skipped": skipped, "num_files_failed": failed,
+        "num_files_indexed": indexed_files, "num_chunks": indexed_chunks,
+        "num_chunks_embedded": embedded_chunks,
         "index_path": rel_project_path(index_path, project_root),
-        "skipped_files": skipped_files,
-        "failures": failures,
-        "changed_only": changed_only,
+        "skipped_files": skipped_files, "failures": failures, "changed_only": changed_only,
     }
-    manifest_path.write_text(
-        json.dumps(manifest, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
-    log.info("Done: files=%d, chunks=%d, skipped=%d, failed=%d", ok, total_chunks, skipped, failed)
+    atomic_json(output_root / "manifest.json", manifest)
+    log.info("Done: embedded=%d indexed=%d chunks=%d skipped=%d failed=%d", ok, indexed_files, indexed_chunks, skipped, failed)
+    return manifest
+
+
+def partition_datasets(selected, workers: int, worker_index: int):
+    if workers < 1 or not 0 <= worker_index < workers:
+        raise ValueError("Require workers >= 1 and 0 <= worker-index < workers")
+    return sorted(selected, key=lambda item: item[0])[worker_index::workers]
 
 
 def main() -> None:
@@ -687,14 +656,9 @@ def main() -> None:
     )
     parser.add_argument(
         "--dataset",
-        choices=sorted(DATASET_PATHS),
+        choices=[*sorted(DATASET_PATHS), "all"],
         default=DEFAULT_DATASET,
-        help=(
-            "Dataset path preset to vectorize. "
-            "Use ce for files/department/정보융합대학/컴퓨터·인공지능공학부/ce/{preprocessed,vectorized}, "
-            "pknu_notice for files/pknu_main/_derived/pknu_notice/{preprocessed,vectorized}, "
-            "or rule for files/rule/preprocessed -> files/rule/vectorized."
-        ),
+        help="Dataset name, or all existing directories under files/preprocessed.",
     )
     parser.add_argument(
         "--input-root",
@@ -741,27 +705,54 @@ def main() -> None:
         action="store_true",
         help="Vectorize only files whose vectorized JSON is missing or older than the preprocessed input.",
     )
+    parser.add_argument("--workers", type=int, default=1)
+    parser.add_argument("--worker-index", type=int, default=0)
+    parser.add_argument("--log-file", type=Path, help="Separate runtime log for this worker.")
     args = parser.parse_args()
+    if args.workers < 1 or not 0 <= args.worker_index < args.workers:
+        parser.error("Require workers >= 1 and 0 <= worker-index < workers")
 
-    configure_logging()
+    configure_logging(args.log_file)
 
     if args.batch_size <= 0:
         raise ValueError("--batch-size must be positive")
 
     # 현재 작업 디렉터리를 프로젝트 루트로 사용한다.
     project_root = PROJECT_ROOT
-    input_root, output_root = resolve_vector_roots(args)
-    embedder = HashEmbedder(1) if args.dry_run else make_embedder(args)
-    run_batch(
-        input_root=input_root,
-        output_root=output_root,
-        project_root=project_root,
-        embedder=embedder,
-        batch_size=args.batch_size,
-        dry_run=args.dry_run,
-        dataset=args.dataset,
-        changed_only=args.changed_only,
-    )
+    if args.dataset == "all":
+        base = args.input_root or project_root / "files/preprocessed"
+        names = sorted(p.name for p in base.iterdir() if p.is_dir() and not p.name.startswith(("_", "."))) if base.exists() else []
+        selected = [(name, base / name,
+                     args.output_root / name if args.output_root else get_vector_paths(project_root, name)["output_root"])
+                    for name in names]
+    else:
+        source, target = resolve_vector_roots(args)
+        selected = [(args.dataset, source, target)]
+    selected = partition_datasets(selected, args.workers, args.worker_index)
+    if not selected:
+        log.info("No preprocessing datasets found")
+        return
+    log.info("[WORKER-START] index=%d workers=%d datasets=%d", args.worker_index, args.workers, len(selected))
+    # Load one model per invocation, reused across all datasets.
+    if args.dry_run:
+        from types import SimpleNamespace
+        embedder = SimpleNamespace(
+            name="hash" if args.backend == "hash" else f"sentence-transformers:{args.model_name}",
+            dimensions=args.dimensions if args.backend == "hash" else None)
+    else:
+        embedder = make_embedder(args)
+    failures = 0
+    for position, (name, input_root, output_root) in enumerate(selected, 1):
+        log.info("[DATASET-START] worker=%d dataset=%d/%d %s", args.worker_index, position, len(selected), name)
+        summary = run_batch(input_root=input_root, output_root=output_root, project_root=project_root,
+                  embedder=embedder, batch_size=args.batch_size, dry_run=args.dry_run,
+                  dataset=name, changed_only=args.changed_only)
+        failures += summary.get("num_files_failed", 0)
+        log.info("[DATASET-DONE] %s", name)
+    log.info("[WORKER-DONE] index=%d failures=%d", args.worker_index, failures)
+    if failures:
+        raise SystemExit(1)
+
 
 
 if __name__ == "__main__":

@@ -6,7 +6,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from scripts.crawlers.common.storage import department_datasets, get_dataset_paths, get_dataset_root
-from scripts.rag import load_to_supabase, vectorization
+from scripts.vectorization import load_to_supabase, vectorization
 from scripts.preprocessing import preprocessing_pipeline
 from scripts.preprocessing import collected
 from scripts.preprocessing.storage import get_preprocessed_root
@@ -46,6 +46,10 @@ class DepartmentDatasetTests(unittest.TestCase):
             self.assertEqual(name, infer_dataset_from_path(expected / "json/sample.json"))
         for name, _, output in collected.scopes(ROOT):
             self.assertEqual(ROOT / "files/preprocessed" / name, output)
+            self.assertEqual(output, vectorization.DATASET_PATHS[name]["input_root"])
+            if name in load_to_supabase.DATASET_TABLES:
+                self.assertEqual(vectorization.DATASET_PATHS[name]["output_root"] / "index.jsonl",
+                                 load_to_supabase.DATASET_TABLES[name]["index"])
         for name in ("..", "../outside", "C:\\outside"):
             with self.assertRaises(ValueError):
                 get_preprocessed_root(ROOT, name)
@@ -82,7 +86,9 @@ class DepartmentDatasetTests(unittest.TestCase):
         web = preprocessing_pipeline.WEB_DATASETS["ce"]
         self.assertEqual(get_dataset_paths(ROOT, "ce").output, web.output_root)
         self.assertEqual(get_preprocessed_root(ROOT, "ce"), web.preprocessed_root)
-        self.assertEqual(get_dataset_root(ROOT, "ce") / "vectorized", vectorization.DATASET_PATHS["ce"]["output_root"])
+        self.assertEqual(ROOT / "files/vectorized/ce", vectorization.DATASET_PATHS["ce"]["output_root"])
+        for dataset, paths in vectorization.DATASET_PATHS.items():
+            self.assertEqual(ROOT / "files/vectorized" / dataset, paths["output_root"])
         self.assertEqual("rag_sources", load_to_supabase.DATASET_TABLES["ce"]["sources"])
 
     def test_every_department_maps_to_the_department_tables(self):
