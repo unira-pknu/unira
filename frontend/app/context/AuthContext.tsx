@@ -56,9 +56,12 @@ export const MAIL_SENT_HINT = (email: string, detail: string) =>
   `메일을 확인해 주세요\n${email}\n${detail} 안 보이면 스팸함도 확인해 주세요.`;
 
 // ── 에러 메시지 정규화 ────────────────────────────────────────────────────────
-// Supabase 에러 메시지는 영어라 한국어로 짧게 매핑. 매칭 안 되면 원문 그대로.
+// Supabase 에러 메시지는 영어라 한국어로 짧게 매핑. 매칭 안 되면 영어 원문 대신
+// 기본 문구를 보여 주고, 원문은 원인을 찾을 수 있게 콘솔에만 남긴다.
+const UNKNOWN_AUTH_ERROR = "잠시 문제가 생겼어요. 잠시 후 다시 시도해 주세요.";
+
 function normalizeAuthError(message: string | undefined | null): string {
-  if (!message) return "알 수 없는 오류가 발생했습니다.";
+  if (!message) return UNKNOWN_AUTH_ERROR;
   const m = message.toLowerCase();
   if (m.includes("invalid login credentials")) {
     return "이메일 또는 비밀번호가 올바르지 않습니다.";
@@ -97,7 +100,12 @@ function normalizeAuthError(message: string | undefined | null): string {
   if (m.includes("rate limit") || m.includes("too many")) {
     return "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.";
   }
-  return message;
+  // "Database error granting user" 등: 비밀번호는 맞았는데 DB가 바빠 로그인 기록을 못 쓴 경우
+  if (m.includes("database error")) {
+    return "지금 로그인이 잘 안 돼요. 잠시 후 다시 시도해 주세요.";
+  }
+  console.warn("[auth] 처리하지 않은 오류:", message);
+  return UNKNOWN_AUTH_ERROR;
 }
 
 // 인증 메일 링크가 도착할 화면(/auth/confirm) 주소. next 는 인증 뒤 갈 곳.
