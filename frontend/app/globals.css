@@ -1,10 +1,17 @@
 @import "tailwindcss";
 
+/* LaundryGothic의 줄 높이 기준(ascent 800, descent 350 / 1000)은 한글 글자(-180..736, 가운데
+   278)를 줄 가운데(225)보다 53만큼 위에 그려, 버튼·칸의 글자가 0.7px쯤 떠 보인다.
+   합(1150)은 그대로 두고 기준선만 53 내려 글자를 가운데로 맞춘다. 지원하지 않는 브라우저는
+   원래대로 보인다. */
 @font-face {
   font-family: 'LaundryGothic';
   src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2403-2@1.0/TTLaundryGothicR.woff2') format('woff2');
   font-weight: 400;
   font-display: swap;
+  ascent-override: 85.3%;
+  descent-override: 29.7%;
+  line-gap-override: 0%;
 }
 
 @font-face {
@@ -12,6 +19,9 @@
   src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2403-2@1.0/TTLaundryGothicB.woff2') format('woff2');
   font-weight: 700;
   font-display: swap;
+  ascent-override: 85.3%;
+  descent-override: 29.7%;
+  line-gap-override: 0%;
 }
 
 :root {

@@ -203,14 +203,6 @@ export default function HomePage() {
           style={{ color: NAVY_MUTED }}
         >
           <span>{footer}</span>
-          <Link
-            href="/docs"
-            prefetch
-            className="underline underline-offset-2 hover:opacity-70 transition-opacity"
-            style={{ color: NAVY_MUTED }}
-          >
-            수집 문서 현황
-          </Link>
         </footer>
       </div>
     </div>

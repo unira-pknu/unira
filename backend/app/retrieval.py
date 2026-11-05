@@ -309,7 +309,7 @@ _LEXICAL_PARTICLE_SUFFIXES = tuple(
         {
             "으로부터", "에서부터", "에게서",
             "이라서", "라서", "이라도", "라도", "이라는", "라는", "이라고", "라고",
-            "에서", "으로", "부터", "까지", "이나", "한테", "에게",
+            "에서", "으로", "부터", "까지", "이나", "한테", "에게", "이랑", "랑",
             "와는", "과는",
             "은", "는", "이", "가", "을", "를", "의", "에", "로", "와", "과", "도", "만", "나",
         },
@@ -317,6 +317,16 @@ _LEXICAL_PARTICLE_SUFFIXES = tuple(
         reverse=True,
     )
 )
+
+# Words that frame the question ("학사경고 *기준*", "*받으면* 어떻게 돼") rather
+# than name the topic. They rarely appear verbatim next to the answer -- the
+# regulation says "기준은"/"기준으로" -- so AND-ing them in zeroed out the
+# lexical match for "학사경고 기준" while "학사경고" alone found the guideline.
+# Fallback-only: title anchoring still sees them.
+_LEXICAL_QUESTION_WORDS = {
+    "기준", "방법", "절차", "조건", "결과", "내용", "정보", "경우", "각각",
+    "받는", "받으면", "받나요", "하면", "되면", "돼", "돼요", "되는지", "뭐야", "뭐가",
+}
 
 
 def _lexical_fallback_query(query_text: str) -> str:
@@ -340,6 +350,11 @@ def _lexical_fallback_query(query_text: str) -> str:
                 break
         if len(token) >= 2:
             tokens.append(token)
+    # Drop question-framing words only if something specific is left; a lone
+    # "졸업" would turn the AND query into the near-full-table scan above.
+    topic = [token for token in tokens if token not in _LEXICAL_QUESTION_WORDS]
+    if any(token not in LEXICAL_EXCLUDED_VARIANTS for token in topic):
+        tokens = topic
     return " ".join(dict.fromkeys(tokens))
 
 

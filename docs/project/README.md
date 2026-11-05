@@ -1,6 +1,6 @@
-# campus-rag
+# UNIRA (구 campus-rag)
 
-RAG-based Q&A system for university documents
+부경대학교 학교 문서 기반 RAG 질의응답 서비스
 
 ## Crawler schema
 

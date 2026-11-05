@@ -23,6 +23,8 @@ export async function POST(request: NextRequest) {
   }
 
   const chatHistory = (body as { chat_history?: unknown } | null)?.chat_history;
+  // 채팅 화면은 단계 안내·답 글자를 받으려고 stream: true 로 묻는다(백엔드 _ask_events).
+  const wantsStream = (body as { stream?: unknown } | null)?.stream === true;
 
   const authHeader = request.headers.get("authorization");
   if (!authHeader) {
@@ -35,25 +37,48 @@ export async function POST(request: NextRequest) {
   const onClientAbort = () => controller.abort();
   request.signal.addEventListener("abort", onClientAbort);
   const timeout = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
+  const cleanup = () => {
+    clearTimeout(timeout);
+    request.signal.removeEventListener("abort", onClientAbort);
+  };
+  // 흘려보내는 중에는 응답을 돌려준 뒤에도 시간 제한·취소 연결이 살아 있어야 한다.
+  let streaming = false;
 
   try {
     const upstream = await fetch(`${BACKEND_URL}/ask`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Accept: "application/json",
+        Accept: wantsStream ? "text/event-stream" : "application/json",
         Authorization: authHeader,
       },
       body: JSON.stringify({
         question: question.trim(),
-        stream: false,
+        stream: wantsStream,
         ...(Array.isArray(chatHistory) ? { chat_history: chatHistory } : {}),
       }),
       cache: "no-store",
       signal: controller.signal,
     });
 
-    if (!upstream.headers.get("Content-Type")?.includes("application/json")) {
+    const contentType = upstream.headers.get("Content-Type") ?? "";
+    if (wantsStream && upstream.ok && upstream.body && contentType.includes("text/event-stream")) {
+      // 모아 두지 않고 받는 대로 넘긴다. 끝나거나 끊기면 정리한다.
+      const passthrough = new TransformStream({ flush: cleanup });
+      upstream.body.pipeTo(passthrough.writable).catch(cleanup);
+      streaming = true;
+      return new Response(passthrough.readable, {
+        status: 200,
+        headers: {
+          "Content-Type": "text/event-stream; charset=utf-8",
+          "Cache-Control": "no-cache, no-transform",
+          "X-Accel-Buffering": "no",
+        },
+      });
+    }
+
+    // 로그인·횟수 제한 같은 오류, 또는 흘려보내기를 모르는 예전 백엔드는 JSON 그대로.
+    if (!contentType.includes("application/json")) {
       await upstream.body?.cancel();
       return Response.json(
         { detail: "백엔드 응답 형식이 올바르지 않습니다. JSON 응답이 필요합니다." },
@@ -75,7 +100,6 @@ export async function POST(request: NextRequest) {
       { status: 502 },
     );
   } finally {
-    clearTimeout(timeout);
-    request.signal.removeEventListener("abort", onClientAbort);
+    if (!streaming) cleanup();
   }
 }

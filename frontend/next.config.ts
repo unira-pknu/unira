@@ -41,6 +41,12 @@ const nextConfig: NextConfig = {
   devIndicators: {
     position: "top-right",
   },
+  // '수집 문서 현황'(/docs)은 아직 고정 예시 데이터(data/routes/docs.json)라 숨긴다.
+  // 서버 크롤링·매일 자동 수집이 안정되면 실제 DB 통계로 바꾸고 이 redirect와
+  // 홈·채팅의 링크를 되살린다.
+  async redirects() {
+    return [{ source: "/docs", destination: "/", permanent: false }];
+  },
 };
 
 export default nextConfig;

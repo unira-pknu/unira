@@ -1,4 +1,4 @@
-# campus-rag PRD
+# UNIRA PRD
 RAG 기반 학교 문서 질의응답 서비스 — Product Requirements Document v1.0
 
 ---
@@ -7,7 +7,7 @@ RAG 기반 학교 문서 질의응답 서비스 — Product Requirements Documen
 
 | 항목 | 내용 |
 |------|------|
-| 프로젝트명 | campus-rag |
+| 프로젝트명 | UNIRA (개발 초기 이름 campus-rag) |
 | 한 줄 목적 | 부경대학교 컴퓨터·인공지능공학부 학생이 학교 문서에 대해 자연어로 질문하면, 관련 문서를 검색하여 정확한 답변과 출처를 함께 제공하는 RAG 기반 Q&A 서비스 |
 | 서비스 유형 | RAG 기반 문서 질의응답 + 관리자 문서 관리 |
 | 대상 사용자 | 부경대학교 컴퓨터·인공지능공학부 재학생 |
