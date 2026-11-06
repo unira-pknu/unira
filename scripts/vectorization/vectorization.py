@@ -27,7 +27,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from scripts.crawlers.common.reader import infer_dataset_from_path
-from scripts.preprocessing.text_cleaning import compact_metadata, has_searchable_body
+from scripts.preprocessing.text_cleaning import clean_extracted_text, compact_metadata, has_searchable_body
 LOG_DIR = PROJECT_ROOT / "logs"
 LOG_FILE = LOG_DIR / "vectorization.log"
 
@@ -443,6 +443,13 @@ def extract_chunk_records(doc: dict, input_file: Path, project_root: Path) -> li
         "source_attachment_path": provenance.get("source_attachment_path", ""),
         "body_image_provenance": doc.get("body_image_provenance", []),
     }
+    if provenance.get("document_kind") == "syllabus":
+        for key in ("syllabus_task_id", "year", "term", "term_code", "course_no", "section",
+                    "course_name", "staff_name", "department", "level", "variant",
+                    "source_link_kind", "source_url", "download_receipt_path", "downloaded_at", "table_policy_version", "table_extraction_status"):
+            base_metadata[key] = provenance.get(key, "")
+    if provenance.get("spreadsheet_policy_version"):
+        base_metadata["spreadsheet_policy_version"] = provenance["spreadsheet_policy_version"]
 
     records: list[dict] = []
     skipped_quality = 0
@@ -450,11 +457,12 @@ def extract_chunk_records(doc: dict, input_file: Path, project_root: Path) -> li
         # 잘못된 형식이거나 비어 있는 청크는 전체 파일 실패로 처리하지 않고 건너뛴다.
         if not isinstance(chunk, dict):
             continue
-        raw_text = normalize_text(chunk.get("text", ""))
+        raw_text = (clean_extracted_text(chunk.get("text", "")) if chunk.get("structured_table")
+                    else normalize_text(chunk.get("text", "")))
         if not raw_text:
             continue
         is_useful, quality_flags = assess_record_quality(raw_text, base_metadata)
-        if not is_useful:
+        if not is_useful and not chunk.get("structured_table"):
             skipped_quality += 1
             continue
 
@@ -473,6 +481,7 @@ def extract_chunk_records(doc: dict, input_file: Path, project_root: Path) -> li
                 "text": text,
                 "metadata": compact_metadata({
                     **base_metadata,
+                    **({"structured_table": chunk["structured_table"]} if chunk.get("structured_table") else {}),
                     "num_chars": chunk.get("num_chars", len(raw_text)),
                     "indexed_num_chars": len(text),
                     "num_lines": chunk.get("num_lines"),

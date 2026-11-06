@@ -15,6 +15,28 @@
 `--input-root`, `--output-root`를 명시합니다. `file_preprocessing`의 CLI도
 동일한 공통 진입점으로 연결됩니다. 특정 학과를 기본 대상으로 선택하지 않습니다.
 
+강의계획서 PDF는 `files/pknu_syllabus/_state/downloads.json`을 자동 연결하여
+과목·교수·학과·학기·분반·유형과 공식 조회 화면 URL을 보존합니다. 작업 ID와
+파일 경로를 대조하고 실제 PDF의 SHA-256을 검증하며, 이력이 없는 PDF는 거부합니다.
+조회 화면 주소는 개별 PDF 직링크가 아닙니다. 세션별 보고서 다운로드 주소를
+영구 첨부 링크로 사용하지 않습니다.
+
+기존 전처리 문서의 본문·청크·식별자는 그대로 두고 출처만 복원하려면:
+
+```powershell
+.venv/Scripts/python.exe -m scripts.preprocessing.syllabus_provenance
+.venv/Scripts/python.exe -m scripts.preprocessing.syllabus_provenance --apply
+```
+
+첫 명령은 검증만 수행합니다. `--apply`는 전체 검증 후 원본 JSON을
+`files/_archive/syllabus_provenance/`에 ZIP으로 백업하고 provenance만 갱신합니다.
+재실행 시 변경 없는 문서는 쓰지 않습니다. 기존 벡터 파일과 DB는 변경하지 않으므로
+검색에 반영하려면 복원한 문서를 별도로 벡터화·적재해야 합니다.
+
+강의계획서는 표 전용 추출기로 평가·교재·선수과목·주차별 계획의 셀과 좌표를
+보존합니다. 기존 문서 반영과 검색·원문 링크 설계는
+[강의계획서 검색](../../docs/backend/SYLLABUS_SEARCH.md)을 참고합니다.
+
 프로젝트 루트의 Python 3.12 가상환경에서 실행합니다.
 
 ```powershell

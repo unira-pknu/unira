@@ -28,6 +28,9 @@ from scripts.preprocessing.extractors.common import (
     normalize_text,
 )
 from scripts.preprocessing.body_image_review import apply_body_image_reviews, body_image_input_mtime
+from scripts.preprocessing.syllabus_provenance import load_syllabus_index, verify_syllabus_pdf
+from scripts.preprocessing.extractors.syllabus import TABLE_POLICY_VERSION, extract_syllabus_blocks
+from scripts.preprocessing.extractors.xlsx import SPREADSHEET_POLICY_VERSION, chunk_spreadsheet_row
 
 log = logging.getLogger(__name__)
 
@@ -387,6 +390,35 @@ def chunk_blocks(
     chunk_size: int = DEFAULT_CHUNK_SIZE,
     overlap: int = DEFAULT_CHUNK_OVERLAP,
 ) -> list[dict]:
+    if any(block.get("structured_table", {}).get("kind") == "spreadsheet" for block in blocks):
+        result = []
+        for block in blocks:
+            if block.get("structured_table", {}).get("kind") == "spreadsheet":
+                result.extend(chunk_spreadsheet_row(block, chunk_size))
+            else:
+                result.extend(chunk_blocks([block], chunk_size, overlap))
+        return [{**chunk, "chunk_id": index} for index, chunk in enumerate(result, 1)]
+    if any(block.get("type") == "syllabus_table_row" for block in blocks):
+        result = []
+        for block in blocks:
+            if block.get("type") == "syllabus_table_row":
+                text = clean_extracted_text(block.get("text", ""))
+                if text:
+                    row = {key: block[key] for key in ("row_index", "table_cells", "bbox")}
+                    previous = result[-1] if result else {}
+                    table = previous.get("structured_table", {})
+                    if table.get("table_id") == block["table_id"] and len(previous["text"]) + len(text) + 1 <= chunk_size:
+                        previous["text"] += "\n" + text
+                        previous["num_lines"] = previous["text"].count("\n") + 1
+                        previous["num_chars"] = len(previous["text"])
+                        table["rows"].append(row)
+                    else:
+                        result.append({"text": text, "num_lines": text.count("\n") + 1,
+                                       "num_chars": len(text), "structured_table": {
+                                           **{key: block[key] for key in ("page", "table_id", "table_headers")}, "rows": [row]}})
+            else:
+                result.extend(chunk_blocks([block], chunk_size, overlap))
+        return [{**chunk, "chunk_id": index} for index, chunk in enumerate(result, 1)]
     # paragraph 단위 청킹이라, 단일 block의 text가 chunk_size를 넘으면
     # 아래 누적 루프의 size 체크가 동작하지 않아 거대 chunk가 생긴다.
     # 미리 펼쳐서 모든 텍스트가 chunk_size 이하가 되도록 한다.
@@ -531,17 +563,26 @@ def save_preprocessed_file(
 
     rel_in_input = rel_project_path(input_file, input_root)
     provenance = attachment_index.get(rel, {})
+    if provenance.get("syllabus_task_id"):
+        verify_syllabus_pdf(input_file, provenance)
     if ext == ".json":
         provenance = {**extract_crawled_json_provenance(input_file), **provenance}
     elif not provenance.get("source_kind"):
         provenance = {**provenance, "source_kind": "attachment"}
     provenance = public_provenance(provenance)
-    blocks = extract_blocks(
-        input_file,
-        pdf_ocr_mode=pdf_ocr_mode,
-        ocr_language=ocr_language,
-        ocr_dpi=ocr_dpi,
-    )
+    if provenance.get("syllabus_task_id") and ext == ".pdf":
+        blocks = extract_syllabus_blocks(input_file)
+        provenance["table_policy_version"] = TABLE_POLICY_VERSION
+        provenance["table_extraction_status"] = "detected" if any(b.get("type") == "syllabus_table_row" for b in blocks) else "unverified"
+    else:
+        blocks = extract_blocks(
+            input_file,
+            pdf_ocr_mode=pdf_ocr_mode,
+            ocr_language=ocr_language,
+            ocr_dpi=ocr_dpi,
+        )
+    if ext in {".xlsx", ".xls"}:
+        provenance["spreadsheet_policy_version"] = SPREADSHEET_POLICY_VERSION
     body_image_provenance: list[dict] = []
     body_image_review_warnings: list[str] = []
     if ext == ".json":
@@ -627,6 +668,8 @@ def save_preprocessed_archive_member(
         ocr_language=ocr_language,
         ocr_dpi=ocr_dpi,
     )
+    if member_ext in {".xlsx", ".xls"}:
+        provenance["spreadsheet_policy_version"] = SPREADSHEET_POLICY_VERSION
     for block in blocks:
         block["text"] = clean_extracted_text(block.get("text", ""))
     blocks = [b for b in blocks if normalize_text(b.get("text", ""))]
@@ -812,6 +855,17 @@ def is_preprocessed_current(
         return False
     rel = rel_project_path(input_file, project_root)
     provenance_mtime = float(attachment_index.get(rel, {}).get("_source_json_mtime") or 0.0)
+    if attachment_index.get(rel, {}).get("syllabus_task_id") and out_path.exists():
+        old = json.loads(out_path.read_text(encoding="utf-8"))
+        if old.get("provenance", {}).get("table_policy_version") != TABLE_POLICY_VERSION:
+            return False
+    if input_file.suffix.lower() in {".xlsx", ".xls"} and out_path.exists():
+        try:
+            old = json.loads(out_path.read_text(encoding="utf-8"))
+        except (ValueError, OSError):
+            return False
+        if old.get("provenance", {}).get("spreadsheet_policy_version") != SPREADSHEET_POLICY_VERSION:
+            return False
     newest_input_mtime = max(
         input_file.stat().st_mtime,
         provenance_mtime,
@@ -875,6 +929,9 @@ def run_batch(
     project_root = project_root.resolve()
 
     attachment_index = load_attachment_index(output_json_root, project_root)
+    syllabus_root = (project_root / "files/pknu_syllabus").resolve()
+    if input_root == syllabus_root or syllabus_root in input_root.parents:
+        attachment_index.update(load_syllabus_index(project_root))
     if target_files is not None:
         allowed_exts = file_exts or SUPPORTED_EXTS
         files = []
@@ -900,6 +957,13 @@ def run_batch(
         else:
             log.info("처리 대상 파일이 없습니다: %s", input_root)
         return
+
+    if input_root == syllabus_root or syllabus_root in input_root.parents:
+        for file_path in files:
+            if file_path.suffix.lower() == ".pdf":
+                info = attachment_index.get(rel_project_path(file_path, project_root), {})
+                if not info.get("syllabus_task_id"):
+                    raise ValueError(f"No syllabus download receipt: {file_path}")
 
     log.info("처리 대상: %d개", len(files))
     ok = 0

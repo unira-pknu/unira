@@ -23,10 +23,9 @@ patched dataset-by-dataset inside it:
    lexical + rerank, unchanged) instead of diluting one shared candidate
    pool.
 
-This module only ever changes what text retrieval searches with. The
-original question and chat_history are still what reaches
-generate_answer/stream_answer unchanged -- so it has no effect on answer
-generation or the streaming response shape.
+The result also carries grounded targets, required conditions, unresolved
+fields and list operations. Ambiguous requests can stop before retrieval;
+source applicability and list conditions are enforced by the caller.
 """
 
 from __future__ import annotations
@@ -36,6 +35,9 @@ import logging
 from typing import Dict, List
 
 from openai import OpenAI
+
+from .query_plan import QuestionPlan, finish_plan, rule_plan
+from .course_identity import is_course_list
 
 logger = logging.getLogger(__name__)
 
@@ -60,32 +62,41 @@ _SYSTEM_PROMPT = (
     "찾아볼 정보가 없는 말이면 queries를 빈 목록으로 두세요. 학교·학과·수업·장학·"
     "시설·일정·규정 등 대학 생활과 조금이라도 관련된 정보를 묻는다면 반드시 하위 질의를 "
     "만드세요. 애매하면 하위 질의를 만드세요.\n\n"
-    '다음 JSON 형식으로만 답하세요: {"queries": ["...", "..."]}'
+    "6. 대상이 생략되어 대화 이력으로도 결정할 수 없으면 임의로 정하지 말고 "
+    "route=clarification, missing_fields에 누락 조건, clarification에 짧은 확인 질문을 적으세요. "
+    "일반적인 절차나 공통 규정은 학생의 학과·학년을 몰라도 검색할 수 있으므로 무조건 되묻지 마세요.\n"
+    "7. 학교·학과·학생 유형과 '오늘 신청 가능', '최신', 요청 개수를 보존하세요. "
+    "신청자격과 이수조건, 공통 규정과 특정 대상 예외를 구분하세요. "
+    "응답 형식(3줄, 체크리스트)은 검색어에서 제외하세요.\n\n"
+    'JSON 형식: {"route":"search|clarification|small_talk", "queries":["..."], '
+    '"missing_fields":[], "clarification":null}'
 )
 
 DEFAULT_TIMEOUT_SECONDS = 8.0
 MAX_SUB_QUERIES = 3
 
 
-def plan_search_queries(
+def plan_question(
     *,
     openai_client: OpenAI,
     model: str,
     question: str,
     chat_history: List[Dict[str, str]],
     timeout: float = DEFAULT_TIMEOUT_SECONDS,
-) -> List[str]:
-    """Return 1+ standalone, search-ready queries for `question`.
+) -> QuestionPlan:
+    """Resolve ambiguity first, then rewrite queries with grounded conditions.
 
-    Always calls the LLM (even with no chat_history) since abbreviation
-    normalization and compound-query splitting are needed on a first
-    message too, not just follow-ups. Falls back to `[question]` unchanged
-    whenever the call fails, times out, or returns something unusable --
-    a broken planning step must never block the request.
-
-    An empty list means small talk ("안녕", "고마워") with nothing to look
-    up; the caller answers it without searching (rule 5 of the prompt).
+    Model failure keeps the deterministic scope/conditions. Clarification
+    and refusal are explicit routes, rather than empty-query small talk.
     """
+    plan = rule_plan(question, chat_history)
+    if plan.route != "search":
+        logger.info("structured query plan: %s", plan.model_dump(mode="json"))
+        return plan
+    if is_course_list(plan.resolved_question):
+        result = finish_plan(plan, question, [plan.resolved_question])
+        logger.info("structured query plan: %s", result.model_dump(mode="json"))
+        return result
     history_lines = [
         f"{'사용자' if turn.get('role') == 'user' else '어시스턴트'}: {turn.get('content', '')}"
         for turn in chat_history
@@ -104,7 +115,7 @@ def plan_search_queries(
                 {"role": "user", "content": user_prompt},
             ],
             temperature=0.0,
-            max_tokens=200,
+            max_tokens=450,
             timeout=timeout,
             response_format={"type": "json_object"},
         )
@@ -113,15 +124,27 @@ def plan_search_queries(
         raw_queries = parsed["queries"]
         if not isinstance(raw_queries, list):
             raise ValueError(f"queries is not a list: {raw_queries!r}")
-        queries = [str(q).strip() for q in raw_queries if str(q).strip()]
+        if any(not isinstance(q, str) for q in raw_queries):
+            raise ValueError("queries must contain strings")
+        queries = [q.strip() for q in raw_queries if q.strip()]
     except Exception:
         logger.warning("query planning failed, falling back to raw question", exc_info=True)
-        return [question]
+        result = finish_plan(plan, question, [plan.resolved_question])
+        logger.info("structured query plan: %s", result.model_dump(mode="json"))
+        return result
 
     if not queries:
-        logger.info("query planning: %r -> small talk", question)
-        return []
+        result = finish_plan(plan, question, [], parsed)
+        logger.info("structured query plan: %s", result.model_dump(mode="json"))
+        return result
 
     queries = queries[:MAX_SUB_QUERIES]
     logger.info("query planning: %r -> %r", question, queries)
-    return queries
+    result = finish_plan(plan, question, queries, parsed)
+    logger.info("structured query plan: %s", result.model_dump(mode="json"))
+    return result
+
+
+def plan_search_queries(**kwargs) -> List[str]:
+    """Compatibility API for evaluation scripts that only need search strings."""
+    return plan_question(**kwargs).queries

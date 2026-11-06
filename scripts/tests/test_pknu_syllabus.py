@@ -29,6 +29,133 @@ RESPONSE = """<?xml version="1.0" encoding="UTF-8"?>
 </Root>"""
 
 
+class SyllabusProvenanceTests(unittest.TestCase):
+    def test_pdf_table_columns_and_blank_cells_survive_chunking(self):
+        import fitz
+        from scripts.preprocessing.extractors.syllabus import extract_syllabus_blocks
+        from scripts.preprocessing.file_preprocessing import chunk_blocks
+        from scripts.vectorization.vectorization import extract_chunk_records
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "table.pdf"
+            with fitz.open() as document:
+                page = document.new_page()
+                for x in (40, 140, 240, 340):
+                    page.draw_line((x, 40), (x, 130))
+                for y in (40, 70, 100, 130):
+                    page.draw_line((40, y), (340, y))
+                for row, cells in enumerate((("Item", "Midterm", "Final"), ("Ratio", "35%", "40%"), ("Prerequisite", "", ""))):
+                    for column, cell in enumerate(cells):
+                        page.insert_text((45 + column * 100, 60 + row * 30), cell, fontsize=9)
+                document.save(path)
+            blocks = extract_syllabus_blocks(path)
+            rows = [b for b in blocks if b["type"] == "syllabus_table_row"]
+            self.assertEqual(rows[1]["table_cells"], ["Ratio", "35%", "40%"])
+            self.assertIn("Midterm: 35%", rows[1]["text"])
+            self.assertIn("Final: 40%", rows[1]["text"])
+            self.assertIn("[빈 셀]", rows[2]["text"])
+            chunks = chunk_blocks(blocks)
+            document = {"slug": "stable", "chunks": chunks,
+                        "provenance": {"source_dataset": "pknu_syllabus", "document_kind": "syllabus"}}
+            records = extract_chunk_records(document, path.with_suffix(".json"), Path(directory))
+            self.assertTrue(any(row["table_cells"] == ["Ratio", "35%", "40%"]
+                                for record in records for row in record["metadata"].get("structured_table", {}).get("rows", [])))
+
+    def setup_receipt(self, root):
+        import hashlib
+        source = root / "files/pknu_syllabus/2026/2/104605_101_DataStructures_kor_task1.pdf"
+        source.parent.mkdir(parents=True)
+        source.write_bytes(b"%PDF-syllabus-original")
+        receipt = {
+            "status": "downloaded", "path": source.relative_to(root / "files/pknu_syllabus").as_posix(),
+            "sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
+            "source_url": "https://irumi.pknu.ac.kr/nxui/launch.html?menuId=U020913",
+            "task": {"id": "task1", "year": 2026, "term": "2", "course_no": "104605",
+                     "section": "101", "course_name": "Data Structures", "variant": "kor",
+                     "staff_name": "Professor", "department": "Computer Science"},
+        }
+        state_path = root / "files/pknu_syllabus/_state/downloads.json"
+        state_path.parent.mkdir()
+        state_path.write_text(json.dumps({"version": 1, "downloads": {"task1": receipt}}), encoding="utf-8")
+        document = {"source_path": source.relative_to(root).as_posix(), "slug": "existing-id",
+                    "provenance": {"source_kind": "attachment", "custom": "preserve"},
+                    "blocks": [{"text": "Original body"}], "chunks": [{"chunk_id": 1, "text": "Original chunk"}]}
+        output = root / "files/preprocessed/pknu_syllabus/files/pdf/2026/2/source.json"
+        output.parent.mkdir(parents=True)
+        output.write_text(json.dumps(document), encoding="utf-8")
+        return source, state_path, receipt, output, document
+
+    def test_repair_preserves_content_backs_up_original_and_is_idempotent(self):
+        import zipfile
+        from scripts.preprocessing.syllabus_provenance import repair
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            source, _, _, output, original = self.setup_receipt(root)
+            original_bytes = output.read_bytes()
+            self.assertEqual(repair(root)["changed"], 1)
+            self.assertEqual(output.read_bytes(), original_bytes)
+            stats = repair(root, apply=True)
+            restored = json.loads(output.read_text(encoding="utf-8"))
+            self.assertEqual({k:v for k,v in restored.items() if k != "provenance"},
+                             {k:v for k,v in original.items() if k != "provenance"})
+            self.assertEqual(restored["provenance"]["custom"], "preserve")
+            self.assertEqual(restored["provenance"]["staff_name"], "Professor")
+            self.assertEqual(restored["provenance"]["attachment_url"], "")
+            self.assertIn("launch.html", restored["provenance"]["doc_url"])
+            with zipfile.ZipFile(root / stats["backup"]) as archive:
+                self.assertEqual(archive.read(output.relative_to(root).as_posix()), original_bytes)
+            self.assertEqual(repair(root, apply=True)["changed"], 0)
+
+    def test_hash_mismatch_aborts_before_writing(self):
+        from scripts.preprocessing.syllabus_provenance import repair
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            source, _, _, output, _ = self.setup_receipt(root)
+            before = output.read_bytes()
+            source.write_bytes(b"modified")
+            with self.assertRaisesRegex(ValueError, "hash mismatch"):
+                repair(root, apply=True)
+            self.assertEqual(output.read_bytes(), before)
+
+    def test_receipt_identity_and_path_must_match(self):
+        from scripts.preprocessing.syllabus_provenance import load_syllabus_index
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            _, state_path, receipt, _, _ = self.setup_receipt(root)
+            receipt["task"]["id"] = "different"
+            state_path.write_text(json.dumps({"version": 1, "downloads": {"task1": receipt}}), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "ID mismatch"):
+                load_syllabus_index(root)
+            receipt["task"]["id"] = "task1"
+            receipt["path"] = "../../outside_task1.pdf"
+            state_path.write_text(json.dumps({"version": 1, "downloads": {"task1": receipt}}), encoding="utf-8")
+            with self.assertRaises(ValueError):
+                load_syllabus_index(root)
+
+    def test_batch_and_vectorization_retain_syllabus_receipt_fields(self):
+        from scripts.preprocessing.file_preprocessing import run_batch
+        from scripts.vectorization.vectorization import extract_chunk_records
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            source, _, _, _, _ = self.setup_receipt(root)
+            output = root / "generated"
+            text = "Data Structures course syllabus. Assessment, textbook and weekly course outline. " * 4
+            with patch("scripts.preprocessing.file_preprocessing.extract_syllabus_blocks", return_value=[{"text": text}]):
+                run_batch(input_root=root / "files/pknu_syllabus", output_root=output,
+                          output_json_root=root / "absent", project_root=root, failed_from_log=None,
+                          dry_run=False, chunk_size=900, chunk_overlap=120, pdf_ocr_mode="never",
+                          ocr_language="eng", ocr_dpi=150, target_files=[source])
+            path = next(output.rglob("*.json"))
+            document = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(document["provenance"]["course_no"], "104605")
+            records = extract_chunk_records(document, path, root)
+            self.assertTrue(records)
+            for record in records:
+                self.assertEqual(record["metadata"]["staff_name"], "Professor")
+                self.assertEqual(record["metadata"]["term"], "2")
+                self.assertEqual(record["metadata"]["section"], "101")
+                self.assertEqual(record["metadata"]["source_link_kind"], "syllabus_search_page")
+
+
 class SyllabusDownloadTests(unittest.TestCase):
     """Catalog scope, durable originals and restart behavior of HTTP downloads."""
 

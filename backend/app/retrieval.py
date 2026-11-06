@@ -8,7 +8,7 @@ import logging
 import re
 import threading
 import time
-from typing import Any, Dict, List, Optional, Protocol, Tuple
+from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple
 
 from supabase import Client, create_client
 
@@ -96,6 +96,7 @@ QUERY_TERM_GROUPS = {
     # "계절수업" -> schedule_005). Keep only the compound term.
     "등록금": ("등록금",),
     "성적": ("성적", "평점", "평균평점"),
+    "공결": ("공결", "출석인정", "출석 인정", "결석 인정"),
     # Students still say "학점포기", but the school's system is called
     # "성적자율삭제" (main/244) and no document uses the old word, so the
     # 2026-09-29 eval (rules_016) never retrieved it. Both are rare compound
@@ -1621,6 +1622,7 @@ def search(
     query_text: Optional[str] = None,
     metadata_filter: Optional[Dict[str, Any]] = None,
     title_anchor: bool = False,
+    scope_check: Optional[Callable[[Dict[str, Any]], bool]] = None,
 ) -> List[Dict[str, Any]]:
     """Fan out across RPCs, merge rows, then return a diverse top_k set.
 
@@ -1661,6 +1663,7 @@ def search(
 
     per_rpc_rows: List[Tuple[str, List[Dict[str, Any]]]] = []
     merged: List[Dict[str, Any]] = []
+    scope_rejected = 0
     for rpc_name in rpc_names:
         rpc_candidate_count = candidate_counts[rpc_name]
         response, elapsed_ms, error = fetched[rpc_name]
@@ -1673,6 +1676,9 @@ def search(
         penalized_query_mismatch = 0
         filtered_dataset_mismatch = 0
         for row in response.data or []:
+            if scope_check is not None and not scope_check(row):
+                scope_rejected += 1
+                continue
             processed, outcome = _process_candidate_row(
                 row,
                 rpc_name,
@@ -1727,6 +1733,9 @@ def search(
 
             rank_index = 0
             for row in (lexical_response.data if lexical_response else None) or []:
+                if scope_check is not None and not scope_check(row):
+                    scope_rejected += 1
+                    continue
                 processed, outcome = _process_candidate_row(
                     row,
                     rpc_name,
@@ -1931,6 +1940,11 @@ def search(
         dataset_priority_weight,
         source_kind_weight,
     )
+
+    if scope_check is not None:
+        before = len(candidates)
+        candidates = [row for row in candidates if scope_check(row)]
+        logger.info("retrieval: applicability kept=%d rejected=%d", len(candidates), scope_rejected + before - len(candidates))
 
     selected = _rerank_candidates(
         question=query_text or "",

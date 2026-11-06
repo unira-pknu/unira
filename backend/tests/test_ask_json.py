@@ -11,6 +11,11 @@ from app.deps import get_state
 from app.rate_limit import enforce_ask_rate_limit
 from app.routers.ask import _search_all, router
 from app.schemas import Source
+from app.query_plan import QuestionPlan, SearchTask
+
+
+def _plan(queries):
+    return QuestionPlan(route="search" if queries else "small_talk", tasks=[SearchTask(text=q) for q in queries])
 
 
 class AskJsonTests(unittest.TestCase):
@@ -47,6 +52,20 @@ class AskJsonTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["sources"], [])
         self.assertTrue(response.json()["answer"])
+
+    def test_syllabus_clarification_bypasses_generation_for_json_and_stream(self):
+        import json
+        for stream in (False, True):
+            with patch("app.routers.ask._retrieve", return_value=([
+                {"_direct_answer": "학기와 분반을 알려주세요.", "_answerable": True}], [])), patch(
+                "app.routers.ask.generate_answer"
+            ) as generation:
+                response = self.client.post("/ask", json={"question": "운영체제 평가 비율", "stream": stream})
+                self.assertEqual(response.status_code, 200)
+                payload = ([json.loads(line[6:]) for line in response.text.splitlines() if line.startswith("data: ")][-1]
+                           if stream else response.json())
+                self.assertEqual(payload["answer"], "학기와 분반을 알려주세요.")
+                generation.assert_not_called()
 
     def test_answerable_flag(self):
         source = Source(title="Guide", uri="", content="text", similarity=1)
@@ -107,7 +126,7 @@ class SmallTalkTests(unittest.TestCase):
         self.client = TestClient(app)
 
     def test_greeting_is_answered_without_searching(self):
-        with patch("app.routers.ask.plan_search_queries", return_value=[]), patch(
+        with patch("app.routers.ask.plan_question", return_value=_plan([])), patch(
             "app.routers.ask.generate_small_talk", return_value="안녕하세요! 학사 도우미 UNIRA예요."
         ), patch("app.routers.ask._retrieve") as retrieve:
             body = self.client.post("/ask", json={"question": "안녕"}).json()
@@ -162,7 +181,7 @@ class AskStreamTests(unittest.TestCase):
             "stream_answer": iter([("token", "졸업은 "), ("token", "130학점[1]."), ("final", "졸업은 130학점[1].")]),
         }
         defaults.update(patches)
-        with patch("app.routers.ask.plan_search_queries", return_value=defaults["plan_search_queries"]), patch(
+        with patch("app.routers.ask.plan_question", return_value=_plan(defaults["plan_search_queries"])), patch(
             "app.routers.ask._retrieve", return_value=defaults["_retrieve"]
         ), patch("app.routers.ask.stream_answer", return_value=defaults["stream_answer"]), patch(
             "app.routers.ask.generate_small_talk", return_value="안녕하세요!"

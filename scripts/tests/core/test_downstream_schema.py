@@ -198,6 +198,15 @@ class VectorizationRegressionTests(unittest.TestCase):
         self.assertEqual("ce", second["source"]["metadata"].obj["source_dataset"])
         self.assertEqual("english", second["source"]["metadata"].obj["ingestion_dataset"])
 
+    def test_table_cells_remain_chunk_metadata_not_source_metadata(self):
+        from scripts.vectorization import load_to_supabase as loader
+        record = self.ingestion_record()
+        table = {"table_id": "p1-t1", "rows": [{"table_cells": ["35%", "40%"]}]}
+        record["metadata"]["structured_table"] = table
+        row = loader.prepare_row(record, loader.DEFAULT_EMBEDDING_MODEL, "ce")
+        self.assertNotIn("structured_table", row["source"]["metadata"].obj)
+        self.assertEqual(table, row["chunk"]["metadata"].obj["structured_table"])
+
     def test_manifest_preflight_blocks_failures_before_database_connection(self):
         from scripts.vectorization import load_to_supabase as loader
         with tempfile.TemporaryDirectory() as directory:

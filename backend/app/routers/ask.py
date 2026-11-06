@@ -15,11 +15,15 @@ from fastapi.responses import StreamingResponse
 from ..deps import AppState, get_state
 from ..excerpts import extract_relevant_excerpt
 from ..generation import generate_answer, generate_small_talk, stream_answer
-from ..query_rewrite import plan_search_queries
+from ..query_rewrite import plan_question
+from ..query_plan import QuestionPlan, SearchTask, finish_plan, rule_plan
+from ..notice_listing import list_notices
+from ..source_scope import checked_rows, scope_reason
 from ..query_transform import transform_query
 from ..rate_limit import enforce_ask_rate_limit
 from ..retrieval import _dedupe_key, _rag_self_intro_first_stage_overrides, search
 from ..schemas import AskRequest, AskResponse, Attachment, Source
+from ..syllabus import extract_request, search_syllabus
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -119,7 +123,7 @@ def _row_to_source(row: Dict[str, Any]) -> Source:
     )
 
 
-def _search_one(state: AppState, search_query: str) -> List[Dict[str, Any]]:
+def _search_one(state: AppState, search_query: str, task: SearchTask | None = None) -> List[Dict[str, Any]]:
     """One embed+search() call for a single (already standalone) query
     string -- the same call _retrieve() always made, just factored out so
     it can run once per decomposed sub-query."""
@@ -142,20 +146,23 @@ def _search_one(state: AppState, search_query: str) -> List[Dict[str, Any]]:
         max_lexical_chunks_per_url=state.settings.rag_max_lexical_chunks_per_url,
         query_text=search_query,
         title_anchor=state.settings.rag_title_anchor_enabled,
+        scope_check=(lambda row: scope_reason(row, task) is None) if task else None,
     )
 
 
-def _search_all(state: AppState, search_queries: List[str]) -> List[List[Dict[str, Any]]]:
+def _search_all(state: AppState, search_queries: List[str], tasks: list[SearchTask] | None = None) -> List[List[Dict[str, Any]]]:
     """Search each sub-query at the same time instead of one after another.
 
     Each search is mostly waiting on Supabase round trips, so a two-part
     question took about twice as long as a single one. Results come back in
     query order and are identical to running them in sequence (measured
     2026-11-02: 2-part questions 11-21s -> 9-13s on CPU)."""
+    def run(index: int):
+        return _search_one(state, search_queries[index], tasks[index]) if tasks else _search_one(state, search_queries[index])
     if len(search_queries) <= 1:
-        return [_search_one(state, q) for q in search_queries]
+        return [run(i) for i in range(len(search_queries))]
     with ThreadPoolExecutor(max_workers=len(search_queries)) as pool:
-        return list(pool.map(lambda q: _search_one(state, q), search_queries))
+        return list(pool.map(run, range(len(search_queries))))
 
 
 def _merge_rows(rows_by_query: List[List[Dict[str, Any]]], top_k: int) -> List[Dict[str, Any]]:
@@ -193,6 +200,7 @@ def _retrieve(
     question: str,
     chat_history: List[Dict[str, str]],
     sub_questions: List[str],
+    plan: QuestionPlan | None = None,
 ) -> Tuple[List[Dict[str, Any]], List[Source]]:
     """Retrieval for the JSON answer response, one search per planned sub-query.
 
@@ -210,7 +218,11 @@ def _retrieve(
     answer generation unchanged (see ask()/generate_answer
     below), so none of this touches generation or the JSON response.
     """
-    search_queries = [transform_query(q) or q for q in sub_questions]
+    plan = plan or finish_plan(rule_plan(question, chat_history), question, sub_questions)
+    if plan.route in {"clarification", "refused"}:
+        return [{"_direct_answer": plan.clarification, "_answerable": False}], []
+    tasks = plan.tasks
+    search_queries = [transform_query(task.text) or task.text for task in tasks]
     logger.info(
         "ask: user=%s question=%r sub_questions=%r search_queries=%r history_turns=%d",
         user_id,
@@ -221,12 +233,49 @@ def _retrieve(
     )
 
     try:
-        rows_by_query = _search_all(state, search_queries)
+        rows_by_query = [[] for _ in tasks]
+        normal_indices = []
+        direct_answers = []
+        for index, task in enumerate(tasks):
+            if task.conditions.kind in {"latest", "open"}:
+                result = list_notices(state.supabase, task)
+                rows_by_query[index] = result.rows
+                direct_answers.append((index, result.answer))
+                continue
+            syllabus_request = extract_request(task.text, chat_history)
+            if syllabus_request is None and len(tasks) == 1:
+                syllabus_request = extract_request(question, chat_history)
+            if task.conditions.kind == "courses" and syllabus_request is None:
+                direct_answers.append((index, "어느 교수님의 어느 학기·과정 강의 목록이 필요하신가요?"))
+                continue
+            if syllabus_request is not None:
+                result = search_syllabus(state.supabase, syllabus_request, top_k=state.settings.rag_top_k)
+                rows_by_query[index] = checked_rows(result.rows, task)
+                if result.answer is not None:
+                    direct_answers.append((index, result.answer))
+            else:
+                normal_indices.append(index)
+        results = _search_all(state, [search_queries[i] for i in normal_indices], [tasks[i] for i in normal_indices])
+        for index, found in zip(normal_indices, results):
+            rows_by_query[index] = checked_rows(found, tasks[index])
+        if len(tasks) == 1 and direct_answers:
+            rows = rows_by_query[0]
+            return [{"_direct_answer": direct_answers[0][1], "_answerable": bool(rows)}, *rows], [_row_to_source(row) for row in rows]
+        if direct_answers and not any(rows_by_query):
+            return [{"_direct_answer": "\n\n".join(answer for _, answer in direct_answers), "_answerable": False}], []
+        # Preserve unresolved parts of compound questions in the evidence.
+        for index, answer in direct_answers:
+            if not rows_by_query[index]:
+                for group in rows_by_query:
+                    for row in group:
+                        row.setdefault("metadata", {})["unresolved_request"] = answer
     except Exception:
         logger.exception("retrieval failed")
         raise HTTPException(status_code=502, detail="retrieval failed")
 
     rows = _merge_rows(rows_by_query, state.settings.rag_top_k)
+    for row in rows:
+        row.setdefault("metadata", {})["request_response_format"] = plan.response_format
 
     sources = [_row_to_source(r) for r in rows]
     top_similarity = max((_similarity(row) for row in rows), default=0.0)
@@ -268,12 +317,15 @@ def ask(
             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
         )
 
-    sub_questions = plan_search_queries(
+    plan = plan_question(
         openai_client=state.openai,
         model=state.settings.openai_model,
         question=question,
         chat_history=chat_history,
     )
+    if plan.route in {"clarification", "refused"}:
+        return AskResponse(answer=plan.clarification, sources=[], answerable=False)
+    sub_questions = plan.queries
     if not sub_questions:
         # 인사·잡담: 찾아볼 게 없으니 검색 없이 짧게 답한다(전에는 "관련 정보를 찾을 수 없습니다").
         logger.info("ask: user=%s question=%r small_talk", user_id, question)
@@ -296,8 +348,11 @@ def ask(
         question=question,
         chat_history=chat_history,
         sub_questions=sub_questions,
+        plan=plan,
     )
 
+    if rows and "_direct_answer" in rows[0]:
+        return AskResponse(answer=rows[0]["_direct_answer"], sources=sources, answerable=rows[0]["_answerable"])
     if not sources:
         return AskResponse(answer=NO_INFO_ANSWER, sources=[], answerable=False)
 
@@ -364,12 +419,16 @@ def _ask_events(
     """
     settings = state.settings
     yield _sse({"type": "status", "stage": "planning"})
-    sub_questions = plan_search_queries(
+    plan = plan_question(
         openai_client=state.openai,
         model=settings.openai_model,
         question=question,
         chat_history=chat_history,
     )
+    if plan.route in {"clarification", "refused"}:
+        yield _sse({"type": "done", "answer": plan.clarification, "sources": [], "answerable": False})
+        return
+    sub_questions = plan.queries
     if not sub_questions:
         logger.info("ask: user=%s question=%r small_talk", user_id, question)
         try:
@@ -395,9 +454,14 @@ def _ask_events(
             question=question,
             chat_history=chat_history,
             sub_questions=sub_questions,
+            plan=plan,
         )
     except HTTPException as exc:
         yield _sse({"type": "error", "detail": exc.detail})
+        return
+    if rows and "_direct_answer" in rows[0]:
+        yield _sse({"type": "done", "answer": rows[0]["_direct_answer"],
+                    "sources": [source.model_dump() for source in sources], "answerable": rows[0]["_answerable"]})
         return
     if not sources:
         yield _sse({"type": "done", "answer": NO_INFO_ANSWER, "sources": [], "answerable": False})

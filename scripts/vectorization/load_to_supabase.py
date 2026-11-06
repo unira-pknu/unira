@@ -336,7 +336,7 @@ def prepare_row(record: dict[str, Any], embedding_model: str, dataset: str | Non
     now = datetime.now(timezone.utc)
     source_metadata = {key: value for key, value in metadata.items()
                        if key not in {"num_chars", "indexed_num_chars", "num_lines",
-                                      "quality_flags", "quality_context_prefix"}}
+                                      "quality_flags", "quality_context_prefix", "structured_table"}}
 
     return {
         "source": {
