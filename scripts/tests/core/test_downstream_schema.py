@@ -16,6 +16,8 @@ from scripts.preprocessing.file_preprocessing import extract_crawled_json_proven
 from scripts.vectorization.vectorization import extract_chunk_records
 from scripts.vectorization.load_to_supabase import normalize_vector_metadata
 from scripts.preprocessing.rule import extract_rule_json_blocks
+from scripts.preprocessing import rule as rule_preprocessing
+from scripts.preprocessing.rule_provenance import snapshot_identity, duplicate_version, attachment_identity, version_state, restore_from_snapshot
 
 
 WORKSPACE_ROOT = PROJECT_ROOT
@@ -32,6 +34,102 @@ def legacy_notice() -> dict:
 
 
 class DownstreamSchemaTests(unittest.TestCase):
+    def test_rule_provenance_index_keeps_collected_aliases_and_double_spaces_in_paths(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            json_root = root / "files/rule/output/json"
+            source = json_root / "pknu_rule_law/collected-file.json"
+            source.parent.mkdir(parents=True)
+            saved = "files/rule/output/files/pknu_rule_law/item/rule  original.pdf"
+            attachment = root / saved
+            attachment.parent.mkdir(parents=True)
+            attachment.write_bytes(b"fixture")
+            payload = {"slug": "raw-alias", "title": "collected label", "type": "hak", "source_site": "https://www.pknu.ac.kr",
+                       "category": "pknu_rule_law", "content": "rule body", "source_id": "search_no_1",
+                       "url": "https://www.pknu.ac.kr/rule/searchSchRegAndRuleView.do?no=1",
+                       "crawled_at": "2026-11-08T00:00:00+09:00",
+                       "attachments": [{"name": "rule  original.pdf", "saved_path": saved,
+                           "url": "https://www.pknu.ac.kr/rule/ruleBoardDownload.do?no=1", "downloaded": True,
+                           "size_bytes": 7, "sha256": "a" * 64}]}
+            source.write_text(json.dumps(payload), encoding="utf-8")
+            with patch.object(rule_preprocessing, "PROJECT_ROOT", root):
+                indexed, attachments = rule_preprocessing.load_rule_json_index(json_root)
+            self.assertIn("pknu_rule_law/collected-file", indexed)
+            self.assertIn("pknu_rule_law/raw-alias", indexed)
+            self.assertEqual(indexed["pknu_rule_law/collected-file"]["doc_url"], payload["url"])
+            self.assertIn(attachment.resolve().as_posix().lower(), attachments)
+
+    def test_rule_snapshot_dates_are_explicit_and_version_deduplication_is_scoped(self):
+        html = ('<input id="schlPubRulId" value="123"><input id="schlPubRulSeq" value="456">'
+                '<input id="schlPubRulNm" value="부경대학교 학칙"><input id="efYd" value="20230101">'
+                '<div id="conTop"><h2>부경대학교 학칙</h2><div class="subtit1">[시행 2023.1.1.]</div></div>'
+                '<div id="conScroll">제1조 목적과 적용 대상</div>')
+        old = snapshot_identity(html)
+        self.assertEqual(old["effective_at"], "2023-01-01T00:00:00+09:00")
+        self.assertTrue(duplicate_version(old, snapshot_identity(html)))
+        newer = snapshot_identity(html.replace('value="456"', 'value="789"').replace("20230101", "20260227").replace("2023.1.1.", "2026.2.27."))
+        self.assertFalse(duplicate_version(old, newer))
+        self.assertEqual(version_state(old, [newer])["rule_version_state"], "historical")
+        self.assertIsNone(version_state(old, [newer])["rule_valid_until"])
+        self.assertFalse(duplicate_version(old, {**old, "rule_document_id": "other"}))
+        with self.assertRaisesRegex(ValueError, "effective date"):
+            snapshot_identity(html.replace("[시행 2023.1.1.]", "[시행 2024.1.1.]"))
+        unconfirmed = snapshot_identity(html.replace('<input id="efYd" value="20230101">', '').replace("[시행 2023.1.1.]", "개정 기록"))
+        self.assertIsNone(unconfirmed["effective_at"])
+        self.assertFalse(duplicate_version(unconfirmed, unconfirmed))
+        restored = restore_from_snapshot({"doc_title": "old label", "doc_url": ""}, html, "stored.html")
+        self.assertEqual(restored["doc_title"], "부경대학교 학칙")
+        self.assertEqual(restored["doc_url"], "")
+
+    def test_rule_attachment_does_not_infer_effective_date_from_filename_or_revision(self):
+        document = {"source_file": "운영지침(2027.07.01  전문).pdf", "blocks": [
+            {"text": "개정 2026. 07. 01."}, {"text": "부 칙(2026. 07. 01.)"},
+            {"text": "제1조(시행일) 이 지침은 공포한 날부터 시행한다."}]}
+        provenance = attachment_identity({"doc_title": "운영지침(일부개정 2026.7.1.)",
+            "source_id": "bylaw:2:1", "published_at": "2025-03-04T00:00:00+09:00"}, document)
+        self.assertIsNone(provenance["effective_at"])
+        self.assertEqual(provenance["rule_effective_status"], "unconfirmed")
+        self.assertTrue(provenance["rule_filename_date_conflict"])
+        self.assertEqual(provenance["rule_revision_dates"], ["2026-07-01"])
+        self.assertEqual(provenance["published_at"], "2025-03-04T00:00:00+09:00")
+
+    def test_rule_effective_conditions_and_version_evidence_survive_vectorization(self):
+        provenance = {"rule_provenance_policy": "rule-provenance-v1", "rule_document_id": "123", "rule_version_id": "456",
+                      "rule_effective_status": "unconfirmed", "effective_at": None,
+                      "applicability_note": "공포일 확인 필요. 파일명 날짜를 시행일로 사용하지 마세요.",
+                      "doc_title": "운영 지침", "doc_url": "https://www.pknu.ac.kr/rule/view?no=1", "source_dataset": "pknu_rule"}
+        doc = {"slug": "rule-attachment", "source_kind": "file", "source_file": "rule.pdf", "source_path": "files/rule/rule.pdf",
+               "provenance": provenance, "chunks": [{"chunk_id": 1, "text": "수강신청 절차와 졸업 학점 기준 및 학생 신청 자격에 관한 규정입니다. " * 12}]}
+        records = extract_chunk_records(doc, WORKSPACE_ROOT / "preprocessed/rule/file/rule.json", WORKSPACE_ROOT)
+        self.assertTrue(records)
+        metadata = records[0]["metadata"]
+        self.assertEqual(metadata["rule_document_id"], "123")
+        self.assertEqual(metadata["rule_effective_status"], "unconfirmed")
+        self.assertEqual(metadata["applicability_note"], provenance["applicability_note"])
+        self.assertIsNone(metadata.get("effective_at"))
+
+    def test_archive_member_provenance_survives_vector_and_database_preparation(self):
+        doc = {"slug": "stable-member", "source_file": "guide.pdf", "source_ext": ".pdf",
+               "source_path": "files/ce/output/files/archive.zip!/nested/guide.pdf",
+               "chunks": [{"chunk_id": 1, "text": "수강신청 기간과 등록금 납부 절차 및 졸업 학점 안내입니다. " * 12}],
+               "provenance": {"source_dataset": "ce", "source_kind": "archive_member",
+                              "archive_path": "files/ce/output/files/archive.zip",
+                              "archive_member_path": "nested/guide.pdf", "archive_member_ext": ".pdf",
+                              "archive_member_sha256": "member-hash", "archive_path_policy_version": 2,
+                              "format_policy_version": "attachment-signature-v1", "actual_source_ext": ".pdf",
+                              "original_sha256": "original-hash", "processed_sha256": "processed-hash",
+                              "previous_preprocessed_path": "preprocessed/ce/guide.json"}}
+        records = extract_chunk_records(doc, WORKSPACE_ROOT / "preprocessed/ce/guide.pdf.json", WORKSPACE_ROOT)
+        self.assertTrue(records)
+        metadata = normalize_vector_metadata(records[0]["metadata"])
+        self.assertEqual(metadata["archive_member_path"], "nested/guide.pdf")
+        self.assertEqual(metadata["archive_member_ext"], ".pdf")
+        self.assertEqual(metadata["archive_member_sha256"], "member-hash")
+        self.assertEqual(metadata["archive_path_policy_version"], 2)
+        self.assertEqual(metadata["actual_source_ext"], ".pdf")
+        self.assertEqual(metadata["original_sha256"], "original-hash")
+        self.assertEqual(metadata["processed_sha256"], "processed-hash")
+
     def test_legacy_department_types_map_without_losing_raw_type(self) -> None:
         cases = (("curriculum", "static_page"), ("resource", "notice"))
         for raw_type, expected_type in cases:
@@ -165,6 +263,40 @@ class DownstreamSchemaTests(unittest.TestCase):
 
 
 class VectorizationRegressionTests(unittest.TestCase):
+    def test_reviewed_exclusion_keeps_unrelated_chunk_positions_and_original_text(self):
+        document = {"slug": "reviewed", "source_path": "files/ce/guide.pdf", "source_file": "guide.pdf",
+                    "provenance": {"source_dataset": "ce"}, "chunks": [
+                        {"text": "원문 \ufffd 보존", "search_excluded": True},
+                        {"text": "수강신청 기간과 등록금 납부 및 졸업 학점 안내입니다. " * 8}]}
+        records = extract_chunk_records(document, WORKSPACE_ROOT / "preprocessed/ce/guide.pdf.json", WORKSPACE_ROOT)
+        self.assertEqual([r["chunk_index"] for r in records], [1])
+        self.assertEqual(document["chunks"][0]["text"], "원문 \ufffd 보존")
+
+    def test_stale_vector_cannot_reinsert_a_reviewed_excluded_chunk(self):
+        from scripts.vectorization.load_to_supabase import prepare_row, DEFAULT_EMBEDDING_MODEL, NoSearchContent
+        record = self.ingestion_record()
+        record["metadata"]["source_path"] = "files/ce/guide.pdf"
+        document = {"slug": record["source_slug"], "source_path": "files/ce/guide.pdf", "chunks": [
+            {"text": "깨진 원문 \ufffd", "search_excluded": True}, {"text": "수강신청 절차 안내"}]}
+        with self.assertRaises(NoSearchContent):
+            prepare_row(record, DEFAULT_EMBEDDING_MODEL, "ce", body_document=document)
+        record["chunk_index"] = 1
+        self.assertEqual(prepare_row(record, DEFAULT_EMBEDDING_MODEL, "ce", body_document=document)["chunk"]["chunk_index"], 1)
+
+    def test_staged_body_validation_does_not_require_unpublished_canonical_path(self):
+        from scripts.vectorization.load_to_supabase import prepare_row, DEFAULT_EMBEDDING_MODEL
+        record = self.ingestion_record()
+        record["metadata"].update(source_path="archive.zip!/a/file.pdf",
+                                  preprocessed_path="preprocessed/ce/not-published.pdf.json")
+        document = {"slug": record["source_slug"], "source_path": record["metadata"]["source_path"],
+                    "chunks": [{"text": "수강신청 절차와 신청 기간 안내입니다."}], "used_metadata_fallback": False}
+        prepared = prepare_row(record, DEFAULT_EMBEDDING_MODEL, "ce", body_document=document)
+        self.assertEqual(prepared["source"]["file_path"], document["source_path"])
+        with self.assertRaisesRegex(ValueError, "does not match record identity"):
+            prepare_row(record, DEFAULT_EMBEDDING_MODEL, "ce", body_document={**document, "slug": "another-member"})
+        with self.assertRaisesRegex(ValueError, "Empty body"):
+            prepare_row(record, DEFAULT_EMBEDDING_MODEL, "ce", body_document={**document, "used_metadata_fallback": True})
+
     def test_vector_workers_partition_datasets_without_overlap(self):
         selected = [(name, Path(name), Path("output") / name)
                     for name in ("ce", "pknu_main", "pknu_syllabus", "rule", "me")]
@@ -198,6 +330,15 @@ class VectorizationRegressionTests(unittest.TestCase):
         self.assertEqual("ce", second["source"]["metadata"].obj["source_dataset"])
         self.assertEqual("english", second["source"]["metadata"].obj["ingestion_dataset"])
 
+    def test_table_cells_remain_chunk_metadata_not_source_metadata(self):
+        from scripts.vectorization import load_to_supabase as loader
+        record = self.ingestion_record()
+        table = {"table_id": "p1-t1", "rows": [{"table_cells": ["35%", "40%"]}]}
+        record["metadata"]["structured_table"] = table
+        row = loader.prepare_row(record, loader.DEFAULT_EMBEDDING_MODEL, "ce")
+        self.assertNotIn("structured_table", row["source"]["metadata"].obj)
+        self.assertEqual(table, row["chunk"]["metadata"].obj["structured_table"])
+
     def test_manifest_preflight_blocks_failures_before_database_connection(self):
         from scripts.vectorization import load_to_supabase as loader
         with tempfile.TemporaryDirectory() as directory:
@@ -222,6 +363,25 @@ class VectorizationRegressionTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "manifest"):
                 loader.preflight_index(index, "ce")
 
+    def test_relocated_index_resolves_original_manifest_without_rewriting_it(self):
+        from scripts.vectorization import load_to_supabase as loader
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            index = root / "vectorized/ce/index.jsonl"
+            index.parent.mkdir(parents=True)
+            index.write_text(json.dumps(self.ingestion_record()) + "\n", encoding="utf-8")
+            manifest = {"dataset": "ce", "vectorized_at": "2026-11-03T00:00:00",
+                        "embedding_backend": loader.DEFAULT_EMBEDDING_MODEL,
+                        "embedding_dimensions": 384, "index_path": "files/vectorized/ce/index.jsonl",
+                        "num_files_failed": 0, "failures": [], "num_chunks": 1}
+            path = index.with_name("manifest.json")
+            path.write_text(json.dumps(manifest), encoding="utf-8")
+            frozen = path.read_bytes()
+            with patch.object(loader, "PROJECT_ROOT", root):
+                self.assertEqual(loader.resolve_index_path("ce", Path(manifest["index_path"])), index)
+                self.assertEqual(loader.DEFAULT_EMBEDDING_MODEL, loader.preflight_index(index, "ce"))
+            self.assertEqual(path.read_bytes(), frozen)
+
     def test_deduplication_is_dataset_and_archive_scoped(self):
         from unittest.mock import MagicMock
         from scripts.vectorization import load_to_supabase as loader
@@ -239,19 +399,19 @@ class VectorizationRegressionTests(unittest.TestCase):
         from unittest.mock import MagicMock
         from scripts.vectorization import load_to_supabase as loader
         with patch.object(loader, "connect_postgres", return_value=MagicMock()), \
-             patch("scripts.ce.update_priorities.update_ce_priorities", return_value=1) as update:
+             patch("scripts.priority.department.update_priorities.update_department_priorities", return_value=1) as update:
             for dataset in ("ce", "english"):
                 loader.refresh_priority_scores(dataset)
             self.assertEqual(2, update.call_count)
         with patch.object(loader, "connect_postgres", return_value=MagicMock()), \
-             patch("scripts.rag.update_main_priorities.fetch_rule_contents", return_value=[]), \
-             patch("scripts.rag.update_main_priorities.update_dataset_priorities", return_value=1) as update:
+             patch("scripts.priority.rag.update_main_priorities.fetch_rule_contents", return_value=[]), \
+             patch("scripts.priority.rag.update_main_priorities.update_dataset_priorities", return_value=1) as update:
             for dataset in ("pknu_notice", "pknu_main", "pknu_syllabus", "pknu_student_life"):
                 loader.refresh_priority_scores(dataset)
             self.assertEqual(["pknu_notice", "pknu_main", "pknu_syllabus", "pknu_main"],
                              [call.args[1] for call in update.call_args_list])
         with patch.object(loader, "connect_postgres", return_value=MagicMock()), \
-             patch("scripts.rule.update_priorities.update_rule_priorities", return_value=1) as update:
+             patch("scripts.priority.rule.update_priorities.update_rule_priorities", return_value=1) as update:
             loader.refresh_priority_scores("rule")
             update.assert_called_once()
 
@@ -356,12 +516,12 @@ class VectorizationRegressionTests(unittest.TestCase):
         from scripts.preprocessing.text_cleaning import has_searchable_body
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            path = root / "files/preprocessed/ce/poster.json"
+            path = root / "preprocessed/ce/poster.json"
             path.parent.mkdir(parents=True)
             doc = {"used_metadata_fallback": True, "chunks": [{"text": "Document title and filename only"}]}
             path.write_text(json.dumps(doc), encoding="utf-8")
             record = self.ingestion_record()
-            record["metadata"]["preprocessed_path"] = "files/preprocessed/ce/poster.json"
+            record["metadata"]["preprocessed_path"] = "preprocessed/ce/poster.json"
             with patch.object(loader, "PROJECT_ROOT", root):
                 self.assertFalse(loader.has_record_body(record))
                 with self.assertRaises(loader.NoSearchContent):
@@ -432,7 +592,7 @@ class VectorizationRegressionTests(unittest.TestCase):
                          {call.args[1:3] for call in indexes.call_args_list})
 
     def test_priority_preview_does_not_mix_notice_attachments_with_main(self):
-        from scripts.rag import update_main_priorities as priorities
+        from scripts.priority.rag import update_main_priorities as priorities
         records = [
             {"source_slug": "notice", "text": "notice attachment",
              "metadata": {"source_dataset": "pknu_notice", "is_notice": False}},
@@ -550,7 +710,7 @@ class VectorizationRegressionTests(unittest.TestCase):
                 self.assertEqual(1, len(flush.call_args.args[1]))
 
     def make_input(self, root, name):
-        path = root / "files/preprocessed/demo" / f"{name}.json"
+        path = root / "preprocessed/demo" / f"{name}.json"
         path.parent.mkdir(parents=True, exist_ok=True)
         payload = {"slug": name, "source_file": name, "source_path": f"source/{name}.txt",
                    "chunks": [{"text": "This university document explains course registration, scholarship applications, graduation requirements, academic deadlines and supporting documents for undergraduate students."}]}
@@ -558,7 +718,7 @@ class VectorizationRegressionTests(unittest.TestCase):
         return path
 
     def run_vectors(self, root, **kwargs):
-        return vectors.run_batch(root / "files/preprocessed/demo", root / "vectors", root,
+        return vectors.run_batch(root / "preprocessed/demo", root / "vectors", root,
                                  vectors.HashEmbedder(8), 2, False, "demo", **kwargs)
 
     def test_incremental_and_targeted_runs_preserve_complete_index(self):
@@ -616,7 +776,7 @@ class VectorizationRegressionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             self.make_input(root, "one")
-            (root / "files/preprocessed/another").mkdir()
+            (root / "preprocessed/another").mkdir()
             with patch.object(vectors, "PROJECT_ROOT", root), patch.object(vectors, "configure_logging"), patch.object(vectors, "make_embedder") as model, patch.object(vectors, "run_batch", return_value={}) as batch, patch("sys.argv", ["vectorization", "--dataset", "all", "--dry-run"]):
                 vectors.main()
             model.assert_not_called()

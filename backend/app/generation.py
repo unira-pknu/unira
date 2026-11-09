@@ -71,13 +71,34 @@ def _format_source_block(rows: List[Dict[str, Any]], max_chars_per_chunk: int) -
         dataset_priority_text = _format_score(row.get("dataset_priority"))
         final_score_text = _format_score(row.get("final_score"))
         rerank_score_text = _format_score(row.get("rerank_score"))
-        content = _truncate(str(row.get("content") or ""), max_chars_per_chunk)
+        # Syllabus retrieval already selected an evidence window inside an exact
+        # offering. A generic 500-character cutoff can remove the table values.
+        content = _truncate(str(row.get("content") or ""), 4000 if row.get("_syllabus") else max_chars_per_chunk)
         posted = _posted_date(metadata)
         lines.append(f"[{index}]")
         lines.append(f"제목: {str(title).strip() or '제목 없음'}")
         if posted:
             lines.append(f"게시일: {posted}")
         lines.append(f"URL: {str(uri).strip() or 'URL 없음'}")
+        if metadata.get("source_link_kind") == "syllabus_search_page":
+            lines.append("링크 종류: 공식 강의계획서 조회 화면 (개별 PDF 직링크 아님)")
+            lines.append("적용 범위: 제목에 적힌 학기·학수번호·분반의 강좌에만 적용. 빈 표 셀은 0이나 선수과목 없음으로 추정하지 않음.")
+        if metadata.get("applicability_note"):
+            lines.append("적용 조건: " + metadata["applicability_note"])
+        if metadata.get("request_purpose"):
+            lines.append("질문 목적: " + metadata["request_purpose"])
+        table = metadata.get("structured_table") or {}
+        if table.get("kind") == "spreadsheet" and len(table.get("rows", [])) == 1:
+            row = table["rows"][0]
+            lines.append(f"표 행 범위: 시트 {table['sheet']}, 원본 {row['source_row']}행. 이 행의 열 제목과 값만 연결하세요.")
+            fields = row.get("fields") or {}
+            if fields.get("course_name") and fields.get("staff_name"):
+                lines.append(f"동일 행에서 확인한 과목·교수: {fields['course_name']} / {fields['staff_name']}")
+        if metadata.get("unresolved_request"):
+            lines.append("미확인 요청: " + metadata["unresolved_request"])
+        conditions = metadata.get("query_conditions") or {}
+        if conditions.get("kind") in {"latest", "open"}:
+            lines.append(f"목록 조건: {conditions['kind']}, 게시일 내림차순, 최대 {conditions.get('limit', 5)}개. 이 자료에 확인된 날짜와 대상만 사용.")
         lines.append(f"유사도: {similarity_text}")
         lines.append(f"우선순위: {priority_text}")
         lines.append(f"데이터셋우선순위: {dataset_priority_text}")
@@ -109,6 +130,8 @@ def build_user_message(
     # "the" schedule (observed 2026-10-13: "수강신청 기간" was answered with
     # 2025-1학기 dates as if they were current).
     today = today_kst()
+    requested_format = next((r.get("metadata", {}).get("request_response_format") for r in rows if r.get("metadata", {}).get("request_response_format")), None)
+    format_note = f"\n- 요청한 출력 형식: {requested_format}. 이 형식을 지키세요." if requested_format else ""
     return (
         f"## 오늘 날짜\n{today.isoformat()} ({current_term_label(today)})\n\n"
         "## 사용자 질문\n"
@@ -126,8 +149,11 @@ def build_user_message(
         "- 참고 자료에 질문과 관련된 내용이 하나라도 있으면 확인 가능한 범위까지 답하세요.\n"
         "- 일부 세부 정보가 없다는 이유로 답변 전체를 포기하지 말고, 확인되지 않는 부분만 명확히 구분하세요.\n"
         "- 질문의 핵심에 답할 근거가 참고 자료에 전혀 없을 때만 \"관련 정보를 찾을 수 없습니다.\"라고만 답하세요.\n"
+        "- 특정 학과·학생 유형·예외 상황의 조건을 전체 학생의 일반 규정으로 확대하지 마세요. 신청 자격과 이수 조건을 구분하세요.\n"
+        "- 미확인 요청이 있으면 다른 자료로 대신 답하지 말고 필요한 조건을 짧게 확인하세요.\n"
         "- 일정·기간·금액은 오늘 날짜 기준 가장 최신 학기 자료를 우선하세요. 인용한 자료가 지난 학기·연도의 것이면 "
         "그 학기·연도를 밝히고, 이번 학기 일정은 최신 공지를 확인해야 한다고 덧붙이세요."
+        + format_note
     )
 
 

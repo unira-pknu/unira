@@ -137,6 +137,8 @@ def extract_pdf_ocr_blocks(
     path: Path,
     ocr_language: str = DEFAULT_OCR_LANGUAGE,
     ocr_dpi: int = DEFAULT_OCR_DPI,
+    *,
+    preserve_raw_text: bool = False,
 ) -> list[dict]:
     try:
         import fitz  # type: ignore
@@ -162,14 +164,14 @@ def extract_pdf_ocr_blocks(
                 capture_output=True,
                 text=True,
                 encoding="utf-8",
-                errors="ignore",
+                errors="strict" if preserve_raw_text else "ignore",
                 check=False,
             )
             if proc.returncode != 0:
                 err = normalize_text(proc.stderr) or "unknown error"
                 log.warning("[OCR-FAIL] %s page %d (%s)", path, page_num, err)
                 continue
-            text = normalize_text(proc.stdout)
+            text = proc.stdout.strip() if preserve_raw_text else normalize_text(proc.stdout)
             if text:
                 blocks.append(
                     {

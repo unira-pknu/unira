@@ -46,13 +46,13 @@ def department_attributes(dataset: str) -> dict:
 
 def get_vector_paths(project_root: Path, dataset: str):
     source = get_preprocessed_root(project_root, dataset)
-    target = project_root / "files/vectorized" / source.name
+    target = project_root / "vectorized" / source.name
     return {"input_root": source, "output_root": target}
 
 
 def dataset_paths(project_root: Path):
     names = set(department_datasets()) | {"rule", "pknu_notice", "pknu_student_life", "pknu_main", "pknu_syllabus"}
-    source = project_root / "files/preprocessed"
+    source = project_root / "preprocessed"
     if source.is_dir():
         names.update(p.name for p in source.iterdir() if p.is_dir() and not p.name.startswith(("_", ".")))
     return {name: get_vector_paths(project_root, name) for name in sorted(names)}

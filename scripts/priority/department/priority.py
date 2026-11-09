@@ -91,7 +91,7 @@ def build_reference_feature_set(contents: Iterable[str]) -> set[str]:
     return build_rule_feature_set(contents)
 
 
-def parse_ce_date(value: object) -> date | None:
+def parse_department_date(value: object) -> date | None:
     if not value:
         return None
     text = str(value).strip()
@@ -124,7 +124,7 @@ def extract_latest_date(*values: object) -> date | None:
     dates: list[date] = []
     for value in values:
         text = str(value or "")
-        parsed = parse_ce_date(text)
+        parsed = parse_department_date(text)
         if parsed:
             dates.append(parsed)
         dates.extend(_semester_dates(text))
@@ -229,8 +229,8 @@ def feature_overlap_score(content: str, reference_features: set[str]) -> tuple[f
     return matched / total, total, matched
 
 
-def calculate_ce_priority(
-    ce_content: str,
+def calculate_department_priority(
+    department_content: str,
     rule_features: set[str],
     main_features: set[str] | None = None,
     metadata: dict | None = None,
@@ -241,8 +241,8 @@ def calculate_ce_priority(
 
     metadata = metadata or {}
     main_features = main_features or set()
-    rule_overlap, feature_count, rule_matched = feature_overlap_score(ce_content, rule_features)
-    main_overlap, _, main_matched = feature_overlap_score(ce_content, main_features)
+    rule_overlap, feature_count, rule_matched = feature_overlap_score(department_content, rule_features)
+    main_overlap, _, main_matched = feature_overlap_score(department_content, main_features)
     if feature_count <= 0:
         return 0.0, {
             "rule": "ce_rule_main_overlap_recency_page_doc_kind_v2",

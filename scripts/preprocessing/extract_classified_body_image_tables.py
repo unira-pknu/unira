@@ -20,8 +20,8 @@ from scripts.preprocessing.extractors.image_ocr import VERSION, extract_table_im
 from scripts.crawlers.common.storage import get_dataset_root
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_CLASSIFICATIONS = ROOT / 'files/_reviewed/body_image_ocr/layout_classifications.jsonl'
-DEFAULT_OUTPUT = ROOT / 'files/_reviewed/body_image_ocr/table_extractions.jsonl'
+DEFAULT_CLASSIFICATIONS = ROOT / 'var/reviewed/body_image_ocr/layout_classifications.jsonl'
+DEFAULT_OUTPUT = ROOT / 'var/reviewed/body_image_ocr/table_extractions.jsonl'
 
 
 def _read_jsonl(path: Path) -> list[dict]:

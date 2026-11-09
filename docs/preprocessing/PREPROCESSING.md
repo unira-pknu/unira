@@ -69,7 +69,7 @@ Tesseract를 설치한 폴더가 PATH에 있어야 PDF 추출기가 찾을 수 �
 
 ## 3. 전체 전처리 실행
 
-전처리 결과는 모두 `files/preprocessed/<dataset>/` 아래로 모읍니다.
+전처리 결과는 모두 `preprocessed/<dataset>/` 아래로 모읍니다.
 수집 원본은 기존 위치에 유지하며, 벡터화 도구의 기본 입력 경로도 이 위치를 사용합니다.
 공통 CLI에 `--output-root`를 직접 지정하면 해당 경로가 우선합니다.
 
@@ -84,9 +84,9 @@ Tesseract를 설치한 폴더가 PATH에 있어야 PDF 추출기가 찾을 수 �
 | 수집 자료 | 전처리 출력 루트 |
 |---|---|
 | 학과·단과대학 | `files/department/<레지스트리 저장 경로>/<dataset>/preprocessed/` |
-| 본교 전체 | `files/preprocessed/pknu_main/` |
-| 강의계획서 | `files/preprocessed/pknu_syllabus/` |
-| 규정 | `files/preprocessed/rule/` |
+| 본교 전체 | `preprocessed/pknu_main/` |
+| 강의계획서 | `preprocessed/pknu_syllabus/` |
+| 규정 | `preprocessed/rule/` |
 
 본문 JSON은 `json/`, 첨부파일은 `files/` 아래에 원본의 상대 경로를 반영합니다.
 규정은 전용 처리기의 JSON·HTML·첨부 출력 구조를 사용합니다.
@@ -133,7 +133,7 @@ OCR 환경을 보완하거나 이름 복원 코드를 바꿨다면 `--force`로 
 ```powershell
 .\.venv\Scripts\python.exe -m scripts.preprocessing.preprocess_files `
   --input-root files/pknu_syllabus `
-  --output-root files/preprocessed/pknu_syllabus/files `
+  --output-root preprocessed/pknu_syllabus/files `
   --file-ext pdf `
   --layout by_ext `
   --pdf-ocr auto

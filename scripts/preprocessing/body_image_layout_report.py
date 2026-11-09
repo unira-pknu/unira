@@ -15,7 +15,7 @@ LAYOUT_LABELS = {
     "prose": "문단", "table": "표", "diagram": "도식", "mixed": "혼합",
     "no_text": "텍스트 없음", "unknown": "검토 필요",
 }
-DEFAULT_LABELS = PROJECT_ROOT / "files" / "_reviewed" / "body_image_ocr" / "layout_labels.jsonl"
+DEFAULT_LABELS = PROJECT_ROOT / "var" / "reviewed" / "body_image_ocr" / "layout_labels.jsonl"
 
 
 def _read_labels(path: Path) -> dict[tuple[str, str], dict[str, Any]]:
@@ -139,7 +139,7 @@ def render_report(rows: list[dict[str, Any]], report_path: Path, *, input_path: 
     source_label = input_path.name if input_path else "분류 결과"
     storage_key = json.dumps("body-image-layout-reviews:" + str(input_path.resolve() if input_path else report_path.resolve()))
     download_name = json.dumps((input_path.stem if input_path else report_path.stem) + ".reviewed.jsonl")
-    merge_command = ".venv\\Scripts\\python.exe -m scripts.preprocessing.apply_body_image_layout_labels --input files/_reviewed/body_image_ocr/" + (input_path.stem if input_path else report_path.stem) + ".reviewed.jsonl"
+    merge_command = ".venv\\Scripts\\python.exe -m scripts.preprocessing.apply_body_image_layout_labels --input var/reviewed/body_image_ocr/" + (input_path.stem if input_path else report_path.stem) + ".reviewed.jsonl"
     review_script = r"""
 const storageKey=__STORAGE_KEY__, downloadName=__DOWNLOAD_NAME__;
 let drafts={}; try { drafts=JSON.parse(localStorage.getItem(storageKey)||'{}'); } catch {}
@@ -190,7 +190,7 @@ main{{max-width:1180px;margin:18px auto;padding:0 16px}}.card{{display:grid;grid
 </style></head><body>
 <header><h1>본문 이미지 레이아웃 검토</h1><div class="sub">{html.escape(source_label)} · {len(rows):,}개 이미지 · 카드에서 미리보기와 원본 문서에 바로 접근할 수 있습니다.</div>
 <div class="metrics">{count_cards}</div><div class="controls"><input id="search" type="search" placeholder="제목, 파일명, 경로 검색"><select id="filter"><option value="">모든 분류</option>{''.join(f'<option value="{key}">{label}</option>' for key,label in LAYOUT_LABELS.items())}</select><select id="confidence"><option value="">모든 confidence</option><option value="low">낮음 (&lt; 0.60)</option><option value="medium">중간 (0.60–0.84)</option><option value="high">높음 (≥ 0.85)</option></select></div></header>
-<main id="cards"><div class="exportbar"><button id="export" class="button export">검토 라벨 내보내기</button><p>분류를 선택한 카드만 내보냅니다. 선택과 메모는 이 브라우저에 임시 저장됩니다.</p><p>다운로드한 JSONL을 files/_reviewed/body_image_ocr/에 둔 뒤 실행: <code>{html.escape(merge_command)}</code></p></div>{''.join(cards)}</main>
+<main id="cards"><div class="exportbar"><button id="export" class="button export">검토 라벨 내보내기</button><p>분류를 선택한 카드만 내보냅니다. 선택과 메모는 이 브라우저에 임시 저장됩니다.</p><p>다운로드한 JSONL을 var/reviewed/body_image_ocr/에 둔 뒤 실행: <code>{html.escape(merge_command)}</code></p></div>{''.join(cards)}</main>
 <script>
 const search=document.querySelector('#search'), filter=document.querySelector('#filter'), confidence=document.querySelector('#confidence');
 function update(){{const q=search.value.trim().toLocaleLowerCase();for(const card of document.querySelectorAll('.card')){{const c=Number(card.dataset.confidence);const band=c<.6?'low':c<.85?'medium':'high';card.hidden=!!((filter.value&&card.dataset.layout!==filter.value)||(confidence.value&&band!==confidence.value)||(q&&!card.dataset.search.includes(q)));}}}}

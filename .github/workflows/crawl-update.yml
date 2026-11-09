@@ -53,9 +53,9 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
-          python scripts/ce/update_priorities.py
-          python scripts/rule/update_priorities.py
-          python scripts/rag/update_main_priorities.py --dataset all
+          python scripts/priority/department/update_priorities.py
+          python scripts/priority/rule/update_priorities.py
+          python scripts/priority/rag/update_main_priorities.py --dataset all
 
       - name: Commit updated crawl state
         run: |

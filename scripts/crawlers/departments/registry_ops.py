@@ -13,6 +13,7 @@ from scripts.crawlers.departments.config import DepartmentConfig, SectionConfig
 from scripts.crawlers.departments.freshness import (
     assess_result_freshness, probe_discovery_warnings,
 )
+from scripts.vectorization.recovery_control import replace_with_retry
 
 
 SECTION_FIELDS = ("id", "name", "category", "kind", "path", "document_type", "bbs_id")
@@ -35,7 +36,7 @@ def save_json_atomic(path: Path, payload: dict[str, Any]) -> Path:
             handle.write("\n")
             handle.flush()
             os.fsync(handle.fileno())
-        os.replace(temp_path, path)
+        replace_with_retry(temp_path, path)
     finally:
         temp_path.unlink(missing_ok=True)
     return path

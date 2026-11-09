@@ -9,7 +9,7 @@ rule 문서 1개(source)마다 우선 순위 점수를 계산해서 public.rule_
     - 각 source별 priority_score와 priority_details를 계산한다.
     - rule_sources.priority_score, priority_details, priority_updated_at을 갱신한다..
 
-현재 우선순위 계산식은 scripts/rule/priority.py에 구현되어 있다.
+현재 우선순위 계산식은 scripts/priority/rule/priority.py에 구현되어 있다.
     priority_score =
         0.30 * authority_score
       + 0.40 * student_relevance_score
@@ -50,11 +50,11 @@ except ModuleNotFoundError:
         def __init__(self, value: Any) -> None:
             self.value = value
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from scripts.rule.priority import aggregate_source_records, calculate_rule_priority  # noqa: E402
+from scripts.priority.rule.priority import aggregate_source_records, calculate_rule_priority  # noqa: E402
 from scripts.vectorization.datasets import get_vector_paths
 
 DEFAULT_INDEX_PATH = get_vector_paths(PROJECT_ROOT, "rule")["output_root"] / "index.jsonl"
@@ -213,7 +213,7 @@ def main() -> None:
     parser.add_argument(
         "--from-index",
         action="store_true",
-        help="Read local files/vectorized/rule/index.jsonl for preview. Requires --dry-run.",
+        help="Read local vectorized/rule/index.jsonl for preview. Requires --dry-run.",
     )
     parser.add_argument("--index-path", type=Path, default=DEFAULT_INDEX_PATH)
     parser.add_argument("--preview-limit", type=int, default=20)

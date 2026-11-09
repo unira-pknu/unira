@@ -41,9 +41,9 @@
 자주 쓰는 예시:
 
 ```powershell
-.\.venv\Scripts\python.exe scripts\preprocessing\file_preprocessing.py --input-root files\ce\output\json --output-root files\preprocessed\ce\json --output-json-root files\ce\output\json --layout flat
-.\.venv\Scripts\python.exe scripts\preprocessing\file_preprocessing.py --input-root files\ce\output\files --output-root files\preprocessed\ce\files --output-json-root files\ce\output\json
-.\.venv\Scripts\python.exe scripts\preprocessing\file_preprocessing.py --input-root files\ce\output\files --output-root files\preprocessed\ce\files --file-ext pdf hwp xls xlsx pptx zip
+.\.venv\Scripts\python.exe scripts\preprocessing\file_preprocessing.py --input-root files\ce\output\json --output-root preprocessed\ce\json --output-json-root files\ce\output\json --layout flat
+.\.venv\Scripts\python.exe scripts\preprocessing\file_preprocessing.py --input-root files\ce\output\files --output-root preprocessed\ce\files --output-json-root files\ce\output\json
+.\.venv\Scripts\python.exe scripts\preprocessing\file_preprocessing.py --input-root files\ce\output\files --output-root preprocessed\ce\files --file-ext pdf hwp xls xlsx pptx zip
 ```
 
 주요 옵션:
@@ -69,9 +69,9 @@
 CE 외의 다른 학과 크롤링 결과도 같은 JSON/파일 구조를 쓰면 이 명령을 그대로 사용할 수 있습니다.
 
 ```powershell
-.\.venv\Scripts\python.exe scripts\preprocessing\preprocess_files.py --input-root files\ce\output\files --output-root files\preprocessed\ce\files --output-json-root files\ce\output\json
-.\.venv\Scripts\python.exe scripts\preprocessing\preprocess_files.py --input-root files\cse\output\files --output-root files\preprocessed\cse\files --output-json-root files\cse\output\json
-.\.venv\Scripts\python.exe scripts\preprocessing\preprocess_files.py --input-root files\cse\output\files --output-root files\preprocessed\cse\files --file-ext pdf hwp xls xlsx pptx zip
+.\.venv\Scripts\python.exe scripts\preprocessing\preprocess_files.py --input-root files\ce\output\files --output-root preprocessed\ce\files --output-json-root files\ce\output\json
+.\.venv\Scripts\python.exe scripts\preprocessing\preprocess_files.py --input-root files\cse\output\files --output-root preprocessed\cse\files --output-json-root files\cse\output\json
+.\.venv\Scripts\python.exe scripts\preprocessing\preprocess_files.py --input-root files\cse\output\files --output-root preprocessed\cse\files --file-ext pdf hwp xls xlsx pptx zip
 ```
 
 주요 옵션은 `scripts/preprocessing/file_preprocessing.py`의 파일 전처리 옵션과 같습니다. `--output-json-root`가 없거나 비어 있으면 게시글 메타데이터 없이 파일 자체 provenance로 처리합니다.
@@ -92,7 +92,7 @@ JSON, HTML, 다운로드된 첨부파일을 모두 처리할 수 있습니다.
 - `--json-root`: `files/rule/output/json`
 - `--html-root`: `files/rule/output/html`
 - `--files-root`: `files/rule/output/files`
-- `--output-root`: `files/preprocessed/rule`
+- `--output-root`: `preprocessed/rule`
 - `--source-scope`: `all`
 - `--chunk-size`: `900`
 - `--chunk-overlap`: `120`
@@ -101,9 +101,9 @@ JSON, HTML, 다운로드된 첨부파일을 모두 처리할 수 있습니다.
 출력 구조:
 
 ```text
-files/preprocessed/rule/json/
-files/preprocessed/rule/html/
-files/preprocessed/rule/file/
+preprocessed/rule/json/
+preprocessed/rule/html/
+preprocessed/rule/file/
 ```
 
 주요 옵션:

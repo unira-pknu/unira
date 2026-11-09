@@ -1,7 +1,7 @@
 """Load vectorized RAG chunks into Supabase PostgreSQL with pgvector.
 
 Expected input:
-    files/vectorized/ce/index.jsonl
+    vectorized/ce/index.jsonl
 
 Required environment:
     DATABASE_URL, SUPABASE_POOLER_URL, SUPABASE_DATABASE_URL, or SUPABASE_DB_URL
@@ -32,7 +32,8 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from scripts.db import connect_postgres  # noqa: E402
-from scripts.preprocessing.text_cleaning import compact_metadata, has_searchable_body
+from scripts.artifact_paths import resolve_artifact_path
+from scripts.preprocessing.text_cleaning import compact_metadata, has_searchable_body, chunk_is_searchable
 from scripts.vectorization.common import EXPECTED_DIMENSIONS, DEFAULT_SENTENCE_MODEL, validate_vectors
 from scripts.vectorization.datasets import (TABLE_FAMILIES, database_tables, dataset_paths,
                                            dataset_families, department_attributes, table_family)
@@ -56,7 +57,14 @@ def _cached_body_status(path: str, size: int, mtime_ns: int) -> bool:
     return has_searchable_body(json.loads(Path(path).read_text(encoding="utf-8-sig")))
 
 
-def has_record_body(record: dict) -> bool:
+@lru_cache(maxsize=8192)
+def _cached_search_exclusions(path: str, size: int, mtime_ns: int) -> frozenset[int]:
+    document = json.loads(Path(path).read_text(encoding="utf-8-sig"))
+    return frozenset(i for i, chunk in enumerate(document.get("chunks") or [])
+                     if isinstance(chunk, dict) and chunk.get("search_excluded") is True)
+
+
+def has_record_body(record: dict, *, body_document: dict | None = None) -> bool:
     metadata = record.get("metadata") or {}
     if not isinstance(metadata, dict):
         raise ValueError("Record metadata must be an object")
@@ -64,15 +72,20 @@ def has_record_body(record: dict) -> bool:
         return False
     if metadata.get("used_metadata_fallback") is True or metadata.get("metadata_only") is True:
         return False
+    if body_document is not None:
+        if (body_document.get("source_path") != metadata.get("source_path")
+                or body_document.get("slug") != record.get("source_slug")):
+            raise ValueError("Staged body document does not match record identity")
+        return chunk_is_searchable(body_document, record.get("chunk_index"))
     # Older vector files did not carry the extraction fallback flag.
     declared = metadata.get("preprocessed_path")
     if declared:
-        path = Path(declared)
-        path = (path if path.is_absolute() else PROJECT_ROOT / path).resolve()
-        if not path.is_relative_to((PROJECT_ROOT / "files/preprocessed").resolve()):
-            raise ValueError("Preprocessed provenance path is outside files/preprocessed")
+        path = resolve_artifact_path(PROJECT_ROOT, declared)
+        if not path.is_relative_to((PROJECT_ROOT / "preprocessed").resolve()):
+            raise ValueError("Preprocessed provenance path is outside preprocessed")
         stat = path.stat()
-        return _cached_body_status(str(path), stat.st_size, stat.st_mtime_ns)
+        return (_cached_body_status(str(path), stat.st_size, stat.st_mtime_ns)
+                and record.get("chunk_index") not in _cached_search_exclusions(str(path), stat.st_size, stat.st_mtime_ns))
     return True
 
 
@@ -116,7 +129,9 @@ def resolve_tables(
 
 def resolve_index_path(dataset: str, index_path: Path | None) -> Path:
     if index_path is not None:
-        return index_path
+        if index_path.is_absolute() and not index_path.is_relative_to(PROJECT_ROOT):
+            return index_path
+        return resolve_artifact_path(PROJECT_ROOT, index_path)
     return DATASET_TABLES[dataset]["index"]
 
 
@@ -174,7 +189,7 @@ def load_embedding_model(index_path: Path) -> str:
     return str(manifest.get("embedding_backend") or DEFAULT_EMBEDDING_MODEL)
 
 
-def preflight_index(index_path: Path, dataset: str) -> str:
+def preflight_index(index_path: Path, dataset: str, *, body_documents: dict | None = None) -> str:
     """Validate the complete index before opening a database connection."""
     manifest_path = index_path.with_name("manifest.json")
     if not manifest_path.is_file():
@@ -194,8 +209,8 @@ def preflight_index(index_path: Path, dataset: str) -> str:
     if not declared:
         raise ValueError("Manifest index_path is required")
     declared_path = Path(declared)
-    if not declared_path.is_absolute():
-        declared_path = PROJECT_ROOT / declared_path
+    if not declared_path.is_absolute() or declared_path.is_relative_to(PROJECT_ROOT):
+        declared_path = resolve_artifact_path(PROJECT_ROOT, declared_path)
     if declared_path.resolve() != index_path.resolve():
         raise ValueError("Manifest index_path does not match selected index")
     model = manifest.get("embedding_backend")
@@ -216,10 +231,13 @@ def preflight_index(index_path: Path, dataset: str) -> str:
         if key in keys:
             raise ValueError("Duplicate source/chunk position in index")
         keys.add(key)
-        if not has_record_body(record):
+        body_document = body_documents.get(metadata.get("source_path")) if body_documents is not None else None
+        if body_documents is not None and body_document is None:
+            raise ValueError("Missing staged body document for selected record")
+        if not has_record_body(record, body_document=body_document):
             excluded += 1
             continue
-        row = prepare_row(record, model, dataset)
+        row = prepare_row(record, model, dataset, body_document=body_document)
     if count == 0 or count != manifest.get("num_chunks"):
         raise ValueError("Index record count does not match nonempty completed manifest")
     if signature != (index_path.stat().st_size, index_path.stat().st_mtime_ns):
@@ -291,12 +309,12 @@ def normalize_vector_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
     return compact_metadata(normalized)
 
 
-def prepare_row(record: dict[str, Any], embedding_model: str, dataset: str | None = None) -> dict[str, dict[str, Any]]:
+def prepare_row(record: dict[str, Any], embedding_model: str, dataset: str | None = None, *, body_document: dict | None = None) -> dict[str, dict[str, Any]]:
     if not embedding_model.startswith("sentence-transformers:"):
         raise ValueError("DB ingestion requires semantic embeddings; hash vectors are for local tests only")
     if record.get("embedding_model", embedding_model) != embedding_model:
         raise ValueError("Record embedding model differs from the index manifest")
-    if not has_record_body(record):
+    if not has_record_body(record, body_document=body_document):
         raise NoSearchContent("Empty body or metadata-only extraction fallback")
     embedding = record.get("embedding")
     if not isinstance(embedding, list):
@@ -336,7 +354,7 @@ def prepare_row(record: dict[str, Any], embedding_model: str, dataset: str | Non
     now = datetime.now(timezone.utc)
     source_metadata = {key: value for key, value in metadata.items()
                        if key not in {"num_chars", "indexed_num_chars", "num_lines",
-                                      "quality_flags", "quality_context_prefix"}}
+                                      "quality_flags", "quality_context_prefix", "structured_table"}}
 
     return {
         "source": {
@@ -668,18 +686,18 @@ def refresh_priority_scores(dataset: str) -> None:
     family = dataset if dataset in TABLE_FAMILIES else table_family(dataset)
     if family == "rag":
         # Scores every active rag_sources row, so it covers all departments.
-        from scripts.ce.update_priorities import update_ce_priorities
+        from scripts.priority.department.update_priorities import update_department_priorities
 
         with connect_postgres(row_factory=_dict_row, prepare_threshold=None) as conn:
-            count = update_ce_priorities(conn, False, 10)
+            count = update_department_priorities(conn, False, 10)
     elif family == "rule":
-        from scripts.rule.update_priorities import update_rule_priorities
+        from scripts.priority.rule.update_priorities import update_rule_priorities
 
         with connect_postgres(row_factory=_dict_row, prepare_threshold=None) as conn:
             count = update_rule_priorities(conn, False, 10)
     elif family in ("pknu_notice", "pknu_main", "pknu_syllabus"):
-        from scripts.rag.update_main_priorities import fetch_rule_contents, update_dataset_priorities
-        from scripts.rag.priority import build_rule_feature_set
+        from scripts.priority.rag.update_main_priorities import fetch_rule_contents, update_dataset_priorities
+        from scripts.priority.rag.priority import build_rule_feature_set
 
         with connect_postgres(row_factory=_dict_row, prepare_threshold=None) as conn:
             rule_features = build_rule_feature_set(fetch_rule_contents(conn))
