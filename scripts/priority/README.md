@@ -29,8 +29,8 @@ DB 조회 후 미리보기는 `--dry-run`을 사용합니다. 옵션 없이 실�
 ```
 
 `ce` 등 수집 데이터셋 별칭은 원본·벡터·DB 문서 ID에 쓰이므로 유지합니다. 학과 미리보기 기본 인덱스도 기존
-`vectorized/ce/index.jsonl`을 사용합니다. 기존 우선순위 상세 기록과의 호환을 위해 계산 결과의 `latest_ce_date` 키는
-유지하며, 함수명은 `calculate_department_priority`와 `update_department_priorities`를 사용합니다.
+`vectorized/ce/index.jsonl`을 사용합니다. 기존 우선순위 상세 기록과의 호환을 위해 계산 결과의 `latest_ce_date` 키와
+기존 계산 정책 식별자는 유지하며, 함수명은 `calculate_department_priority`와 `update_department_priorities`를 사용합니다.
 
 저장소 내부 import, 적재 후 우선순위 갱신, 복구 작업, 파이프라인, CI와 문서 명령은 새 경로를 사용합니다.
 이전 패키지 경로의 호환 파일은 두지 않습니다.

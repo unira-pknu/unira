@@ -8,7 +8,7 @@
 
 ### `scripts/priority/department/update_priorities.py`
 
-Supabase의 CE source priority score를 갱신합니다.
+Supabase의 활성 학과 문서(`rag_sources`) 전체의 priority score를 갱신합니다.
 
 ```powershell
 .\.venv\Scripts\python.exe scripts\priority\department\update_priorities.py
