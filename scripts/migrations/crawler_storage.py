@@ -284,11 +284,14 @@ def migrate_department_layout(
             _save_report(report_path, report)
             print(f"Moved {entry['dataset']}: {len(snapshot)} files verified", flush=True)
         files = project_root / "files"
-        # Include shared OCR/discovery records and old root state, without touching CSV.
-        candidates = list(files.rglob("*.json")) + list(files.rglob("*.jsonl")) + list(files.rglob("*.json.bak")) + list(files.rglob("*.json.legacy.bak"))
+        # Current derived roots live outside files. Frozen recovery evidence is
+        # deliberately excluded: rewriting those files would invalidate hashes.
+        reference_roots = (files, project_root / "preprocessed", project_root / "vectorized",
+                           project_root / "var/reviewed", project_root / "eval")
+        candidates = [path for root in reference_roots
+                      for pattern in ("*.json", "*.jsonl", "*.json.bak", "*.json.legacy.bak")
+                      for path in root.rglob(pattern)]
         candidates.extend(project_root.glob("*.json"))
-        candidates.extend((project_root / "eval").rglob("*.json"))
-        candidates.extend((project_root / "eval").rglob("*.jsonl"))
         for path in candidates:
             if path == report_path or path.is_relative_to(files / "department" / "_migration"):
                 continue
@@ -296,7 +299,8 @@ def migrate_department_layout(
                 report["rewritten_files"] += 1
                 if report["rewritten_files"] % 5000 == 0:
                     print(f"Updated local references in {report['rewritten_files']} files", flush=True)
-        for path in (files / "_reviewed").rglob("*"):
+        review_roots = (project_root / "var/reviewed", files / "_reviewed")
+        for path in (path for root in review_roots for path in root.rglob("*")):
             if path.suffix not in {".html", ".md"} or not path.is_file():
                 continue
             text = path.read_text(encoding="utf-8")

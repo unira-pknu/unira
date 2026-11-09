@@ -159,7 +159,17 @@ class CrawlerStorageTests(unittest.TestCase):
         timestamp = document.stat().st_mtime_ns
         review = self.root / "var" / "reviewed" / "preview.html"
         review.parent.mkdir(parents=True)
-        review.write_text('<a href="../ce/output/files/doc/test.pdf">PDF</a>', encoding="utf-8")
+        review.write_text('<a href="../../files/ce/output/files/doc/test.pdf">PDF</a>', encoding="utf-8")
+        derived = []
+        for stage in ("preprocessed", "vectorized"):
+            path = self.root / stage / "ce" / "doc.json"
+            path.parent.mkdir(parents=True)
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            derived.append((path, path.stat().st_mtime_ns))
+        frozen = self.root / "var/recovery/example/plan.json"
+        frozen.parent.mkdir(parents=True)
+        frozen.write_text(json.dumps(payload), encoding="utf-8")
+        frozen_bytes = frozen.read_bytes()
         plan = migrate_department_layout(self.root, storage_paths=paths)
         self.assertEqual(1, plan["moves"])
         self.assertTrue(source.is_dir())
@@ -171,7 +181,11 @@ class CrawlerStorageTests(unittest.TestCase):
         expected = {**payload, "saved_path": "files/department/College/Faculty/ce/output/files/doc/test.pdf"}
         self.assertEqual(expected, updated)
         self.assertEqual(timestamp, (target / "output/json/doc.json").stat().st_mtime_ns)
-        self.assertIn("../department/College/Faculty/ce/output/files/doc/test.pdf", review.read_text(encoding="utf-8"))
+        self.assertIn("../../files/department/College/Faculty/ce/output/files/doc/test.pdf", review.read_text(encoding="utf-8"))
+        for path, modified_at in derived:
+            self.assertEqual(expected, json.loads(path.read_text(encoding="utf-8")))
+            self.assertEqual(modified_at, path.stat().st_mtime_ns)
+        self.assertEqual(frozen_bytes, frozen.read_bytes())
         self.assertEqual(2, report["verified_files"])
         self.assertEqual(0, migrate_department_layout(self.root, storage_paths=paths)["moves"])
         source.mkdir()

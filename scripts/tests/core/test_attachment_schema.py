@@ -56,6 +56,7 @@ class AttachmentSchemaTests(unittest.TestCase):
             run = root / "var/recovery/retry"
             run.mkdir(parents=True)
             original = root / "files/original.pdf"
+            original.parent.mkdir(parents=True)
             original.write_bytes(b"verified original")
             artifact = run / "recovered.pdf"
             artifact.write_bytes(original.read_bytes())
@@ -279,6 +280,7 @@ class AttachmentSchemaTests(unittest.TestCase):
             run = root / "var/recovery/repair"
             run.mkdir(parents=True)
             selected = []
+            (root / "files").mkdir()
             for name, state in (("success.pdf", "valid"), ("empty.pdf", "valid"), ("broken.zip", "damaged")):
                 source = root / "files" / name
                 source.write_bytes(b"original fixture " + name.encode())
@@ -305,6 +307,7 @@ class AttachmentSchemaTests(unittest.TestCase):
             run = root / "var/recovery/repair"
             run.mkdir(parents=True)
             original = root / "files/document.zip"
+            original.parent.mkdir(parents=True)
             original.write_bytes(b"damaged inner document stream")
             recovered = run / "recovered.docx"
             recovered.write_bytes(b"new version downloaded from the recorded source")
