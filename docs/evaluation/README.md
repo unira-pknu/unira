@@ -123,7 +123,7 @@ Evaluation commands are in `eval/tools/` and run from the repository root with
 이 평가는 격리된 로컬 테스트 저장소를 사용하며 Supabase를 변경하지 않습니다.
 
 ```powershell
-python -m scripts.vectorization.ingest_layout_data      # files/_reviewed/body_image_ocr/*.reviewed.jsonl -> files/_test_db/test_layout_rag_YYYYMMDD/
+python -m scripts.vectorization.ingest_layout_data      # var/reviewed/body_image_ocr/*.reviewed.jsonl -> var/test_db/test_layout_rag_YYYYMMDD/
 python -m eval.tools.generate_testset         # 최대 50개 QA 쌍 -> eval/results/layout_eval_dataset.csv (--mode rule: API 비용 없음)
 python -m eval.tools.run_evaluation           # eval/results/layout_eval_report.md (+ .json) (--retrieval-only: API 비용 없음)
 ```

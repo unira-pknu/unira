@@ -42,7 +42,7 @@ class Target(BaseModel):
 
 class Conditions(BaseModel):
     kind: Literal["search", "latest", "open", "courses"] = "search"
-    limit: int = Field(default=5, ge=1, le=20)
+    limit: int | None = Field(default=5, ge=1, le=20)
     order_by: Literal["relevance", "published_at_desc", "course_name"] = "relevance"
     as_of: datetime = Field(default_factory=lambda: datetime.now(KST))
     year: int | None = None
@@ -107,14 +107,14 @@ def resolve_context(question: str, history: list[dict]) -> tuple[str, bool]:
     if previous and slot_answer and not TOPICS.search(question) and len(_subject_names(previous)) == 1:
         return question + " / " + previous, False
     referential = bool(REFERENT.search(question))
-    generic = bool(re.search(r"신청|언제까지|전화번호|연락처", question)) and not TOPICS.search(question)
+    generic = bool(re.search(r"신청|기한|마감|언제까지|전화번호|연락처", question)) and not TOPICS.search(question)
     if not (referential or generic):
         return question, False
     # Named offices, departments and courses are already subjects.
     name = re.search(r"[가-힣A-Za-z·]+(?:센터|사무실|학과|전공|학부|프로그램|장학금|본부|[과처관원팀])", question)
     if name and not referential:
         return question, False
-    residual = re.sub(r"\d+\s*학년(?:인데|인|이야|입니다)?|저는|제가|저|신청|언제|까지야|까지|전화번호|연락처|알려\s*줘|알려주세요|뭐|무엇|어떤|할\s*수|있어요|가능한지|가능해|해요|[?!.\s]", "", question)
+    residual = re.sub(r"\d+\s*학년(?:인데|인|이야|입니다)?|저는|제가|저|신청|기한|기간|마감|언제(?:까지)?(?:예요|에요|인가요|입니까|야|죠)?|까지야|까지|전화번호|연락처|알려\s*줘|알려주세요|뭐|무엇|어떤|할\s*수|있어요|가능한지|가능해|해요|[?!.\s]", "", question)
     if len(residual) >= 2 and not referential:
         # An unfamiliar programme name should be resolved by the planner,
         # rather than rejected merely because it is absent from TOPICS.
@@ -174,9 +174,16 @@ def conditions_for(text: str) -> Conditions:
     count = re.search(r"(?<!\d)(\d{1,2})\s*(?:개|건)", text)
     term_index = current_term() if re.search(r"이번\s*학기", text) else query_term(text)
     year = re.search(r"(20\d{2})\s*(?:년|학년도)", text)
+    if kind == "courses":
+        all_terms = re.search(r"(?:전체|모든)\s*학기|학기\s*상관없", text)
+        named_term = re.search(r"[12]\s*학기|20\d{2}\s*[-/]\s*[12]|(?:이번|지난|다음)\s*학기", text)
+        if all_terms and (not named_term or all_terms.start() < named_term.start()):
+            term_index = None
+            if year and year.start() > all_terms.start():
+                year = None
     compact = re.sub(r"\s+", "", text)
     topic = next((w for w in ("교내장학", "국가장학", "교외장학", "장학", "교환학생", "취업", "기숙사") if w in compact), None)
-    return Conditions(kind=kind, limit=max(1, min(20, int(count[1]))) if count else 5,
+    return Conditions(kind=kind, limit=max(1, min(20, int(count[1]))) if count else (None if kind == "courses" else 5),
                       order_by="course_name" if kind == "courses" else ("published_at_desc" if kind != "search" else "relevance"),
                       year=term_index // 2 if term_index else (int(year[1]) if year else None),
                       term=str(term_index % 2 + 1) if term_index else None, topic=topic)

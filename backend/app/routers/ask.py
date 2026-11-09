@@ -145,6 +145,8 @@ def _search_one(state: AppState, search_query: str, task: SearchTask | None = No
         max_chunks_per_url=state.settings.rag_max_chunks_per_url,
         max_lexical_chunks_per_url=state.settings.rag_max_lexical_chunks_per_url,
         query_text=search_query,
+        per_rpc_metadata_filters={"match_rag_documents": {"ingestion_dataset": task.target.department_id}}
+        if task and task.target.department_id else None,
         title_anchor=state.settings.rag_title_anchor_enabled,
         scope_check=(lambda row: scope_reason(row, task) is None) if task else None,
     )

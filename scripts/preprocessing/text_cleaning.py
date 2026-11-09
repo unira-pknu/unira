@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from functools import lru_cache
 
 CONTROL_CHARS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 ZERO_WIDTH_CHARS = re.compile(r"[\u200b-\u200f\ufeff]")
@@ -50,7 +51,19 @@ def has_searchable_body(document: dict) -> bool:
         return False
     chunks = document.get("chunks") or []
     return any(isinstance(chunk, dict) and str(chunk.get("text") or "").strip()
-               and chunk.get("type") != "metadata_fallback" for chunk in chunks)
+               and chunk.get("type") != "metadata_fallback" and chunk.get("search_excluded") is not True for chunk in chunks)
+
+
+def chunk_is_searchable(document: dict, position: int | None) -> bool:
+    """Explicit review exclusions apply only to their original chunk positions."""
+    if not has_searchable_body(document):
+        return False
+    if position is None:
+        return True
+    chunks = document.get("chunks") or []
+    if not isinstance(position, int) or position < 0 or position >= len(chunks):
+        raise ValueError("Record chunk position is not aligned with preprocessing")
+    return isinstance(chunks[position], dict) and chunks[position].get("search_excluded") is not True
 
 
 def _collapse_spaced_hangul(match: re.Match[str]) -> str:
@@ -82,6 +95,19 @@ def is_noise_line(line: str) -> bool:
     return False
 
 
+@lru_cache(maxsize=32768)
+def _clean_extracted_line(raw_line: str) -> str:
+    """Reuse repeated table-cell lines; duplicate suppression stays document-local."""
+    line = normalize_whitespace(raw_line)
+    line = SPREADSHEET_FORMULA.sub(" ", line)
+    line = FORMAT_ARTIFACT.sub(" ", line)
+    line = QUESTION_RUN.sub(" ", line)
+    line = DOT_LEADERS.sub(" ", line)
+    line = REPEATED_PUNCT.sub(r"\1\1", line)
+    line = MULTISPACE.sub(" ", line).strip()
+    return "" if is_noise_line(line) else line
+
+
 def clean_extracted_text(text: object) -> str:
     """Clean extracted document text while preserving legal/article structure."""
 
@@ -103,14 +129,8 @@ def clean_extracted_text(text: object) -> str:
     previous = ""
     duplicate_run = 0
     for raw_line in value.splitlines():
-        line = normalize_whitespace(raw_line)
-        line = SPREADSHEET_FORMULA.sub(" ", line)
-        line = FORMAT_ARTIFACT.sub(" ", line)
-        line = QUESTION_RUN.sub(" ", line)
-        line = DOT_LEADERS.sub(" ", line)
-        line = REPEATED_PUNCT.sub(r"\1\1", line)
-        line = MULTISPACE.sub(" ", line).strip()
-        if is_noise_line(line):
+        line = _clean_extracted_line(raw_line)
+        if not line:
             continue
         if line == previous:
             duplicate_run += 1

@@ -229,7 +229,7 @@ def feature_overlap_score(content: str, reference_features: set[str]) -> tuple[f
     return matched / total, total, matched
 
 
-def calculate_ce_priority(
+def calculate_department_priority(
     ce_content: str,
     rule_features: set[str],
     main_features: set[str] | None = None,

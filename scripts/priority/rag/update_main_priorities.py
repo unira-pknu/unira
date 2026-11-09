@@ -21,11 +21,11 @@ except ModuleNotFoundError:
         def __init__(self, value: Any) -> None:
             self.value = value
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from scripts.rag.priority import build_rule_feature_set, calculate_main_priority  # noqa: E402
+from scripts.priority.rag.priority import build_rule_feature_set, calculate_main_priority  # noqa: E402
 from scripts.db import connect_postgres  # noqa: E402
 from scripts.vectorization.datasets import get_vector_paths, table_family
 

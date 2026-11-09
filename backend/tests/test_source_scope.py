@@ -95,3 +95,18 @@ def test_future_amendment_is_not_current_policy():
 def test_admission_table_section_does_not_apply_to_enrolled_students():
     row = {"title": "학생생활관 입실생 선발지침", "content": "수시전형 합격자 정시전형 합격자 편입생 합격자 신청기간"}
     assert scope_reason(row, task("재학생 기숙사 신청 자격")) == "restricted_student_section"
+
+
+def test_spreadsheet_row_instructor_and_term_are_checked():
+    row = {"title": "개설 교과목", "metadata": {"structured_table": {"kind": "spreadsheet", "rows": [
+        {"fields": {"staff_name": "오정은", "course_name": "수리학및실험", "year": "2026", "term": "2"}}]}}}
+    request = task("2026년 2학기 유승호 교수님 소프트웨어공학 강의실")
+    assert scope_reason(row, request) == "different_instructor"
+    row["metadata"]["structured_table"]["rows"][0]["fields"]["staff_name"] = "유승호"
+    request.conditions.term = "1"
+    assert scope_reason(row, request) == "different_course_term"
+
+
+def test_old_unstructured_spreadsheet_cannot_establish_professor_course_relation():
+    row = {"title": "개설 교과목", "content": "유승호 수리학및실험", "metadata": {"source_ext": ".xlsx"}}
+    assert scope_reason(row, task("유승호 교수님 소프트웨어공학 강의실")) == "unverified_spreadsheet_instructor"

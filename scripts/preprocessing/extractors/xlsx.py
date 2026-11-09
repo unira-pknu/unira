@@ -5,7 +5,7 @@ import zipfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-from scripts.preprocessing.extractors.common import normalize_text
+from scripts.preprocessing.extractors.common import normalize_text, clean_extracted_text
 
 SPREADSHEET_POLICY_VERSION = "spreadsheet-rows-v1"
 _HEADER_NAMES = {"학년도", "학기", "교과목명", "과목명", "강좌명", "학수번호", "분반", "담당교수", "교수명", "성명",
@@ -76,13 +76,15 @@ def _spreadsheet_blocks(sheet: str, rows: dict[int, dict[int, dict]], merges: li
         headers.append(" / ".join(labels) or _column_name(col))
 
     blocks = []
+    header_signatures = {tuple(str(c.get("effective_value", c["value"])) for c in initial[row]) for row in header_rows}
     for row in sorted(rows):
         if not any(c.get("value") or c.get("formula") for c in rows[row].values()):
             continue
         cells = cells_at(row)
+        is_header = row in header_rows or tuple(str(c.get("effective_value", c["value"])) for c in cells) in header_signatures
         columns = [{"column": _column_name(col), "header": headers[col]} for col in range(width)]
         fields = {}
-        if row not in header_rows:
+        if not is_header:
             for col, cell in enumerate(cells):
                 header = _header_key(headers[col])
                 value = str(cell.get("effective_value", cell["value"]))
@@ -98,7 +100,7 @@ def _spreadsheet_blocks(sheet: str, rows: dict[int, dict[int, dict]], merges: li
         table = {"kind": "spreadsheet", "policy_version": SPREADSHEET_POLICY_VERSION, "sheet": sheet,
                  "header_rows": header_rows, "header_status": "detected" if header_rows else "unverified",
                  "columns": columns, "rows": [{"source_row": row, "cells": cells, "fields": fields,
-                                                "row_kind": "header" if row in header_rows else "data"}]}
+                                                "row_kind": "header" if is_header else "data"}]}
         text = f"시트: {sheet} | 원본 행: {row}\n" + "\n".join(
             f"{headers[i]}[{c['column']}]: {c.get('effective_value', c['value'])}" for i, c in enumerate(cells) if c.get("effective_value", c["value"]) or c.get("formula"))
         blocks.append({"type": "table_row", "style": style, "sheet": sheet, "row": row, "text": text, "structured_table": table})
@@ -110,7 +112,14 @@ def chunk_spreadsheet_row(block: dict, chunk_size: int) -> list[dict]:
     table = block["structured_table"]
     row = table["rows"][0]
     prefix = f"시트: {table['sheet']} | 원본 행: {row['source_row']}\n"
-    identity = " | ".join(f"{key}: {value}" for key, value in row["fields"].items() if len(str(value)) <= max(80, chunk_size // 4))
+    identity_parts = []
+    identity_budget = max(0, chunk_size // 2 - len(prefix))
+    for key in ("course_name", "staff_name", "year", "term", "course_no", "section", "level", "department"):
+        value = row["fields"].get(key)
+        part = f"{key}: {value}"
+        if value and len(" | ".join([*identity_parts, part])) <= identity_budget:
+            identity_parts.append(part)
+    identity = " | ".join(identity_parts)
     if identity:
         prefix += identity + "\n"
     # Very small requested chunks still need a usable row/column identity.
@@ -150,7 +159,7 @@ def _format_xls_value(cell: object, datemode: int) -> str:
     if cell_type in {xlrd.XL_CELL_EMPTY, xlrd.XL_CELL_BLANK}:
         return ""
     if cell_type == xlrd.XL_CELL_TEXT:
-        return normalize_text(value)
+        return clean_extracted_text(value)
     if cell_type == xlrd.XL_CELL_BOOLEAN:
         return "TRUE" if bool(value) else "FALSE"
     if cell_type == xlrd.XL_CELL_DATE:
@@ -192,7 +201,7 @@ def _xlsx_text_value(cell: ET.Element, shared_strings: list[str]) -> str:
     cell_type = cell.attrib.get("t", "")
     if cell_type == "inlineStr":
         parts = [node.text or "" for node in cell.findall(".//{*}t")]
-        return normalize_text("".join(parts))
+        return clean_extracted_text("".join(parts))
 
     value_node = cell.find("{*}v")
     if value_node is None or value_node.text is None:
@@ -201,7 +210,7 @@ def _xlsx_text_value(cell: ET.Element, shared_strings: list[str]) -> str:
     value = value_node.text
     if cell_type == "s":
         try:
-            return normalize_text(shared_strings[int(value)])
+            return clean_extracted_text(shared_strings[int(value)])
         except (ValueError, IndexError):
             return ""
     if cell_type == "b":
@@ -219,7 +228,7 @@ def _load_xlsx_shared_strings(zf: zipfile.ZipFile) -> list[str]:
     strings: list[str] = []
     for item in root.findall("{*}si"):
         parts = [node.text or "" for node in item.findall(".//{*}t")]
-        strings.append(normalize_text("".join(parts)))
+        strings.append(clean_extracted_text("".join(parts)))
     return strings
 
 
@@ -255,23 +264,43 @@ def extract_xlsx_blocks(path: Path) -> list[dict]:
 
         for sheet_index, sheet_path in enumerate(sheet_paths, start=1):
             sheet_name = sheet_names.get(sheet_path, f"sheet{sheet_index}")
-            root = ET.fromstring(zf.read(sheet_path))
-            rows = {}
-            for row_idx, row in enumerate(root.findall(".//{*}sheetData/{*}row"), start=1):
-                cells = {}
-                for col_idx, cell in enumerate(row.findall("{*}c")):
-                    value = _xlsx_text_value(cell, shared_strings)
-                    column = _column_index(cell.attrib["r"]) if cell.attrib.get("r") else col_idx
-                    cells[column] = {"value": value}
-                    formula = cell.find("{*}f")
-                    if formula is not None:
-                        cells[column]["formula"] = formula.text or ""
-                rows[int(row.attrib.get("r", row_idx))] = cells
-            merges = []
-            for region in root.findall(".//{*}mergeCell"):
-                bounds = region.attrib["ref"].split(":")
-                start, end = bounds[0], bounds[-1]
-                merges.append((_column_index(start), int(re.search(r"\d+", start)[0]), _column_index(end), int(re.search(r"\d+", end)[0])))
+            rows, merges = {}, []
+            # Old workbooks can contain millions of format-only cells. Parse a
+            # row at a time and keep only stored values/formulas; cells_at()
+            # restores blank positions within every retained data row.
+            sheet_data = None
+            row_idx = 0
+            with zf.open(sheet_path) as stream:
+                for event, node in ET.iterparse(stream, events=("start", "end")):
+                    tag = node.tag.rsplit("}", 1)[-1]
+                    if event == "start":
+                        if tag == "sheetData":
+                            sheet_data = node
+                        continue
+                    if tag == "row":
+                        row_idx += 1
+                        cells = {}
+                        for col_idx, cell in enumerate(node.findall("{*}c")):
+                            if not len(cell):
+                                continue
+                            value = _xlsx_text_value(cell, shared_strings)
+                            formula = cell.find("{*}f")
+                            if not value and formula is None:
+                                continue
+                            column = _column_index(cell.attrib["r"]) if cell.attrib.get("r") else col_idx
+                            cells[column] = {"value": value}
+                            if formula is not None:
+                                cells[column]["formula"] = formula.text or ""
+                        if cells:
+                            rows[int(node.attrib.get("r", row_idx))] = cells
+                        node.clear()
+                        if sheet_data is not None:
+                            sheet_data.clear()
+                    elif tag == "mergeCell":
+                        bounds = node.attrib["ref"].split(":")
+                        start, end = bounds[0], bounds[-1]
+                        merges.append((_column_index(start), int(re.search(r"\d+", start)[0]), _column_index(end), int(re.search(r"\d+", end)[0])))
+                        node.clear()
             blocks.extend(_spreadsheet_blocks(sheet_name, rows, merges, "XLSX"))
     return blocks
 

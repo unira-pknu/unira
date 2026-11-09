@@ -38,6 +38,7 @@ class CourseRequest:
     names_only: bool = False
     all_terms: bool = False
     all_levels: bool = False
+    limit: int | None = None
 
 
 @dataclass
@@ -86,10 +87,19 @@ def extract_request(question: str, history: list[dict] | None = None) -> CourseR
     staff = instructor_name(question)
     level = course_level(question)
     if listing:
+        all_term_match = re.search(r"(?:전체|모든)\s*학기|학기\s*상관없", question)
+        explicit_term = re.search(r"[12]\s*학기|20\d{2}\s*[-/]\s*[12]|(?:이번|지난|다음)\s*학기", question)
+        all_terms = bool(all_term_match and (not explicit_term or all_term_match.start() < explicit_term.start()))
+        if all_terms:
+            term = None
+            if not year_match or year_match.start() > all_term_match.start():
+                year = None
+        count = re.search(r"(?<!\d)(\d{1,2})\s*(?:개|건)", question)
         return CourseRequest(year=year, term=term, instructor=staff, level=level, list_courses=True,
                              names_only=bool(re.search(r"강의명|과목명|강좌명|이름만", question)),
-                             all_terms=bool(re.search(r"(?:전체|모든)\s*학기|학기\s*상관없", question)),
-                             all_levels=bool(re.search(r"(?:전체|모든)\s*과정|학부.{0,5}대학원.{0,5}(?:모두|전체)|과정\s*상관없", question)))
+                             all_terms=all_terms,
+                             all_levels=level is None and bool(re.search(r"(?:전체|모든)\s*과정|학부.{0,5}대학원.{0,5}(?:모두|전체)|과정\s*상관없", question)),
+                             limit=max(1, min(20, int(count[1]))) if count else None)
     cleaned = question
     for match in (pair, short_term, year_match, term_match, section, code, department):
         if match:
@@ -193,7 +203,8 @@ def search_instructor_courses(client: Any, request: CourseRequest) -> SyllabusRe
         courses.setdefault(key[:-1], []).append(selected)
     lines, evidence, source_ids = [], [], []
     current_scope = None
-    for key, sections in sorted(courses.items(), key=lambda item: (item[0][:3], str(item[1][0]["metadata"]["course_name"]))):
+    ordered = sorted(courses.items(), key=lambda item: (item[0][:3], str(item[1][0]["metadata"]["course_name"])))
+    for key, sections in ordered[:request.limit]:
         m = sections[0]["metadata"]
         scope = key[:3]
         if scope != current_scope:

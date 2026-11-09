@@ -40,12 +40,12 @@ class DepartmentDatasetTests(unittest.TestCase):
     def test_preprocessing_outputs_and_vectorization_inputs_use_central_storage(self):
         from scripts.crawlers.common.reader import infer_dataset_from_path
         for name, dataset in preprocessing_pipeline.WEB_DATASETS.items():
-            expected = ROOT / "files" / "preprocessed" / name
+            expected = ROOT / "preprocessed" / name
             self.assertEqual(expected, dataset.preprocessed_root)
             self.assertEqual(expected, vectorization.DATASET_PATHS[name]["input_root"])
             self.assertEqual(name, infer_dataset_from_path(expected / "json/sample.json"))
         for name, _, output in collected.scopes(ROOT):
-            self.assertEqual(ROOT / "files/preprocessed" / name, output)
+            self.assertEqual(ROOT / "preprocessed" / name, output)
             self.assertEqual(output, vectorization.DATASET_PATHS[name]["input_root"])
             if name in load_to_supabase.DATASET_TABLES:
                 self.assertEqual(vectorization.DATASET_PATHS[name]["output_root"] / "index.jsonl",
@@ -86,9 +86,9 @@ class DepartmentDatasetTests(unittest.TestCase):
         web = preprocessing_pipeline.WEB_DATASETS["ce"]
         self.assertEqual(get_dataset_paths(ROOT, "ce").output, web.output_root)
         self.assertEqual(get_preprocessed_root(ROOT, "ce"), web.preprocessed_root)
-        self.assertEqual(ROOT / "files/vectorized/ce", vectorization.DATASET_PATHS["ce"]["output_root"])
+        self.assertEqual(ROOT / "vectorized/ce", vectorization.DATASET_PATHS["ce"]["output_root"])
         for dataset, paths in vectorization.DATASET_PATHS.items():
-            self.assertEqual(ROOT / "files/vectorized" / dataset, paths["output_root"])
+            self.assertEqual(ROOT / "vectorized" / dataset, paths["output_root"])
         self.assertEqual("rag_sources", load_to_supabase.DATASET_TABLES["ce"]["sources"])
 
     def test_every_department_maps_to_the_department_tables(self):

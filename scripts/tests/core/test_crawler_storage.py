@@ -18,6 +18,11 @@ from scripts.crawlers.main.paths import page_root
 
 
 class CrawlerStorageTests(unittest.TestCase):
+    def test_dataset_inference_accepts_external_derived_roots_with_nested_files(self):
+        self.assertEqual("ce", infer_dataset_from_path(Path("preprocessed/ce/files/pdf/course.json")))
+        self.assertEqual("pknu_syllabus", infer_dataset_from_path(Path("vectorized/pknu_syllabus/files/pdf/course.json")))
+        self.assertEqual("rule", infer_dataset_from_path(Path("files/rule/output/files/rule.pdf")))
+
     def setUp(self) -> None:
         self.temp = tempfile.TemporaryDirectory()
         self.root = Path(self.temp.name)
@@ -152,7 +157,7 @@ class CrawlerStorageTests(unittest.TestCase):
         document.parent.mkdir(parents=True)
         document.write_text(json.dumps(payload), encoding="utf-8")
         timestamp = document.stat().st_mtime_ns
-        review = self.root / "files" / "_reviewed" / "preview.html"
+        review = self.root / "var" / "reviewed" / "preview.html"
         review.parent.mkdir(parents=True)
         review.write_text('<a href="../ce/output/files/doc/test.pdf">PDF</a>', encoding="utf-8")
         plan = migrate_department_layout(self.root, storage_paths=paths)

@@ -182,3 +182,47 @@ class SyllabusTests(unittest.TestCase):
     def test_new_topic_breaks_professor_followup_context(self):
         history = [{"role": "user", "content": "유승호 교수님 강의명 알려줘"}, {"role": "user", "content": "기숙사 신청 방법 알려줘"}]
         self.assertIsNone(extract_request("전체 강의명만 알려줘", history))
+
+    def test_explicit_all_terms_and_levels_override_previous_selection(self):
+        history = [{"role": "user", "content": "2026-2학기 학부 유승호 교수님 강의명 알려줘"}]
+        request = extract_request("전체 학기 모든 과정 강의명만 알려줘", history)
+        self.assertTrue(request.all_terms and request.all_levels)
+        self.assertIsNone(request.year)
+        self.assertIsNone(request.term)
+        self.assertIsNone(request.level)
+        result = search_syllabus(instructor_db(), request)
+        self.assertIn("2026학년도 1학기", result.answer)
+        self.assertIn("산업대학원", result.answer)
+
+    def test_new_level_overrides_old_level(self):
+        history = [{"role": "user", "content": "2026-2학기 대학원 유승호 교수님 강의명 알려줘"}]
+        request = extract_request("학부만 알려줘", history)
+        self.assertEqual(request.level, "학부")
+        self.assertNotIn("운영체제특론", search_syllabus(instructor_db(), request).answer)
+
+    def test_json_and_stream_use_exact_metadata_without_models_or_general_search(self):
+        import json
+        from unittest.mock import patch
+        from fastapi import FastAPI
+        from fastapi.testclient import TestClient
+        from app.deps import get_state
+        from app.rate_limit import enforce_ask_rate_limit
+        from app.routers.ask import router
+        app = FastAPI()
+        app.include_router(router)
+        app.dependency_overrides[get_state] = lambda: SimpleNamespace(
+            settings=SimpleNamespace(openai_model="test", rag_top_k=1), openai=None, supabase=instructor_db())
+        app.dependency_overrides[enforce_ask_rate_limit] = lambda: "test-user"
+        client = TestClient(app)
+        for stream in (False, True):
+            with patch("app.routers.ask._search_one") as generic, patch("app.routers.ask.generate_answer") as generation:
+                response = client.post("/ask", json={"question": "2026-2학기 학부 유승호 교수님 강의명 알려줘", "stream": stream})
+            self.assertEqual(response.status_code, 200)
+            result = ([json.loads(line[6:]) for line in response.text.splitlines() if line.startswith("data: ")][-1]
+                      if stream else response.json())
+            self.assertIn("소프트웨어공학", result["answer"])
+            self.assertNotIn("수리학", result["answer"])
+            self.assertEqual(len(result["sources"]), 1)
+            self.assertIn("irumi.pknu.ac.kr", result["sources"][0]["uri"])
+            generic.assert_not_called()
+            generation.assert_not_called()

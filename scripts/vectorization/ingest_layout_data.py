@@ -1,12 +1,12 @@
 """Chunk reviewed body-image OCR data by layout and load it into a local TEST store.
 
 Safety: this script never connects to Supabase or touches ``rag_chunks``. It
-writes only to ``files/_test_db/test_layout_rag_YYYYMMDD[_suffix]/`` and
+writes only to ``var/test_db/test_layout_rag_YYYYMMDD[_suffix]/`` and
 embeds with the local sentence-transformers model (no API cost).
 
 Example:
   python -m scripts.vectorization.ingest_layout_data
-  python -m scripts.vectorization.ingest_layout_data --input "files/_reviewed/body_image_ocr/*.reviewed.jsonl" --limit 50
+  python -m scripts.vectorization.ingest_layout_data --input "var/reviewed/body_image_ocr/*.reviewed.jsonl" --limit 50
 """
 from __future__ import annotations
 
@@ -48,7 +48,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--input", action="append",
                         help="Glob of *.reviewed.jsonl files (repeatable). "
-                             "Default: files/_reviewed/body_image_ocr/*.reviewed.jsonl")
+                             "Default: var/reviewed/body_image_ocr/*.reviewed.jsonl")
     parser.add_argument("--table-extractions", default=str(REVIEWED_ROOT / "table_extractions.jsonl"))
     parser.add_argument("--diagram-extractions", default=str(REVIEWED_ROOT / "diagram_extractions.jsonl"))
     parser.add_argument("--store", default=default_store_name(),

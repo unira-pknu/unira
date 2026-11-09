@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 import logging
+import os
 import re
 import shutil
 import sys
@@ -60,6 +61,7 @@ SUPPORTED_EXTS = EXTRACTABLE_EXTS | ARCHIVE_EXTS
 MAX_ARCHIVE_MEMBERS = 300
 MAX_ARCHIVE_MEMBER_BYTES = 100 * 1024 * 1024
 MAX_ARCHIVE_TOTAL_BYTES = 500 * 1024 * 1024
+ARCHIVE_PATH_POLICY_VERSION = 2
 
 
 def parse_file_exts(values: list[str] | None) -> set[str] | None:
@@ -173,14 +175,96 @@ def archive_member_output_path(
     *,
     layout: str = "by_ext",
 ) -> Path:
+    """Keep the complete member name: dir/guide.pdf -> dir/guide.pdf.json."""
+    if not is_safe_archive_member(member_name):
+        raise ValueError(f"Unsafe archive member: {member_name!r}")
     archive_rel = archive_file.resolve().relative_to(input_root.resolve())
     member_rel = PurePosixPath(member_name.replace("\\", "/"))
     archive_stem_rel = archive_rel.with_suffix("")
     if layout == "flat":
-        return (output_root / archive_stem_rel / Path(*member_rel.parts)).with_suffix(".json")
+        target = output_root / archive_stem_rel / Path(*member_rel.parts)
+        return target.with_name(target.name + ".json")
     if layout == "by_ext":
-        return (output_root / "zip" / archive_stem_rel / Path(*member_rel.parts)).with_suffix(".json")
+        target = output_root / "zip" / archive_stem_rel / Path(*member_rel.parts)
+        return target.with_name(target.name + ".json")
     raise ValueError(f"unsupported layout: {layout}")
+
+
+def legacy_archive_member_output_path(archive_file, input_root, output_root, member_name, *, layout="by_ext"):
+    """Old, lossy location; use for identity migration only, never new writes."""
+    target = archive_member_output_path(archive_file, input_root, output_root, member_name, layout=layout)
+    return target.with_name(target.name[:-5]).with_suffix(".json")
+
+
+def validate_archive_member_targets(names: list[str]) -> None:
+    """Fail before extraction on duplicate names or Windows path aliases."""
+    seen = set()
+    for name in names:
+        if not is_safe_archive_member(name):
+            raise ValueError(f"Unsafe archive member: {name!r}")
+        parts = PurePosixPath(name.replace("\\", "/")).parts
+        for part in parts:
+            stem = part.split(".", 1)[0].upper()
+            if (part.endswith((".", " ")) or re.search(r'[<>:"|?*\x00-\x1f]', part)
+                    or stem in {"CON", "PRN", "AUX", "NUL", *(f"COM{i}" for i in range(1, 10)), *(f"LPT{i}" for i in range(1, 10))}):
+                raise ValueError(f"Unsupported Windows archive path: {name!r}")
+        key = "/".join(parts).casefold()
+        if key in seen:
+            raise ValueError(f"Duplicate archive member output: {name!r}")
+        seen.add(key)
+    # A file cannot also be the directory containing another member.
+    output_keys = {key + ".json" for key in seen}
+    for key in seen | output_keys:
+        for parent in PurePosixPath(key).parents:
+            if parent.as_posix() in seen or parent.as_posix() in output_keys:
+                raise ValueError(f"Archive file/directory collision: {key!r}")
+
+
+def archive_previous_result(paths: list[Path], source_paths: set[str]):
+    for path in dict.fromkeys(paths):
+        if not path.is_file():
+            continue
+        previous = json.loads(path.read_text(encoding="utf-8-sig"))
+        if previous.get("source_path") in source_paths:
+            return path, previous
+    return None, {}
+
+
+def write_archive_result(path: Path, result: dict) -> None:
+    """Replace only the same source, and leave the old result intact on failure."""
+    if path.exists():
+        previous = json.loads(path.read_text(encoding="utf-8-sig"))
+        if previous.get("source_path") != result["source_path"]:
+            raise ValueError(f"Refusing to overwrite another archive member: {path}")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent, delete=False) as handle:
+            temporary = Path(handle.name)
+            json.dump(result, handle, ensure_ascii=False, indent=2)
+        os.replace(temporary, path)
+    finally:
+        if temporary:
+            temporary.unlink(missing_ok=True)
+
+
+def retire_archive_result(path: Path, source_paths: set[str]) -> None:
+    """Retain a byte-for-byte backup outside the *.json input set."""
+    if not path.is_file():
+        return
+    original = path.read_bytes()
+    if json.loads(original.decode("utf-8-sig")).get("source_path") not in source_paths:
+        return
+    backup = path.with_name(path.name + ".legacy")
+    if backup.exists():
+        if backup.read_bytes() != original:
+            raise ValueError(f"Legacy backup already differs: {backup}")
+    else:
+        with backup.open("xb") as handle:
+            handle.write(original)
+    if path.read_bytes() != original:
+        raise ValueError(f"Legacy result changed during migration: {path}")
+    path.unlink()
 
 
 def load_attachment_index(output_json_root: Path, project_root: Path) -> dict[str, dict]:
@@ -643,15 +727,28 @@ def save_preprocessed_archive_member(
     ocr_language: str,
     ocr_dpi: int,
     layout: str = "by_ext",
+    previous_outputs: list[Path] | None = None,
+    retire_previous: bool = True,
 ) -> tuple[bool, str]:
     archive_rel = rel_project_path(archive_file, project_root)
-    archive_rel_in_input = rel_project_path(archive_file, input_root)
+    archive_rel_in_input = archive_provenance.get("archive_relative_to_input") or rel_project_path(archive_file, input_root)
     member_ext = member_file.suffix.lower()
     if member_ext not in EXTRACTABLE_EXTS:
         return False, "unsupported archive member"
 
     member_source = f"{archive_rel}!/{member_name}"
     member_source_in_input = f"{archive_rel_in_input}!/{member_name}"
+    out_path = archive_member_output_path(archive_file, input_root, output_root, member_name, layout=layout)
+    original_name = str(archive_provenance.get("archive_member_original_name") or member_name).replace("\\", "/")
+    source_aliases = {member_source, f"{archive_rel}!/{original_name}"}
+    candidates = [out_path, legacy_archive_member_output_path(archive_file, input_root, output_root, member_name, layout=layout)]
+    if original_name != member_name and is_safe_archive_member(original_name):
+        candidates.extend([
+            archive_member_output_path(archive_file, input_root, output_root, original_name, layout=layout),
+            legacy_archive_member_output_path(archive_file, input_root, output_root, original_name, layout=layout),
+        ])
+    candidates.extend(previous_outputs or [])
+    previous_path, previous = archive_previous_result(candidates, source_aliases)
     provenance = {
         **archive_provenance,
         "source_kind": "archive_member",
@@ -659,7 +756,17 @@ def save_preprocessed_archive_member(
         "archive_relative_to_input": archive_rel_in_input,
         "archive_member_path": member_name,
         "archive_file_name": archive_file.name,
+        "archive_member_ext": PurePosixPath(member_name).suffix,
+        "archive_member_sha256": hashlib.sha256(member_file.read_bytes()).hexdigest(),
+        "archive_path_policy_version": ARCHIVE_PATH_POLICY_VERSION,
     }
+    if previous_path and previous_path != out_path:
+        provenance["previous_preprocessed_path"] = rel_project_path(previous_path, project_root)
+        provenance["previous_source_path"] = previous["source_path"]
+    elif previous_path:
+        for key in ("previous_preprocessed_path", "previous_source_path"):
+            if previous.get("provenance", {}).get(key):
+                provenance.setdefault(key, previous["provenance"][key])
     provenance = public_provenance(provenance)
 
     blocks = extract_blocks(
@@ -683,11 +790,8 @@ def save_preprocessed_archive_member(
             chunks = fallback_chunks
             used_metadata_fallback = True
 
-    out_path = archive_member_output_path(archive_file, input_root, output_root, member_name, layout=layout)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-
     result = {
-        "slug": preserved_source_slug(member_source, out_path),
+        "slug": previous.get("slug") or preserved_source_slug(member_source, out_path),
         "source_file": PurePosixPath(member_name.replace("\\", "/")).name,
         "source_path": member_source,
         "source_relative_to_input": member_source_in_input,
@@ -702,7 +806,11 @@ def save_preprocessed_archive_member(
         "chunks": chunks,
     }
 
-    out_path.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+    write_archive_result(out_path, result)
+    if retire_previous:
+        for candidate in dict.fromkeys(candidates):
+            if candidate != out_path:
+                retire_archive_result(candidate, source_aliases)
     return True, out_path.as_posix()
 
 
@@ -735,6 +843,12 @@ def save_preprocessed_archive(
     total_size = 0
     member_count = 0
     with zf, tempfile.TemporaryDirectory(prefix="campus_rag_zip_") as temp_dir:
+        validate_archive_member_targets([
+            decoded_archive_member_name(info).replace("\\", "/")
+            for info in zf.infolist() if not info.is_dir()
+            and is_safe_archive_member(decoded_archive_member_name(info))
+            and PurePosixPath(decoded_archive_member_name(info)).suffix.lower() in EXTRACTABLE_EXTS
+        ])
         temp_root = Path(temp_dir)
         for info in zf.infolist():
             if info.is_dir():
@@ -787,27 +901,6 @@ def save_preprocessed_archive(
                 if saved:
                     ok += 1
                     log.info("[OK:zip] %s!/%s -> %s", archive_rel, member_name, info_text)
-                    # Remove only a verified old result after its corrected replacement exists.
-                    original_name = info.filename.replace("\\", "/")
-                    if member_name != original_name and is_safe_archive_member(original_name):
-                        old_output = archive_member_output_path(archive_file, input_root, output_root, original_name, layout=layout)
-                        new_output = Path(info_text)
-                        if old_output != new_output and old_output.is_file() and new_output.is_file():
-                            try:
-                                previous = json.loads(old_output.read_text(encoding="utf-8"))
-                                if previous.get("source_path") == f"{archive_rel}!/{original_name}":
-                                    old_output.unlink()
-                                    log.info("[RENAME:zip] %s -> %s", old_output, new_output)
-                                    parent = old_output.parent
-                                    boundary = output_root.resolve()
-                                    while parent.resolve() != boundary and parent.resolve().is_relative_to(boundary):
-                                        try:
-                                            parent.rmdir()
-                                        except OSError:
-                                            break
-                                        parent = parent.parent
-                            except (OSError, ValueError):
-                                log.warning("[RENAME:zip] Could not remove old result: %s", old_output)
                 else:
                     skipped += 1
                     log.info("[SKIP:zip] %s!/%s (%s)", archive_rel, member_name, info_text)
@@ -822,6 +915,8 @@ def save_preprocessed_archive(
                 failed += 1
                 log.warning("[FAIL:zip] %s!/%s (%s)", archive_rel, member_name, exc)
 
+    if failed:
+        return False, f"archive extraction incomplete: ok={ok}, skipped={skipped}, failed={failed}"
     if ok:
         return True, f"archive members processed: ok={ok}, skipped={skipped}, failed={failed}"
     return False, f"no supported archive members processed: skipped={skipped}, failed={failed}"

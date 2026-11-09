@@ -340,15 +340,24 @@ def _lexical_fallback_query(query_text: str) -> str:
     already-safe AND query match in more cases, by narrowing the token list
     down to the words actually likely to appear next to the answer.
     """
+    # Exchange documents often repeat long parent titles and attachment names.
+    # One explicitly named institution + academic year is a bounded document
+    # identity; AND-ing all remaining inflected words can eliminate every hit.
+    institutions = set(re.findall(r"[가-힣A-Za-z]+대학교", query_text))
+    academic_year = re.search(r"(?<!\d)\d{4}학년도", query_text)
+    if (len(institutions) == 1 and academic_year
+            and re.search(r"교류|교환학생", query_text)):
+        return next(iter(institutions)) + " " + academic_year.group()
     tokens: list[str] = []
     for raw_token in _normalize_text(query_text).split(" "):
         token = raw_token.strip("?!.,~()[]\"'")
         if not token or token in _LEXICAL_STOPWORDS:
             continue
-        for suffix in _LEXICAL_PARTICLE_SUFFIXES:
-            if len(token) > len(suffix) + 1 and token.endswith(suffix):
-                token = token[: -len(suffix)]
-                break
+        if not re.search(r"(?<!\d)\d{4}학년도$", token):
+            for suffix in _LEXICAL_PARTICLE_SUFFIXES:
+                if len(token) > len(suffix) + 1 and token.endswith(suffix):
+                    token = token[: -len(suffix)]
+                    break
         if len(token) >= 2:
             tokens.append(token)
     # Drop question-framing words only if something specific is left; a lone
@@ -677,6 +686,32 @@ def _row_uri(row: Dict[str, Any]) -> str:
     )
 
 
+def _attachment_source_identity(row: Dict[str, Any]) -> str:
+    metadata = row.get("metadata") or {}
+    if metadata.get("source_kind") not in {"attachment", "archive_member"}:
+        return ""
+    if row.get("source_id"):
+        return "source:" + str(row["source_id"])
+    if metadata.get("source_path"):
+        return "file:" + str(metadata["source_path"]).replace("\\", "/")
+    return ""
+
+
+def _explicit_attachment_candidates(rows: List[Dict[str, Any]], question: Optional[str]) -> List[Dict[str, Any]]:
+    """A complete, distinctive attachment name identifies its document first."""
+    text = re.sub(r"\s+", "", question or "").casefold()
+    named = set()
+    for row in rows:
+        identity = _attachment_source_identity(row)
+        metadata = row.get("metadata") or {}
+        filename = str(metadata.get("source_file") or metadata.get("attachment_name") or "")
+        stem = re.sub(r"\.[A-Za-z0-9]{1,6}$", "", filename)
+        stem = re.sub(r"\s+", "", stem).casefold()
+        if identity and len(stem) >= 12 and stem in text:
+            named.add(identity)
+    return [row for row in rows if _attachment_source_identity(row) in named] if named else rows
+
+
 def _url_key(row: Dict[str, Any]) -> str:
     """Per-URL cap 용 key. 쿼리스트링/앵커 제거해서 같은 문서 다른 뷰 통합.
 
@@ -688,6 +723,9 @@ def _url_key(row: Dict[str, Any]) -> str:
     부서 연락처 디렉터리를 잘게 쪼갠 뒤 실제로 겪은 사례. 제목까지 묶어야
     "같은 문서의 여러 청크"만 캡 대상이 된다.
     """
+    attachment = _attachment_source_identity(row)
+    if attachment:
+        return attachment
     uri = re.sub(r"[?#].*$", "", _normalize_text(_row_uri(row)).lower())
     title = _normalize_text(_title_for_row(row)).lower()
     if uri:
@@ -697,6 +735,12 @@ def _url_key(row: Dict[str, Any]) -> str:
 
 def _dedupe_key(row: Dict[str, Any]) -> str:
     """정확히 같은 chunk 제거용 (같은 chunk가 여러 RPC에서 반환되는 경우 대비)."""
+    attachment = _attachment_source_identity(row)
+    if attachment:
+        if row.get("chunk_index") is not None:
+            return f"{attachment}|chunk:{row['chunk_index']}"
+        if row.get("id"):
+            return "chunk:" + str(row["id"])
     uri = _row_uri(row)
     title = _title_for_row(row)
     metadata = row.get("metadata") or {}
@@ -967,6 +1011,7 @@ def _fetch_rpc_responses(
     candidate_counts: Dict[str, int],
     lexical_query: Optional[str],
     max_workers: int = 1,
+    metadata_filters: Optional[Dict[str, Dict[str, Any]]] = None,
 ) -> Dict[str, RpcResult]:
     """Call every vector RPC (and its `<name>_lexical` companion when there is
     a lexical query), at most `max_workers` at a time; with 1 they run in the
@@ -976,6 +1021,8 @@ def _fetch_rpc_responses(
     calls: Dict[str, Dict[str, Any]] = {}
     for rpc_name in rpc_names:
         calls[rpc_name] = {**base_payload, "match_count": candidate_counts[rpc_name]}
+        if metadata_filters and rpc_name in metadata_filters:
+            calls[rpc_name]["metadata_filter"] = metadata_filters[rpc_name]
         if lexical_query:
             lexical_count = candidate_counts[rpc_name]
             if rpc_name in FRESHNESS_RPCS:
@@ -984,6 +1031,10 @@ def _fetch_rpc_responses(
                 "query_text": lexical_query,
                 "match_count": lexical_count,
             }
+            # Use the scoped overload only when a filter exists. Older
+            # unfiltered clients keep the original two-argument RPC contract.
+            if calls[rpc_name].get("metadata_filter"):
+                calls[f"{rpc_name}_lexical"]["metadata_filter"] = calls[rpc_name]["metadata_filter"]
 
     def run(name: str, rpc_client: Client) -> RpcResult:
         started = time.perf_counter()
@@ -1189,6 +1240,7 @@ def _title_anchor_chunks(
     dataset_priority_weight: float,
     source_kind_weight: float,
     max_workers: int = 1,
+    metadata_filters: Optional[Dict[str, Dict[str, Any]]] = None,
 ) -> List[Dict[str, Any]]:
     """Best chunks of the notices a rare query word names in their title.
 
@@ -1205,14 +1257,17 @@ def _title_anchor_chunks(
 
     def fetch_titles(term: str, source_table: str, rpc_client: Client) -> List[Dict[str, Any]]:
         try:
-            response = (
+            query = (
                 rpc_client.table(source_table)
                 .select("id, url, title, published_at:metadata->>published_at, date:metadata->>date")
                 .eq("status", "active")
                 .ilike("title", f"%{term}%")
                 .limit(title_anchor.TERM_FETCH_LIMIT)
-                .execute()
             )
+            filters = _source_lookup_filters((metadata_filters or {}).get(rpc_by_source[source_table], {}))
+            if filters:
+                query = query.contains("metadata", filters)
+            response = query.execute()
         except Exception:
             logger.warning("retrieval: title anchor lookup failed table=%s", source_table, exc_info=True)
             return []
@@ -1309,6 +1364,12 @@ _WORD_VARIANTS = {"휴학": ("휴학", "휴·복학", "휴ㆍ복학")}
 _TERM_TITLE_SKIP_WORDS = frozenset({"작년", "재작년", "지난", "다음", "학기", "학년도"})
 
 
+def _source_lookup_filters(filters: Dict[str, Any]) -> Dict[str, Any]:
+    # Chunk-only fields cannot constrain source-table lookups.
+    keys = {"ingestion_dataset", "department_id", "original_source_slug", "year", "term", "level", "staff_name", "course_no", "section"}
+    return {key: value for key, value in filters.items() if key in keys}
+
+
 def _term_title_patterns(term: int) -> str:
     """PostgREST or-filter matching titles that name `term` (term_index)."""
     year, semester = term // 2, term % 2 + 1
@@ -1326,6 +1387,7 @@ def _term_title_chunks(
     priority_weight: float,
     dataset_priority_weight: float,
     source_kind_weight: float,
+    metadata_filters: Optional[Dict[str, Dict[str, Any]]] = None,
 ) -> List[Dict[str, Any]]:
     """Opening chunks of the asked term's notices whose title has a query word."""
     target = query_term(query_text)
@@ -1354,15 +1416,18 @@ def _term_title_chunks(
         for word in words:
             for variant in _WORD_VARIANTS.get(word, (word,)):
                 try:
-                    rows = (
+                    query = (
                         client.table(source_table)
                         .select("id, url, title")
                         .eq("status", "active")
                         .ilike("title", f"%{variant}%")
                         .or_(patterns)
                         .limit(50)
-                        .execute()
-                    ).data or []
+                    )
+                    filters = _source_lookup_filters((metadata_filters or {}).get(rpc_name, {}))
+                    if filters:
+                        query = query.contains("metadata", filters)
+                    rows = query.execute().data or []
                 except Exception:
                     logger.warning("retrieval: term title lookup failed table=%s", source_table, exc_info=True)
                     rows = []
@@ -1621,6 +1686,7 @@ def search(
     max_lexical_chunks_per_url: Optional[int] = None,
     query_text: Optional[str] = None,
     metadata_filter: Optional[Dict[str, Any]] = None,
+    per_rpc_metadata_filters: Optional[Dict[str, Dict[str, Any]]] = None,
     title_anchor: bool = False,
     scope_check: Optional[Callable[[Dict[str, Any]], bool]] = None,
 ) -> List[Dict[str, Any]]:
@@ -1659,6 +1725,7 @@ def search(
     # Settings.rag_rpc_concurrency for why). Ranking below is unchanged.
     fetched = _fetch_rpc_responses(
         client, rpc_names, payload, candidate_counts, lexical_query, max_workers=rpc_concurrency,
+        metadata_filters=per_rpc_metadata_filters,
     )
 
     per_rpc_rows: List[Tuple[str, List[Dict[str, Any]]]] = []
@@ -1758,6 +1825,7 @@ def search(
                     # whichever of the two signals is stronger instead of
                     # always deferring to the vector channel.
                     existing = rows_by_key[dedupe_key]
+                    existing["_lexical_rank_index"] = rank_index
                     lexical_equivalent = _lexical_synthetic_similarity(
                         rank_index, min_similarity
                     )
@@ -1775,6 +1843,7 @@ def search(
                     rank_index, min_similarity
                 )
                 processed["_lexical_only"] = True
+                processed["_lexical_rank_index"] = rank_index
                 processed["priority_score"] = _priority_score(processed)
                 processed["dataset_priority"] = _dataset_priority(processed)
                 processed["final_score"] = _final_score(
@@ -1852,6 +1921,24 @@ def search(
             ):
                 taken += 1
 
+    # Keep a bounded share of exact keyword hits until the reranker sees them.
+    # Their synthetic similarity is capped at .75 and cannot otherwise compete
+    # with many near-identical vector hits above .85, even at lexical rank 1.
+    if reranker is not None:
+        lexical_budget = min(max(1, overall_candidate_count // 3), overall_candidate_count - len(candidates))
+        lexical_pool = sorted(
+            ((row["_lexical_rank_index"], rpc_index, row)
+             for rpc_index, (_, rows) in enumerate(per_rpc_rows)
+             for row in rows if "_lexical_rank_index" in row),
+            key=lambda item: item[:2],
+        )
+        for _, _, row in lexical_pool:
+            if lexical_budget <= 0:
+                break
+            if _add_row(candidates, seen, url_counts, row, max_chunks_per_url=max_chunks_per_url,
+                        lexical_url_counts=lexical_url_counts, max_lexical_chunks_per_url=max_lexical_chunks_per_url):
+                lexical_budget -= 1
+
     merged.sort(
         key=lambda row: _final_score(
             row,
@@ -1887,6 +1974,7 @@ def search(
                 dataset_priority_weight,
                 source_kind_weight,
                 max_workers=rpc_concurrency,
+                metadata_filters={name: (per_rpc_metadata_filters or {}).get(name, metadata_filter or {}) for name in rpc_names},
             )
         )
 
@@ -1901,6 +1989,7 @@ def search(
             priority_weight,
             dataset_priority_weight,
             source_kind_weight,
+            metadata_filters={name: (per_rpc_metadata_filters or {}).get(name, metadata_filter or {}) for name in rpc_names},
         )
     )
 
@@ -1946,6 +2035,7 @@ def search(
         candidates = [row for row in candidates if scope_check(row)]
         logger.info("retrieval: applicability kept=%d rejected=%d", len(candidates), scope_rejected + before - len(candidates))
 
+    candidates = _explicit_attachment_candidates(candidates, query_text)
     selected = _rerank_candidates(
         question=query_text or "",
         candidates=candidates,

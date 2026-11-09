@@ -253,7 +253,7 @@ def migrate(root: Path, *, apply: bool, progress=None) -> dict:
     announce("Rewriting JSON references in memory")
     # Shared review artifacts can link to the relocated originals too.
     sources = set(moves)
-    for shared in (root / "files" / "_reviewed", root / "files" / "_discovery"):
+    for shared in (root / "var" / "reviewed", root / "files" / "_discovery"):
         sources.update(p for p in shared.rglob("*.json") if p.is_file())
     for source in sorted(sources):
         if source.suffix not in {".json", ".jsonl"} and source.name not in {"state.json.bak"}:

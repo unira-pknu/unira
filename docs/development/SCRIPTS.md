@@ -20,7 +20,7 @@ multiple majors stays at the faculty level and is stored once. Independent
 faculties use their own name as the first level. The existing dataset alias
 (for example, `ce`) remains the leaf folder and document identity is preserved.
 Each dataset keeps `output/{json,html,files,images,runs}` and `state.json` inside that folder.
-Derived data lives centrally in `files/preprocessed/<dataset>/` and `files/vectorized/<dataset>/`.
+Derived data lives centrally in `preprocessed/<dataset>/` and `vectorized/<dataset>/`.
 
 ```text
 files/department/
@@ -63,11 +63,14 @@ scripts/
 ├─ preprocessing/        # text cleaning, chunking, OCR review, and preprocessing CLIs
 │  └─ extractors/        # attachment/file format extractors
 ├─ vectorization/        # embeddings, vector files, DB ingestion/search, and pipelines
-├─ rag/                  # retrieval priority scoring and priority updates
-├─ ce/                   # CE priority commands
-├─ rule/                 # rule priority commands
+├─ priority/             # document priority scoring and DB update commands
+│  ├─ department/        # shared department priorities
+│  ├─ rule/              # university rule priorities
+│  └─ rag/               # main-site, notice and syllabus priorities
 └─ tests/
 ```
+
+Priority command options and examples are in [scripts/priority/README.md](../../scripts/priority/README.md).
 
 Tests are grouped by the feature they verify:
 
@@ -114,7 +117,7 @@ python scripts/crawlers/departments/cli.py discover --dataset ce
 Layout-aware OCR RAG evaluation (isolated test store, never touches Supabase):
 
 ```powershell
-python -m scripts.vectorization.ingest_layout_data            # files/_reviewed/body_image_ocr/*.reviewed.jsonl -> files/_test_db/test_layout_rag_YYYYMMDD/
+python -m scripts.vectorization.ingest_layout_data            # var/reviewed/body_image_ocr/*.reviewed.jsonl -> var/test_db/test_layout_rag_YYYYMMDD/
 python -m eval.tools.generate_testset               # <= 50 QA pairs -> eval/results/layout_eval_dataset.csv (--mode rule: no API cost)
 python -m eval.tools.run_evaluation                 # -> eval/results/layout_eval_report.md (+ .json) (--retrieval-only: no API cost)
 ```

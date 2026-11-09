@@ -39,6 +39,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from scripts.preprocessing.storage import get_preprocessed_root
 from scripts.preprocessing.text_cleaning import clean_extracted_text
 from scripts.crawlers.common.reader import read_document
+from scripts.preprocessing.rule_provenance import restore_from_snapshot
 
 DEFAULT_INPUT_ROOT = PROJECT_ROOT / "files" / "rule" / "output" / "json"
 DEFAULT_HTML_ROOT = PROJECT_ROOT / "files" / "rule" / "output" / "html"
@@ -166,6 +167,12 @@ def is_output_current(
     out_path = output_path_for(input_file, input_root, output_root / source_kind)
     if not out_path.exists():
         return False
+    try:
+        previous = json.loads(out_path.read_text(encoding="utf-8-sig"))
+    except (OSError, ValueError):
+        return False
+    if source_kind in {"html", "file"} and not previous.get("provenance", {}).get("doc_url"):
+        return False
     provenance_mtime = 0.0
     if source_kind == "file":
         provenance = attachments_by_path.get(input_file.resolve().as_posix().lower(), {})
@@ -184,25 +191,36 @@ def load_rule_json_index(json_root: Path) -> tuple[dict[str, dict[str, Any]], di
         try:
             payload = json.loads(json_path.read_text(encoding="utf-8-sig"))
             doc = read_document(payload, dataset="rule", project_root=PROJECT_ROOT)
-        except Exception:
+        except Exception as error:
+            log.warning("Rule provenance skipped %s: %s", json_path, error)
             continue
         if not isinstance(doc, dict):
             continue
 
         category = normalize_inline(doc.get("category"))
         slug = normalize_inline(doc.get("slug")) or json_path.stem
-        key = f"{category}/{slug}" if category else slug
         doc_info = {
             **build_provenance(doc, json_path),
             "source_json_path": rel_project_path(json_path),
             "_source_json_mtime": json_path.stat().st_mtime,
         }
-        docs_by_key[key] = doc_info
+        html_path = json_root.parent / "html" / json_path.relative_to(json_root).with_suffix(".html")
+        if html_path.is_file():
+            doc_info = restore_from_snapshot(doc_info, html_path.read_text(encoding="utf-8-sig"), rel_project_path(html_path))
+        # Legacy conversion changes doc.slug. HTML names still refer to the
+        # collected JSON filename; both keys must resolve to the same source.
+        for alias in {slug, str(payload.get("slug") or ""), json_path.stem} - {""}:
+            alias_key = f"{category}/{alias}" if category else alias
+            previous = docs_by_key.get(alias_key)
+            if previous and previous["source_json_path"] != doc_info["source_json_path"]:
+                raise ValueError(f"Ambiguous rule provenance alias: {alias_key}")
+            docs_by_key[alias_key] = doc_info
 
         for attachment in doc.get("attachments", []) or []:
             if not isinstance(attachment, dict):
                 continue
-            saved_path = normalize_inline(attachment.get("saved_path"))
+            # Spaces are part of a filename, including repeated spaces.
+            saved_path = str(attachment.get("saved_path") or "")
             if not saved_path:
                 continue
             abs_path = (PROJECT_ROOT / saved_path).resolve()

@@ -32,7 +32,7 @@ def main() -> int:
     parser.add_argument("--source", action="append", required=True,
                         help="Project-relative crawler JSON path; repeat for selected documents")
     parser.add_argument("--output-root", type=Path,
-                        help="Output root (default: files/_reviewed/body_image_ocr/rag_inputs/<dataset>)")
+                        help="Output root (default: var/reviewed/body_image_ocr/rag_inputs/<dataset>)")
     parser.add_argument("--chunk-size", type=int, default=DEFAULT_CHUNK_SIZE)
     parser.add_argument("--chunk-overlap", type=int, default=DEFAULT_CHUNK_OVERLAP)
     args = parser.parse_args()

@@ -19,8 +19,8 @@ from scripts.preprocessing.storage import get_preprocessed_root
 from scripts.preprocessing.extractors.diagram_ocr import VERSION, extract_diagram_image
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_CLASSIFICATIONS = ROOT / 'files/_reviewed/body_image_ocr/layout_classifications.jsonl'
-DEFAULT_OUTPUT = ROOT / 'files/_reviewed/body_image_ocr/diagram_extractions.jsonl'
+DEFAULT_CLASSIFICATIONS = ROOT / 'var/reviewed/body_image_ocr/layout_classifications.jsonl'
+DEFAULT_OUTPUT = ROOT / 'var/reviewed/body_image_ocr/diagram_extractions.jsonl'
 
 
 def _read_jsonl(path: Path) -> list[dict]:

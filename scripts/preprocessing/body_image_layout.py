@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 import json
 from pathlib import Path
 from scripts.preprocessing.storage import get_preprocessed_root
+from scripts.artifact_paths import resolve_artifact_path
 from typing import Any
 
 
@@ -240,11 +241,11 @@ def _paths(args: argparse.Namespace) -> list[Path]:
         if args.all_datasets or args.dataset:
             raise ValueError("--source cannot be combined with --dataset or --all-datasets")
         for value in args.source:
-            path = (PROJECT_ROOT / value).resolve()
+            path = resolve_artifact_path(PROJECT_ROOT, value)
             try:
-                path.relative_to(PROJECT_ROOT / "files")
+                path.relative_to(PROJECT_ROOT)
             except ValueError as exc:
-                raise ValueError("--source must be inside files/") from exc
+                raise ValueError("--source must be inside the project workspace") from exc
             if "preprocessed" not in path.parts or "body_images" not in path.parts or path.suffix != ".json":
                 raise ValueError("--source must name a body_images JSON result")
             selected.append(path)
@@ -266,11 +267,12 @@ def _paths(args: argparse.Namespace) -> list[Path]:
 
 def _review_path(ocr_path: Path) -> Path:
     from scripts.crawlers.common.reader import infer_dataset_from_path
-    relative = ocr_path.resolve().relative_to(PROJECT_ROOT / "files")
+    ocr_path = resolve_artifact_path(PROJECT_ROOT, ocr_path)
+    relative = ocr_path.relative_to(PROJECT_ROOT)
     dataset = infer_dataset_from_path(ocr_path)
     if not dataset:
         raise ValueError(f"Cannot infer dataset from {ocr_path}")
-    return PROJECT_ROOT / "files" / "_reviewed" / "body_image_ocr" / "reviews" / dataset / relative.name
+    return PROJECT_ROOT / "var" / "reviewed" / "body_image_ocr" / "reviews" / dataset / relative.name
 
 
 def main() -> None:

@@ -11,6 +11,7 @@ output/
 outputs/
 preprocessed/
 vectorized/
+var/
 logs/
 *.log
 ask_results.json

@@ -3,7 +3,7 @@
 Reads human-reviewed body-image layout labels (``*.reviewed.jsonl``) plus the
 optional table/diagram extraction JSONL files produced by the layout OCR
 pipeline, turns each image into layout-specific chunks, and stores them in a
-local, file-based vector store under ``files/_test_db/<name>/``.
+local, file-based vector store under ``var/test_db/<name>/``.
 
 The store never talks to Supabase: it is a directory holding
 ``records.jsonl`` + ``embeddings.npy`` + ``manifest.json``. Store names must
@@ -19,8 +19,8 @@ import re
 from typing import Any, Iterable
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-REVIEWED_ROOT = PROJECT_ROOT / "files" / "_reviewed" / "body_image_ocr"
-TEST_DB_ROOT = PROJECT_ROOT / "files" / "_test_db"
+REVIEWED_ROOT = PROJECT_ROOT / "var" / "reviewed" / "body_image_ocr"
+TEST_DB_ROOT = PROJECT_ROOT / "var" / "test_db"
 STORE_NAME_PATTERN = re.compile(r"^test_layout_rag_\d{8}(?:_[A-Za-z0-9]+)?$")
 STORE_MARKER = "campus-rag/layout_rag_test_store"
 

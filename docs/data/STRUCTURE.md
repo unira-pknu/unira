@@ -1,37 +1,22 @@
 # Data Structure
 
-크롤링 산출물, 전처리 결과, 벡터화 결과는 기본적으로 `files/` 아래에 저장합니다.
-`files/`는 `.gitignore` 대상이며, 재생성 가능한 데이터 저장소로 취급합니다.
+`files/`에는 수집 원본과 그 수집 이력만 보관합니다. 전처리·벡터·복구 자료는 프로젝트 루트의 별도 폴더를 사용합니다.
+각 데이터 폴더는 `.gitignore` 대상입니다.
 
 ## Top-Level Layout
 
 ```text
 files/
-  ce/
-    output/
-      json/        # department crawler page JSON
-      html/        # department crawler raw HTML
-      files/       # CE downloaded attachments
-    preprocessed/  # CE RAG chunks
-
-  rule/
-    output/
-      json/        # Rule crawler page JSON
-      html/        # Rule crawler raw HTML
-      files/       # Rule downloaded attachments
-    preprocessed/  # Rule RAG chunks
-
-  pknu_notice/
-    output/
-      json/        # Main homepage notice JSON
-      html/        # Main homepage notice raw HTML
-      deleted/     # Missing/orphaned notice JSON snapshots
-
-  pknu_student_life/
-    output/
-      json/        # Student life guide/eBook JSON
-      files/       # Downloaded guide PDFs
-      deleted/     # Reserved for deleted/orphaned items
+  department/      # 학과 수집 원본·첨부·수집 이력
+  pknu_main/       # 본교 수집 원본·첨부·수집 이력
+  pknu_syllabus/   # 강의계획서 원본·다운로드 이력
+  rule/            # 규정 원본·첨부·수집 이력
+preprocessed/      # <dataset>/ 전처리 문서
+vectorized/        # <dataset>/ 벡터·인덱스
+var/
+  recovery/        # 복구 계획·변경 전 백업·재개 체크포인트
+  reviewed/        # 별도 검토 산출물
+  storage_paths.json # 이동한 기존 자료의 경로 호환 정보
 ```
 
 All crawler datasets now use the same generated storage contract:
@@ -195,21 +180,21 @@ files/ce/output/files/<category>/<slug>/<attachment>
 Preprocessing can be run separately for page JSON and attachments.
 
 ```powershell
-.\.venv\Scripts\python.exe scripts\preprocessing\preprocess_files.py --input-root files\ce\output\json --output-root files\preprocessed\ce\json --output-json-root files\ce\output\json --layout flat
-.\.venv\Scripts\python.exe scripts\preprocessing\preprocess_files.py --input-root files\ce\output\files --output-root files\preprocessed\ce\files --output-json-root files\ce\output\json
+.\.venv\Scripts\python.exe scripts\preprocessing\preprocess_files.py --input-root files\ce\output\json --output-root preprocessed\ce\json --output-json-root files\ce\output\json --layout flat
+.\.venv\Scripts\python.exe scripts\preprocessing\preprocess_files.py --input-root files\ce\output\files --output-root preprocessed\ce\files --output-json-root files\ce\output\json
 ```
 
 Typical preprocessed layout:
 
 ```text
-files/preprocessed/ce/json/<category>/<slug>.json
-files/preprocessed/ce/files/<ext>/<category>/<slug>/<attachment>.json
+preprocessed/ce/json/<category>/<slug>.json
+preprocessed/ce/files/<ext>/<category>/<slug>/<attachment>.json
 ```
 
 Vectorized output:
 
 ```text
-files/vectorized/ce/
+vectorized/ce/
   index.jsonl
   manifest.json
   ...
@@ -250,9 +235,9 @@ legacy files, and preserves a field whenever its text is not represented by
 Preprocessed output:
 
 ```text
-files/preprocessed/rule/json/
-files/preprocessed/rule/html/
-files/preprocessed/rule/file/
+preprocessed/rule/json/
+preprocessed/rule/html/
+preprocessed/rule/file/
 ```
 
 Every chunk keeps `source_kind` metadata so JSON, HTML, and attachment-derived records can be distinguished even when text overlaps.
@@ -260,7 +245,7 @@ Every chunk keeps `source_kind` metadata so JSON, HTML, and attachment-derived r
 Vectorized output:
 
 ```text
-files/vectorized/rule/
+vectorized/rule/
   index.jsonl
   manifest.json
   ...
@@ -332,10 +317,10 @@ Each line represents one chunk with content, metadata, embedding, and source ide
 
 Supported built-in dataset presets:
 
-- `ce`: `files/preprocessed/ce` -> `files/vectorized/ce`
-- `rule`: `files/preprocessed/rule` -> `files/vectorized/rule`
+- `ce`: `preprocessed/ce` -> `vectorized/ce`
+- `rule`: `preprocessed/rule` -> `vectorized/rule`
 
-All registered departments, `rule`, `pknu_notice`, `pknu_student_life`, `pknu_main`, and `pknu_syllabus` have vectorization presets. `--dataset all` discovers existing dataset directories under `files/preprocessed/`. See [vectorization paths](../../scripts/vectorization/README.md).
+All registered departments, `rule`, `pknu_notice`, `pknu_student_life`, `pknu_main`, and `pknu_syllabus` have vectorization presets. `--dataset all` discovers existing dataset directories under `preprocessed/`. See [vectorization paths](../../scripts/vectorization/README.md).
 
 ## Supabase Repository Files
 

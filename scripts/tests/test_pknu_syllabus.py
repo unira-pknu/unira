@@ -79,7 +79,7 @@ class SyllabusProvenanceTests(unittest.TestCase):
         document = {"source_path": source.relative_to(root).as_posix(), "slug": "existing-id",
                     "provenance": {"source_kind": "attachment", "custom": "preserve"},
                     "blocks": [{"text": "Original body"}], "chunks": [{"chunk_id": 1, "text": "Original chunk"}]}
-        output = root / "files/preprocessed/pknu_syllabus/files/pdf/2026/2/source.json"
+        output = root / "preprocessed/pknu_syllabus/files/pdf/2026/2/source.json"
         output.parent.mkdir(parents=True)
         output.write_text(json.dumps(document), encoding="utf-8")
         return source, state_path, receipt, output, document

@@ -15,6 +15,40 @@ JSON과 SSE 응답 모두 같은 경로를 사용한다.
 학과·교수는 복원한 메타데이터를 우선 사용하고, 구버전에는 첫 청크에서 확인되는
 값만 보충한다. 확인되지 않은 값은 미확인으로 표시한다.
 
+## 교수별 강좌 목록 조회
+
+“유승호 교수님이 진행하는 강의명을 알려줘”처럼 교수별 목록을 요청하면
+`pknu_syllabus_sources`의 활성 문서 메타데이터를 직접 조회한다. 교수명(`staff_name`),
+학년도(`year`), 학기(`term`), 과정(`level`)을 각각 비교하며 일반 벡터 검색이나 Excel
+본문에서 교수명 주변의 과목을 가져오지 않는다. “대학원”은 대학원 과정 전체를,
+“산업대학원” 등의 명칭은 해당 과정을 가리킨다.
+
+학기·과정이 생략되어 여러 후보가 있으면 학년도·학기·과정 목록을 보여주고 선택을
+요청한다. “2026-2학기 학부만”, “전체 강의명만 알려줘” 같은 후속 질문은 이전
+사용자 질문의 교수와 조건을 이어받는다. 이전 답변의 과목명은 조회 조건에 사용하지
+않는다. “전체 학기·모든 과정”은 범위를 넓히는 명시적 조건으로 처리한다.
+
+국문·영문·공학인증 보고서는 같은 강좌로 묶고 같은 과목의 여러 분반은 강의명
+목록에서 합친다. 목록을 RAG `top_k`로 자르지 않으며, 후보가 조회 상한을 넘으면
+조건을 더 지정하도록 요청한다. 결과는 수집된 강의계획서 범위이고 학교 전체의
+개설 현황을 보장하지 않는다.
+
+목록 출처는 “공식 강의계획서 조회 — 교수별 강의 목록”으로 제공한다. 같은 조회
+화면 URL을 사용하는 각 문서를 한 PDF처럼 표시하지 않으며, 실제 조회한 문서 ID와
+강좌·분반은 `source_ids`, `catalogue_offerings`에 보존한다. 개별 PDF 제공은 아래의
+별도 설계를 따른다.
+
+## Excel 개설 현황의 행·열 보존
+
+Excel은 원본 시트·행 번호·열 좌표, 다단 열 제목, 빈 셀과 병합 셀을
+`structured_table`로 보존한다. 검색용 텍스트에도 열 제목과 같은 행의 과목·교수를
+반복한다. 행이 길어 분할되더라도 다음 행과 합치거나 행 사이 overlap을 만들지 않는다.
+따라서 한 행 끝의 교수명이 다음 행 과목에 연결되는 문제를 방지한다.
+
+표 구조가 없는 구버전 Excel 청크는 교수와 과목의 관계를 확인하는 근거로 채택하지
+않는다. 기존 Excel을 이 구조로 바꾸려면 전처리·벡터화·적재를 다시 수행해야 하며
+코드 변경만으로 이미 적재한 청크가 갱신되지는 않는다.
+
 ## PDF 표와 기존 데이터 반영
 
 강의계획서 PDF는 `scripts/preprocessing/extractors/syllabus.py`에서 PyMuPDF의
@@ -31,7 +65,7 @@ JSON과 SSE 응답 모두 같은 경로를 사용한다.
 재처리 대상이 된다. 원본 PDF를 재다운로드할 필요는 없다.
 
 ```powershell
-.venv/Scripts/python.exe -m scripts.preprocessing.preprocess_files --input-root files/pknu_syllabus --output-root files/preprocessed/pknu_syllabus/files --file-ext pdf --changed-only
+.venv/Scripts/python.exe -m scripts.preprocessing.preprocess_files --input-root files/pknu_syllabus --output-root preprocessed/pknu_syllabus/files --file-ext pdf --changed-only
 ```
 
 재처리한 문서는 기존 벡터화·적재 절차로 `pknu_syllabus_sources`와

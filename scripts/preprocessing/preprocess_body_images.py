@@ -126,7 +126,7 @@ def main():
                                'images': len(entry['images']),
                                'blocks': sum(len(r.get('blocks', [])) for r in entry['images'])})
                 print(json.dumps(report[-1], ensure_ascii=False), flush=True)
-    write_json(ROOT/'files/_reviewed/body_image_ocr/latest.json', report)
+    write_json(ROOT/'var/reviewed/body_image_ocr/latest.json', report)
 
 
 if __name__ == '__main__':

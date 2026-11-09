@@ -114,8 +114,8 @@ Supabase Dashboard에서 SQL을 실행하는 방법은 다음과 같습니다.
 
 ```bash
 python scripts/crawlers/departments/engine.py --dataset ce --once
-python scripts/preprocessing/file_preprocessing.py --input-root files/ce/output/json --output-root files/preprocessed/ce/json --output-json-root files/ce/output/json --layout flat
-python scripts/preprocessing/file_preprocessing.py --input-root files/ce/output/files --output-root files/preprocessed/ce/files --output-json-root files/ce/output/json
+python scripts/preprocessing/file_preprocessing.py --input-root files/ce/output/json --output-root preprocessed/ce/json --output-json-root files/ce/output/json --layout flat
+python scripts/preprocessing/file_preprocessing.py --input-root files/ce/output/files --output-root preprocessed/ce/files --output-json-root files/ce/output/json
 python scripts/vectorization/vectorization.py --dataset ce --backend sentence-transformers
 python scripts/vectorization/load_to_supabase.py --dataset ce
 ```

@@ -7,7 +7,6 @@ from urllib.parse import urlparse
 
 from . import department_focus as departments
 from .query_plan import AUDIENCES, PROGRAM_CONTEXTS, SCHOOL_ALIASES, SearchTask, department_catalog
-from .course_identity import course_level
 
 
 def source_department(row: dict) -> str | None:
@@ -35,13 +34,23 @@ def scope_reason(row: dict, task: SearchTask) -> str | None:
     title = str(m.get("doc_title") or row.get("title") or "")
     content = str(row.get("content") or "")
     target = task.target
-    staff = str(m.get("staff_name") or "")
+    table = m.get("structured_table") or {}
+    table_rows = table.get("rows") or []
+    fields = table_rows[0].get("fields", {}) if table.get("kind") == "spreadsheet" and len(table_rows) == 1 else {}
+    staff = str(fields.get("staff_name") or m.get("staff_name") or "")
+    spreadsheet = table.get("kind") == "spreadsheet" or str(m.get("source_ext") or "").lower() in {".xlsx", ".xls"}
+    if target.instructor and spreadsheet and re.search(r"강의|수업|과목|강좌", task.text) and not fields.get("staff_name"):
+        return "unverified_spreadsheet_instructor"
     if target.instructor and ((staff and staff != target.instructor) or (task.conditions.kind == "courses" and staff != target.instructor)):
         return "different_instructor"
-    if target.level and m.get("level"):
-        level = str(m["level"])
+    if target.level and (fields.get("level") or m.get("level")):
+        level = str(fields.get("level") or m["level"])
         if not (level.endswith("대학원") if target.level == "대학원" else level == target.level):
             return "different_course_level"
+    if fields:
+        for key, expected in (("year", task.conditions.year), ("term", task.conditions.term)):
+            if expected is not None and fields.get(key) and str(fields[key]) != str(expected):
+                return "different_course_term"
     amendment = re.search(r"(?:개정|시행)\s*\(?\s*(20\d{2})\s*[.-]\s*(\d{1,2})\s*[.-]\s*(\d{1,2})", title)
     if amendment and task.conditions.kind == "search":
         try:

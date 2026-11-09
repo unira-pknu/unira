@@ -87,6 +87,13 @@ def _format_source_block(rows: List[Dict[str, Any]], max_chars_per_chunk: int) -
             lines.append("적용 조건: " + metadata["applicability_note"])
         if metadata.get("request_purpose"):
             lines.append("질문 목적: " + metadata["request_purpose"])
+        table = metadata.get("structured_table") or {}
+        if table.get("kind") == "spreadsheet" and len(table.get("rows", [])) == 1:
+            row = table["rows"][0]
+            lines.append(f"표 행 범위: 시트 {table['sheet']}, 원본 {row['source_row']}행. 이 행의 열 제목과 값만 연결하세요.")
+            fields = row.get("fields") or {}
+            if fields.get("course_name") and fields.get("staff_name"):
+                lines.append(f"동일 행에서 확인한 과목·교수: {fields['course_name']} / {fields['staff_name']}")
         if metadata.get("unresolved_request"):
             lines.append("미확인 요청: " + metadata["unresolved_request"])
         conditions = metadata.get("query_conditions") or {}

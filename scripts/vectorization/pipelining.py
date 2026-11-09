@@ -138,8 +138,8 @@ def run_pipeline(args: argparse.Namespace) -> None:
             ],
         )
         run_command(
-            "update_ce_priorities",
-            [python, "scripts/ce/update_priorities.py"],
+            "update_department_priorities",
+            [python, "scripts/priority/department/update_priorities.py"],
         )
         elapsed = (datetime.now() - started_at).total_seconds()
         log.info("Daily pipeline completed successfully in %.1fs", elapsed)

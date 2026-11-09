@@ -14,8 +14,8 @@ import numpy as np
 from PIL import Image, ImageOps
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_OUTPUT = PROJECT_ROOT / "files" / "_reviewed" / "body_image_ocr" / "layout_classifications.jsonl"
-DEFAULT_SUMMARY = PROJECT_ROOT / "files" / "_reviewed" / "body_image_ocr" / "layout_classification_summary.json"
+DEFAULT_OUTPUT = PROJECT_ROOT / "var" / "reviewed" / "body_image_ocr" / "layout_classifications.jsonl"
+DEFAULT_SUMMARY = PROJECT_ROOT / "var" / "reviewed" / "body_image_ocr" / "layout_classification_summary.json"
 LAYOUT_TYPES = {"prose", "table", "diagram", "mixed", "no_text", "unknown"}
 AUTO_ROUTE_THRESHOLD = 0.85
 

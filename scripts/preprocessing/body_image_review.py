@@ -39,13 +39,13 @@ def _document_paths(source_file: Path, project_root: Path) -> tuple[str, str, Pa
         legacy_ocr = root / "preprocessed" / "body_images" / document_relative
         if not ocr_path.is_file() and legacy_ocr.is_file():
             ocr_path = legacy_ocr
-    review_path = project_root / "files" / "_reviewed" / "body_image_ocr" / "reviews" / dataset / f"{source_file.stem}.json"
+    review_path = project_root / "var" / "reviewed" / "body_image_ocr" / "reviews" / dataset / f"{source_file.stem}.json"
     return source_path, dataset, ocr_path, review_path
 
 
 @lru_cache(maxsize=8)
 def _load_extraction_index(project_root_text: str, filename: str) -> dict[tuple[str, str], dict[str, Any]]:
-    path = Path(project_root_text) / "files" / "_reviewed" / "body_image_ocr" / filename
+    path = Path(project_root_text) / "var" / "reviewed" / "body_image_ocr" / filename
     index: dict[tuple[str, str], dict[str, Any]] = {}
     if not path.is_file():
         return index
@@ -401,7 +401,7 @@ def body_image_input_mtime(source_file: Path, *, project_root: Path) -> float:
     _source_path, _dataset, ocr_path, review_path = paths
     candidates = [path for path in (ocr_path, review_path) if path.is_file()]
     if ocr_path.is_file():
-        reviewed_root = project_root / "files" / "_reviewed" / "body_image_ocr"
+        reviewed_root = project_root / "var" / "reviewed" / "body_image_ocr"
         candidates.extend(path for path in (
             reviewed_root / "table_extractions.jsonl",
             reviewed_root / "diagram_extractions.jsonl",

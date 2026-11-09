@@ -112,7 +112,7 @@ def atomic_write(path: Path, data: bytes) -> None:
 def repair(project_root: Path, *, apply: bool = False) -> dict:
     project_root = project_root.resolve()
     index = load_syllabus_index(project_root)
-    folder = project_root / "files/preprocessed/pknu_syllabus"
+    folder = project_root / "preprocessed/pknu_syllabus"
     files = sorted(folder.rglob("*.json"))
     if not files or not index:
         raise ValueError("No syllabus preprocessing documents or download receipts")
@@ -137,7 +137,7 @@ def repair(project_root: Path, *, apply: bool = False) -> dict:
              "changed": len(changed), "applied": apply, "backup": None}
     if not apply or not changed:
         return stats
-    backup_root = project_root / "files/_archive/syllabus_provenance"
+    backup_root = project_root / "var/recovery/syllabus_provenance"
     backup_root.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
     backup = backup_root / f"preprocessed_{stamp}.zip"

@@ -6,28 +6,28 @@
 
 ## Priority Updates
 
-### `scripts/ce/update_priorities.py`
+### `scripts/priority/department/update_priorities.py`
 
 Supabase의 CE source priority score를 갱신합니다.
 
 ```powershell
-.\.venv\Scripts\python.exe scripts\ce\update_priorities.py
-.\.venv\Scripts\python.exe scripts\ce\update_priorities.py --dry-run
+.\.venv\Scripts\python.exe scripts\priority\department\update_priorities.py
+.\.venv\Scripts\python.exe scripts\priority\department\update_priorities.py --dry-run
 ```
 
-### `scripts/rule/update_priorities.py`
+### `scripts/priority/rule/update_priorities.py`
 
 Supabase의 rule source priority score를 갱신합니다.
 
 ```powershell
-.\.venv\Scripts\python.exe scripts\rule\update_priorities.py
-.\.venv\Scripts\python.exe scripts\rule\update_priorities.py --dry-run
+.\.venv\Scripts\python.exe scripts\priority\rule\update_priorities.py
+.\.venv\Scripts\python.exe scripts\priority\rule\update_priorities.py --dry-run
 ```
 
 옵션:
 
 - `--dry-run`: DB 업데이트 없이 계산 결과만 확인합니다.
-- `--from-index`: 로컬 `files/vectorized/rule/index.jsonl`에서 preview합니다. `--dry-run`과 함께 사용해야 합니다.
+- `--from-index`: 로컬 `vectorized/rule/index.jsonl`에서 preview합니다. `--dry-run`과 함께 사용해야 합니다.
 - `--index-path PATH`: preview에 사용할 index 경로입니다.
 - `--preview-limit N`: preview 출력 개수입니다.
 
@@ -74,13 +74,13 @@ Supabase 적재 전에는 DB schema와 맞는 384차원 `sentence-transformers/p
 
 기본 매핑:
 
-- `--dataset ce`: `files/vectorized/ce/index.jsonl` -> `rag_sources`, `rag_chunks`
+- `--dataset ce`: `vectorized/ce/index.jsonl` -> `rag_sources`, `rag_chunks`
 - 다른 등록 학과도 `rag_*`를 사용하며 `department_id`로 구분합니다.
 - `--dataset pknu_main`: 원본 `metadata.source_dataset=pknu_notice` 행은 `pknu_notice_*`, 나머지는 `pknu_main_*`에 분배합니다.
 - `--dataset pknu_notice`: `pknu_notice_sources`, `pknu_notice_chunks`
 - `--dataset pknu_student_life`: `pknu_main_sources`, `pknu_main_chunks`
 - `--dataset pknu_syllabus`: `pknu_syllabus_sources`, `pknu_syllabus_chunks`
-- `--dataset rule`: `files/vectorized/rule/index.jsonl` -> `rule_sources`, `rule_chunks`
+- `--dataset rule`: `vectorized/rule/index.jsonl` -> `rule_sources`, `rule_chunks`
 - `--batch-size`: `200`
 
 옵션:
@@ -155,7 +155,7 @@ CE 파이프라인을 자동으로 실행합니다.
 3. `scripts/preprocessing/preprocess_files.py`로 첨부파일 전처리
 4. `scripts/vectorization/vectorization.py`
 5. `scripts/vectorization/load_to_supabase.py`
-6. `scripts/ce/update_priorities.py`
+6. `scripts/priority/department/update_priorities.py`
 
 1회 실행:
 
@@ -209,11 +209,11 @@ DB 상태 점검용 읽기 전용 스크립트는 `supabase/audit/`에 있습니
 
 ```powershell
 .\.venv\Scripts\python.exe scripts\crawlers\departments\engine.py --dataset ce --once
-.\.venv\Scripts\python.exe scripts\preprocessing\preprocess_files.py --input-root files\ce\output\json --output-root files\preprocessed\ce\json --output-json-root files\ce\output\json --layout flat
-.\.venv\Scripts\python.exe scripts\preprocessing\preprocess_files.py --input-root files\ce\output\files --output-root files\preprocessed\ce\files --output-json-root files\ce\output\json
+.\.venv\Scripts\python.exe scripts\preprocessing\preprocess_files.py --input-root files\ce\output\json --output-root preprocessed\ce\json --output-json-root files\ce\output\json --layout flat
+.\.venv\Scripts\python.exe scripts\preprocessing\preprocess_files.py --input-root files\ce\output\files --output-root preprocessed\ce\files --output-json-root files\ce\output\json
 .\.venv\Scripts\python.exe scripts\vectorization\vectorization.py --dataset ce --backend sentence-transformers
 .\.venv\Scripts\python.exe scripts\vectorization\load_to_supabase.py --dataset ce
-.\.venv\Scripts\python.exe scripts\ce\update_priorities.py
+.\.venv\Scripts\python.exe scripts\priority\department\update_priorities.py
 ```
 
 ### Rule
@@ -223,7 +223,7 @@ DB 상태 점검용 읽기 전용 스크립트는 `supabase/audit/`에 있습니
 .\.venv\Scripts\python.exe scripts\preprocessing\rule.py
 .\.venv\Scripts\python.exe scripts\vectorization\vectorization.py --dataset rule --backend sentence-transformers
 .\.venv\Scripts\python.exe scripts\vectorization\load_to_supabase.py --dataset rule
-.\.venv\Scripts\python.exe scripts\rule\update_priorities.py
+.\.venv\Scripts\python.exe scripts\priority\rule\update_priorities.py
 ```
 
 ### Main Website

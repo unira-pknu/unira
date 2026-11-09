@@ -8,7 +8,7 @@ from typing import Any
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_TARGET = PROJECT_ROOT / "files" / "_reviewed" / "body_image_ocr" / "layout_labels.jsonl"
+DEFAULT_TARGET = PROJECT_ROOT / "var" / "reviewed" / "body_image_ocr" / "layout_labels.jsonl"
 LAYOUT_TYPES = {"prose", "table", "diagram", "mixed", "no_text", "unknown"}
 
 

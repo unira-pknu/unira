@@ -26,6 +26,13 @@ SOURCE_DATASET_ALIASES = {"rule": "pknu_rule"}
 def infer_dataset_from_path(path: Path) -> str | None:
     parts = path.resolve().parts
     folded = [part.casefold() for part in parts]
+    # Central derived roots precede any nested attachment directory named files.
+    first_files = folded.index("files") if "files" in folded else len(parts)
+    for marker in ("preprocessed", "vectorized"):
+        if marker in folded:
+            stage = folded.index(marker)
+            if stage < first_files and stage + 1 < len(parts):
+                return parts[stage + 1]
     if "files" in folded:
         index = folded.index("files")
         if index + 1 < len(parts):

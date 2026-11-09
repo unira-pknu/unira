@@ -1,4 +1,4 @@
-"""Vectorize files/preprocessed/<dataset> chunk JSON; --dataset all covers existing datasets.
+"""Vectorize preprocessed/<dataset> chunk JSON; --dataset all covers existing datasets.
 
 Uses normalized sentence-transformers embeddings by default. Hash embeddings are
 for local tests. Writes per-file vectors, a complete index.jsonl, and manifest.json.
@@ -28,6 +28,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from scripts.crawlers.common.reader import infer_dataset_from_path
 from scripts.preprocessing.text_cleaning import clean_extracted_text, compact_metadata, has_searchable_body
+from scripts.vectorization.recovery_control import replace_with_retry
 LOG_DIR = PROJECT_ROOT / "logs"
 LOG_FILE = LOG_DIR / "vectorization.log"
 
@@ -218,9 +219,9 @@ def build_context_prefix(metadata: dict, source_file: str) -> str:
     return "\n".join(lines)
 
 
-def build_embedding_text(text: str, metadata: dict, source_file: str) -> str:
+def build_embedding_text(text: str, metadata: dict, source_file: str, *, preserve_layout: bool = False) -> str:
     prefix = build_context_prefix(metadata, source_file)
-    body = normalize_text(text)
+    body = clean_extracted_text(text) if preserve_layout else normalize_text(text)
     if not prefix:
         return body
     return f"{prefix}\n본문: {body}"
@@ -269,7 +270,7 @@ def atomic_json(path: Path, payload: dict) -> None:
         with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent, delete=False) as handle:
             temporary = Path(handle.name)
             json.dump(payload, handle, ensure_ascii=False, indent=2)
-        os.replace(temporary, path)
+        replace_with_retry(temporary, path)
     finally:
         if temporary:
             temporary.unlink(missing_ok=True)
@@ -450,12 +451,38 @@ def extract_chunk_records(doc: dict, input_file: Path, project_root: Path) -> li
             base_metadata[key] = provenance.get(key, "")
     if provenance.get("spreadsheet_policy_version"):
         base_metadata["spreadsheet_policy_version"] = provenance["spreadsheet_policy_version"]
+    if provenance.get("source_kind") == "archive_member":
+        for key in ("archive_path", "archive_relative_to_input", "archive_file_name",
+                    "archive_member_path", "archive_member_original_name", "archive_member_ext",
+                    "archive_member_sha256", "archive_path_policy_version",
+                    "previous_preprocessed_path", "previous_source_path"):
+            if key in provenance:
+                base_metadata[key] = provenance[key]
+    if provenance.get("format_policy_version"):
+        for key in ("format_policy_version", "actual_file_format", "actual_source_ext", "original_sha256",
+                    "processed_sha256", "download_history_paths", "format_repair_receipt",
+                    "recovery_status", "requires_source_review", "ocr_review_required"):
+            if key in provenance:
+                base_metadata[key] = provenance[key]
+    if provenance.get("rule_provenance_policy"):
+        for key, value in provenance.items():
+            if key.startswith("rule_") or key in {"applicability_note", "issued_at"}:
+                base_metadata[key] = value
 
     records: list[dict] = []
+    if provenance.get("text_quality_review"):
+        base_metadata["text_quality_review"] = provenance["text_quality_review"]
     skipped_quality = 0
     for position, chunk in enumerate(chunks, start=1):
         # 잘못된 형식이거나 비어 있는 청크는 전체 파일 실패로 처리하지 않고 건너뛴다.
         if not isinstance(chunk, dict):
+            continue
+        if chunk.get("search_excluded") is True:
+            skipped_quality += 1
+            continue
+        table = chunk.get("structured_table") or {}
+        if table.get("kind") == "spreadsheet" and table.get("rows") and all(row.get("row_kind") == "header" for row in table["rows"]):
+            skipped_quality += 1
             continue
         raw_text = (clean_extracted_text(chunk.get("text", "")) if chunk.get("structured_table")
                     else normalize_text(chunk.get("text", "")))
@@ -466,7 +493,8 @@ def extract_chunk_records(doc: dict, input_file: Path, project_root: Path) -> li
             skipped_quality += 1
             continue
 
-        text = build_embedding_text(raw_text, base_metadata, doc.get("source_file", ""))
+        text = build_embedding_text(raw_text, base_metadata, doc.get("source_file", ""),
+                                    preserve_layout=bool(chunk.get("structured_table")))
 
         chunk_id = chunk.get("chunk_id", position)
         chunk_index = position - 1
@@ -667,7 +695,7 @@ def main() -> None:
         "--dataset",
         choices=[*sorted(DATASET_PATHS), "all"],
         default=DEFAULT_DATASET,
-        help="Dataset name, or all existing directories under files/preprocessed.",
+        help="Dataset name, or all existing directories under preprocessed.",
     )
     parser.add_argument(
         "--input-root",
@@ -729,7 +757,7 @@ def main() -> None:
     # 현재 작업 디렉터리를 프로젝트 루트로 사용한다.
     project_root = PROJECT_ROOT
     if args.dataset == "all":
-        base = args.input_root or project_root / "files/preprocessed"
+        base = args.input_root or project_root / "preprocessed"
         names = sorted(p.name for p in base.iterdir() if p.is_dir() and not p.name.startswith(("_", "."))) if base.exists() else []
         selected = [(name, base / name,
                      args.output_root / name if args.output_root else get_vector_paths(project_root, name)["output_root"])

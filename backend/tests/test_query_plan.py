@@ -13,7 +13,7 @@ def planner(payload):
         create=lambda **kwargs: SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=json.dumps(payload, ensure_ascii=False)))]))))
 
 
-@pytest.mark.parametrize("question", ["신청 언제까지야?", "거기 전화번호는?", "저 2학년인데 뭐 신청할 수 있어요?"])
+@pytest.mark.parametrize("question", ["신청 언제까지야?", "신청기한은 언제야?", "신청 기간이 언제예요?", "마감은 언제인가요?", "거기 전화번호는?", "저 2학년인데 뭐 신청할 수 있어요?"])
 def test_unresolved_subject_never_calls_model_or_retrieval(question):
     plan = plan_question(openai_client=None, model="test", question=question, chat_history=[])
     assert plan.route == "clarification" and plan.missing_fields == ["subject"]
