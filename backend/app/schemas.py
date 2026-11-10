@@ -53,3 +53,5 @@ class AskResponse(BaseModel):
     # tests that ignore the field keep working.
     answerable: bool = True
     evaluation_evidence: dict[str, Any] | None = None
+    # Partial means usable evidence survived primary search-channel failures.
+    retrieval_status: Literal["complete", "partial"] | None = None

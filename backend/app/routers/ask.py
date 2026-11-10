@@ -25,12 +25,18 @@ from ..query_transform import transform_query
 from ..rate_limit import enforce_ask_rate_limit
 from ..retrieval import _dedupe_key, _rag_self_intro_first_stage_overrides, search
 from ..schemas import AskRequest, AskResponse, Attachment, Source
+from ..search_status import SearchResults, SearchUnavailable
 from ..syllabus import extract_request, search_syllabus
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
 NO_INFO_ANSWER = "관련 정보를 찾을 수 없습니다."
+SEARCH_UNAVAILABLE_MESSAGE = "검색 서비스를 일시적으로 확인할 수 없습니다. 잠시 후 다시 시도해 주세요."
+
+
+def _retrieval_fields(rows: list | None) -> dict:
+    return {"retrieval_status": "partial" if rows.degraded else "complete"} if isinstance(rows, SearchResults) else {}
 
 
 def _is_no_info_answer(answer: str) -> bool:
@@ -162,7 +168,11 @@ def _search_all(state: AppState, search_queries: List[str], tasks: list[SearchTa
     query order and are identical to running them in sequence (measured
     2026-11-02: 2-part questions 11-21s -> 9-13s on CPU)."""
     def run(index: int):
-        return _search_one(state, search_queries[index], tasks[index]) if tasks else _search_one(state, search_queries[index])
+        try:
+            return _search_one(state, search_queries[index], tasks[index]) if tasks else _search_one(state, search_queries[index])
+        except SearchUnavailable as exc:
+            # A failed sub-query must not discard other sub-queries' evidence.
+            return SearchResults(channels=exc.channels, failed_queries=[search_queries[index]])
     if len(search_queries) <= 1:
         return [run(i) for i in range(len(search_queries))]
     with ThreadPoolExecutor(max_workers=len(search_queries)) as pool:
@@ -240,6 +250,7 @@ def _retrieve(
         rows_by_query = [[] for _ in tasks]
         normal_indices = []
         direct_answers = []
+        health = SearchResults()
         for index, task in enumerate(tasks):
             if task.conditions.kind in {"latest", "open"}:
                 result = list_notices(state.supabase, task)
@@ -261,7 +272,11 @@ def _retrieve(
                 normal_indices.append(index)
         results = _search_all(state, [search_queries[i] for i in normal_indices], [tasks[i] for i in normal_indices])
         for index, found in zip(normal_indices, results):
+            health.channels.extend({**c, "task_index": index} for c in getattr(found, "channels", []))
+            health.failed_queries.extend(getattr(found, "failed_queries", []))
             rows_by_query[index] = checked_rows(found, tasks[index])
+        if health.degraded and not any(rows_by_query):
+            raise SearchUnavailable(health.channels)
         if len(tasks) == 1 and direct_answers:
             rows = rows_by_query[0]
             return [{"_direct_answer": direct_answers[0][1], "_answerable": bool(rows)}, *rows], [_row_to_source(row) for row in rows]
@@ -273,6 +288,17 @@ def _retrieve(
                 for group in rows_by_query:
                     for row in group:
                         row.setdefault("metadata", {})["unresolved_request"] = answer
+        for group in rows_by_query:
+            for row in group:
+                metadata = row.setdefault("metadata", {})
+                if health.degraded:
+                    metadata["retrieval_incomplete"] = True
+                if health.failed_queries:
+                    note = "다음 요청은 검색 장애로 확인하지 못했습니다: " + "; ".join(health.failed_queries)
+                    metadata["unresolved_request"] = "\n".join(filter(None, (metadata.get("unresolved_request"), note)))
+    except SearchUnavailable as exc:
+        logger.warning("retrieval: cannot establish absence while search channels failed")
+        raise HTTPException(status_code=503, detail=SEARCH_UNAVAILABLE_MESSAGE) from exc
     except Exception:
         logger.exception("retrieval failed")
         raise HTTPException(status_code=502, detail="retrieval failed")
@@ -316,7 +342,7 @@ def _retrieve(
             for index, (row, source) in enumerate(zip(rows, sources), start=1)
         ]
         logger.debug("ask: final_source_summaries=%s", source_summaries)
-    return rows, sources
+    return SearchResults(rows, channels=health.channels, failed_queries=health.failed_queries), sources
 
 
 @router.post("/ask", response_model=AskResponse, response_model_exclude_none=True)
@@ -347,9 +373,12 @@ def ask(
     )
 
     def respond(answer: str, sources: List[Source], answerable: bool, rows: list | None = None) -> AskResponse:
+        if isinstance(rows, SearchResults) and rows.degraded and not answerable:
+            raise HTTPException(status_code=503, detail=SEARCH_UNAVAILABLE_MESSAGE)
         return AskResponse(
             answer=answer, sources=sources, answerable=answerable,
-            evaluation_evidence=evidence_snapshot(state, plan, rows or [], sources, question=question) if payload.include_evidence else None,
+            evaluation_evidence=evidence_snapshot(state, plan, rows if rows is not None else [], sources, question=question) if payload.include_evidence else None,
+            **_retrieval_fields(rows),
         )
 
     if plan.route in {"clarification", "refused"}:
@@ -486,14 +515,18 @@ def _ask_events(
             plan=plan,
         )
     except HTTPException as exc:
-        yield _sse({"type": "error", "detail": exc.detail})
+        yield _sse({"type": "error", "detail": exc.detail, "status_code": exc.status_code})
         return
     if rows and "_direct_answer" in rows[0]:
         yield _sse({"type": "done", "answer": rows[0]["_direct_answer"],
                     "sources": [source.model_dump() for source in sources], "answerable": rows[0]["_answerable"]})
         return
     if not sources:
-        yield _sse({"type": "done", "answer": NO_INFO_ANSWER, "sources": [], "answerable": False})
+        if isinstance(rows, SearchResults) and rows.degraded:
+            yield _sse({"type": "error", "detail": SEARCH_UNAVAILABLE_MESSAGE, "status_code": 503})
+            return
+        yield _sse({"type": "done", "answer": NO_INFO_ANSWER, "sources": [], "answerable": False,
+                    **_retrieval_fields(rows)})
         return
 
     yield _sse({"type": "status", "stage": "writing"})
@@ -526,9 +559,13 @@ def _ask_events(
 
     sources = _with_excerpts(sources, question=question, answer=answer, state=state)
     answer = answer or NO_INFO_ANSWER
+    if isinstance(rows, SearchResults) and rows.degraded and _is_no_info_answer(answer):
+        yield _sse({"type": "error", "detail": SEARCH_UNAVAILABLE_MESSAGE, "status_code": 503})
+        return
     yield _sse({
         "type": "done",
         "answer": answer,
         "sources": [source.model_dump() for source in sources],
         "answerable": not _is_no_info_answer(answer),
+        **_retrieval_fields(rows),
     })

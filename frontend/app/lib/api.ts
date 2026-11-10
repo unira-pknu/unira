@@ -25,6 +25,7 @@ export type AskResult = {
   answer: string;
   sources: ChatSource[];
   answerable: boolean;
+  retrievalStatus?: "complete" | "partial";
 };
 
 type BackendSource = {
@@ -38,6 +39,7 @@ type BackendAskResponse = {
   answer?: string;
   sources?: BackendSource[];
   answerable?: boolean;
+  retrieval_status?: "complete" | "partial";
 };
 
 const DEFAULT_CATEGORY = "자료";
@@ -70,8 +72,8 @@ async function readErrorMessage(res: Response): Promise<string> {
   return `요청 실패 (HTTP ${res.status})`;
 }
 
-/** /api/ask failure; `status` lets the chat show the backend's own text for
- * limits (429) instead of the generic failure line. */
+/** /api/ask failure; preserve limits (429) and search availability (503)
+ * so the chat can show their user-facing guidance. */
 export class AskError extends Error {
   constructor(message: string, readonly status: number) {
     super(message);
@@ -143,6 +145,7 @@ export async function askBackend(
     // A "no info" refusal cites nothing, so don't show source chips under it.
     sources: answerable ? (data.sources ?? []).map(adaptSource) : [],
     answerable,
+    retrievalStatus: data.retrieval_status,
   };
 }
 
@@ -151,7 +154,7 @@ type AskStreamEvent =
   | { type: "token"; text: string }
   | { type: "replace"; text: string }
   | ({ type: "done" } & BackendAskResponse)
-  | { type: "error"; detail?: string };
+  | { type: "error"; detail?: string; status_code?: number };
 
 /** "data: {...}\n\n" 이벤트를 받는 대로 처리하고, done 이벤트의 내용을 돌려준다. */
 async function readAskStream(res: Response, progress: AskProgress): Promise<BackendAskResponse> {
@@ -171,7 +174,7 @@ async function readAskStream(res: Response, progress: AskProgress): Promise<Back
       if (event.type === "status") progress.onStage?.(event.stage, event.count);
       else if (event.type === "token") progress.onText?.((text += event.text));
       else if (event.type === "replace") progress.onText?.((text = event.text));
-      else if (event.type === "error") throw new AskError(event.detail ?? "답변 생성에 실패했어요.", 502);
+      else if (event.type === "error") throw new AskError(event.detail ?? "답변 생성에 실패했어요.", event.status_code ?? 502);
       else if (event.type === "done") {
         await reader.cancel();
         return event;

@@ -46,11 +46,12 @@ class EvalSchemaTests(unittest.TestCase):
         row = _result_row(
             question_row=valid_case(), status_code=200, elapsed_seconds=1.25,
             response={"answer": "관련 정보를 찾을 수 없습니다.", "answerable": False,
-                      "sources": [], "evaluation_evidence": evidence},
+                      "sources": [], "evaluation_evidence": evidence, "retrieval_status": "complete"},
         )
         self.assertIs(row["answerable"], True)
         self.assertIs(row["response_answerable"], False)
         self.assertEqual(evidence, row["evaluation_evidence"])
+        self.assertEqual("complete", row["retrieval_status"])
 
     def test_accepts_answerable_case(self) -> None:
         _validate_structured_case(valid_case(), location="case")

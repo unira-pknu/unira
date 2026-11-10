@@ -8,6 +8,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from .generation import _format_source_block, _source_content
+from .search_status import SearchResults
 
 # Explicitly exclude API keys, tokens, user identity and database credentials.
 SETTING_NAMES = (
@@ -24,6 +25,7 @@ METADATA_NAMES = (
     "published_at", "posted_at", "date", "year", "term", "applicability_note",
     "source_link_kind", "structured_table",
     "request_query",
+    "retrieval_incomplete", "unresolved_request",
 )
 
 
@@ -69,4 +71,5 @@ def evidence_snapshot(state: Any, plan: Any, rows: list[dict], sources: list[Any
         "plan": plan.model_dump(mode="json"),
         "prompt_source_block": None if direct else _format_source_block(evidence_rows, limit, question),
         "sources": captured,
+        "retrieval": rows.diagnostics() if isinstance(rows, SearchResults) else None,
     }

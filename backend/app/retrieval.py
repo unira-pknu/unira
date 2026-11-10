@@ -28,6 +28,7 @@ from .freshness import (
 )
 from . import department_focus, title_anchor
 from .reranking import normalize_scores
+from .search_status import SearchResults, SearchUnavailable
 
 logger = logging.getLogger(__name__)
 
@@ -1017,7 +1018,7 @@ def _fetch_rpc_responses(
     a lexical query), at most `max_workers` at a time; with 1 they run in the
     original order (vector, lexical, next vector, ...). Returns name ->
     (response, elapsed_ms, error); a failed call carries its exception instead
-    of raising, so the caller keeps its per-RPC "skip on failure" behavior."""
+    of raising, so successful vector/lexical channels remain independent."""
     calls: Dict[str, Dict[str, Any]] = {}
     for rpc_name in rpc_names:
         calls[rpc_name] = {**base_payload, "match_count": candidate_counts[rpc_name]}
@@ -1036,19 +1037,24 @@ def _fetch_rpc_responses(
             if calls[rpc_name].get("metadata_filter"):
                 calls[f"{rpc_name}_lexical"]["metadata_filter"] = calls[rpc_name]["metadata_filter"]
 
-    def run(name: str, rpc_client: Client) -> RpcResult:
+    def run(name: str, use_worker_client: bool = False) -> RpcResult:
         started = time.perf_counter()
         try:
+            # Client construction can fail too; keep that failure local to
+            # this channel rather than raising from future.result().
+            rpc_client = _worker_client(client) if use_worker_client else client
             response = rpc_client.rpc(name, calls[name]).execute()
+            if not isinstance(response.data, list) or any(not isinstance(row, dict) for row in response.data):
+                raise ValueError("invalid search RPC response")
             return response, (time.perf_counter() - started) * 1000, None
         except Exception as exc:  # reported by the caller, same as before
             return None, (time.perf_counter() - started) * 1000, exc
 
     if max_workers <= 1:
-        return {name: run(name, client) for name in calls}
+        return {name: run(name) for name in calls}
     pool = _get_rpc_pool(max_workers)
     futures = {
-        name: pool.submit(lambda n=name: run(n, _worker_client(client))) for name in calls
+        name: pool.submit(run, name, True) for name in calls
     }
     return {name: future.result() for name, future in futures.items()}
 
@@ -1689,14 +1695,19 @@ def search(
     per_rpc_metadata_filters: Optional[Dict[str, Dict[str, Any]]] = None,
     title_anchor: bool = False,
     scope_check: Optional[Callable[[Dict[str, Any]], bool]] = None,
-) -> List[Dict[str, Any]]:
+) -> SearchResults:
     """Fan out across RPCs, merge rows, then return a diverse top_k set.
 
     Each RPC must accept the same (query_embedding, match_count, min_similarity,
     metadata_filter) signature and return rows with a `similarity` field. RPCs
     apply min_similarity in DB, so the merged set is already filtered. A failure
-    in one RPC is logged at WARN and skipped; partial results still flow.
+    in one channel is logged without dropping its successful companion.
+    An empty result with channel failures raises SearchUnavailable instead
+    of asserting that no matching evidence exists.
     """
+    if not rpc_names:
+        raise SearchUnavailable([{"rpc_name": None, "channel": "configuration", "status": "error",
+                                  "result_count": None, "elapsed_ms": 0.0, "error_type": "NoSearchChannels"}])
     query_terms = _query_term_groups(query_text)
     lexical_query = _lexical_query_text(query_text, query_terms)
     candidate_count = max(first_stage_k, top_k)
@@ -1730,19 +1741,22 @@ def search(
 
     per_rpc_rows: List[Tuple[str, List[Dict[str, Any]]]] = []
     merged: List[Dict[str, Any]] = []
+    channels: List[Dict[str, Any]] = []
     scope_rejected = 0
     for rpc_name in rpc_names:
         rpc_candidate_count = candidate_counts[rpc_name]
         response, elapsed_ms, error = fetched[rpc_name]
+        channels.append({"rpc_name": rpc_name, "channel": "vector", "status": "error" if error else "ok",
+                         "result_count": len(response.data) if error is None else None,
+                         "elapsed_ms": round(elapsed_ms, 2), "error_type": type(error).__name__ if error else None})
         if error is not None:
-            logger.warning("retrieval: rpc=%s failed, skipping", rpc_name, exc_info=error)
-            continue
+            logger.warning("retrieval: vector rpc=%s failed; preserving other channels", rpc_name, exc_info=error)
 
         rows: List[Dict[str, Any]] = []
         filtered_noise = 0
         penalized_query_mismatch = 0
         filtered_dataset_mismatch = 0
-        for row in response.data or []:
+        for row in (response.data if error is None else []):
             if scope_check is not None and not scope_check(row):
                 scope_rejected += 1
                 continue
@@ -1792,6 +1806,11 @@ def search(
             vector_keys = set(rows_by_key)
             lexical_rpc_name = f"{rpc_name}_lexical"
             lexical_response, _lexical_ms, lexical_error = fetched[lexical_rpc_name]
+            channels.append({"rpc_name": lexical_rpc_name, "channel": "lexical",
+                             "status": "error" if lexical_error else "ok",
+                             "result_count": len(lexical_response.data) if lexical_error is None else None,
+                             "elapsed_ms": round(_lexical_ms, 2),
+                             "error_type": type(lexical_error).__name__ if lexical_error else None})
             if lexical_error is not None:
                 logger.warning(
                     "retrieval: lexical rpc=%s failed, skipping", lexical_rpc_name, exc_info=lexical_error
@@ -2110,4 +2129,10 @@ def search(
                 }
             )
         logger.debug("retrieval: selected=%s", selected_summaries)
-    return selected
+    result = SearchResults(selected, channels=channels)
+    if result.degraded:
+        logger.warning("retrieval: partial search failed_channels=%d selected=%d",
+                       sum(c["status"] == "error" for c in channels), len(result))
+        if not result:
+            raise SearchUnavailable(channels)
+    return result

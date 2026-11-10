@@ -98,6 +98,8 @@ def _format_source_block(rows: List[Dict[str, Any]], max_chars_per_chunk: int, q
             lines.append("적용 조건: " + metadata["applicability_note"])
         if metadata.get("request_purpose"):
             lines.append("질문 목적: " + metadata["request_purpose"])
+        if metadata.get("retrieval_incomplete"):
+            lines.append("검색 범위: 일부 검색이 일시적으로 실패했습니다. 확인한 자료 범위만 답하고 다른 자료가 없다고 단정하지 마세요.")
         if row.get("_context_chunks"):
             lines.append("근거 범위: 동일 원문에서 확인한 인접 청크 포함. 서로 다른 적용 조건을 합치지 마세요.")
         table = metadata.get("structured_table") or {}

@@ -223,6 +223,7 @@ def _result_row(
         "answer": response.get("answer", "") if not error else "",
         "sources": sources,
         "response_answerable": response.get("answerable"),
+        "retrieval_status": response.get("retrieval_status"),
         "evaluation_evidence": response.get("evaluation_evidence"),
         "source_count": len(sources),
         "top_similarity": _top_similarity(sources),

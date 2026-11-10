@@ -61,12 +61,14 @@ def test_sorted_listing_keeps_citations_in_both_protocols(stream):
 def test_scope_is_applied_before_reranking_even_to_added_candidates():
     from app.retrieval import search
     good, bad = {"id": "good"}, {"id": "bad"}
-    with patch("app.retrieval._fetch_rpc_responses", return_value={}), patch(
+    fetched = {name: (SimpleNamespace(data=[]), 0, None)
+               for name in ("match_rule_documents", "match_rule_documents_lexical")}
+    with patch("app.retrieval._fetch_rpc_responses", return_value=fetched), patch(
         "app.retrieval._term_title_chunks", return_value=[bad, good]
     ), patch("app.retrieval._focus_department", side_effect=lambda *args: args[2]), patch(
         "app.retrieval._rerank_candidates", return_value=[good]
     ) as rerank:
-        result = search(None, rpc_names=[], embedding=[1.0], top_k=1, first_stage_k=2, min_similarity=0.3,
+        result = search(None, rpc_names=["match_rule_documents"], embedding=[1.0], top_k=1, first_stage_k=2, min_similarity=0.3,
                         query_text="query", scope_check=lambda row: row["id"] != "bad")
     assert result == [good]
     assert rerank.call_args.kwargs["candidates"] == [good]
