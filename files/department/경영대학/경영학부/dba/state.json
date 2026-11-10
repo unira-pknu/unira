@@ -1,0 +1,117 @@
+{
+  "schema_version": "1.0",
+  "dataset": "dba",
+  "updated_at": "2026-11-11T00:05:30+09:00",
+  "items": {
+    "http://dba.pknu.ac.kr/dba/3812": {
+      "source_id": "http://dba.pknu.ac.kr/dba/3812",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-10T23:46:44+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 11,
+      "name": "고시반 게시판",
+      "updated_at": "2026-11-10T23:46:44+09:00"
+    },
+    "http://dba.pknu.ac.kr/dba/1235": {
+      "source_id": "http://dba.pknu.ac.kr/dba/1235",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-10T23:50:23+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 1848,
+      "name": "공지사항",
+      "updated_at": "2026-11-10T23:50:23+09:00"
+    },
+    "http://dba.pknu.ac.kr/dba/1237": {
+      "source_id": "http://dba.pknu.ac.kr/dba/1237",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-10T23:54:54+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 111,
+      "name": "학사 안내",
+      "updated_at": "2026-11-10T23:54:54+09:00"
+    },
+    "http://dba.pknu.ac.kr/dba/1236": {
+      "source_id": "http://dba.pknu.ac.kr/dba/1236",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-10T23:57:21+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 80,
+      "name": "졸업 안내",
+      "updated_at": "2026-11-10T23:57:21+09:00"
+    },
+    "http://dba.pknu.ac.kr/dba/1238": {
+      "source_id": "http://dba.pknu.ac.kr/dba/1238",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T00:00:19+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 134,
+      "name": "장학 안내",
+      "updated_at": "2026-11-11T00:00:19+09:00"
+    },
+    "http://dba.pknu.ac.kr/dba/1244": {
+      "source_id": "http://dba.pknu.ac.kr/dba/1244",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T00:02:12+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 576,
+      "name": "취업 정보",
+      "updated_at": "2026-11-11T00:02:12+09:00"
+    },
+    "http://dba.pknu.ac.kr/dba/7924": {
+      "source_id": "http://dba.pknu.ac.kr/dba/7924",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T00:02:17+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 1,
+      "name": "채용/초빙",
+      "updated_at": "2026-11-11T00:02:17+09:00"
+    },
+    "http://dba.pknu.ac.kr/dba/2098": {
+      "source_id": "http://dba.pknu.ac.kr/dba/2098",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T00:02:58+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 11,
+      "name": "자료실",
+      "updated_at": "2026-11-11T00:02:58+09:00"
+    },
+    "http://dba.pknu.ac.kr/dba/1249": {
+      "source_id": "http://dba.pknu.ac.kr/dba/1249",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T00:05:21+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 232,
+      "name": "공지사항",
+      "updated_at": "2026-11-11T00:05:21+09:00"
+    },
+    "http://dba.pknu.ac.kr/dba/1250": {
+      "source_id": "http://dba.pknu.ac.kr/dba/1250",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T00:05:30+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 3,
+      "name": "각종 서식 및 자료실",
+      "updated_at": "2026-11-11T00:05:30+09:00"
+    }
+  }
+}

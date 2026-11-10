@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "dataset": "aics",
+  "updated_at": "2026-11-10T21:51:25+09:00",
+  "items": {
+    "https://icms.pknu.ac.kr/aics/8994": {
+      "source_id": "https://icms.pknu.ac.kr/aics/8994",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-10T21:50:47+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 2,
+      "name": "공지사항",
+      "updated_at": "2026-11-10T21:50:47+09:00"
+    },
+    "https://icms.pknu.ac.kr/aics/8996": {
+      "source_id": "https://icms.pknu.ac.kr/aics/8996",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-10T21:51:01+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 3,
+      "name": "학과 소식 · 뉴스",
+      "updated_at": "2026-11-10T21:51:01+09:00"
+    }
+  }
+}

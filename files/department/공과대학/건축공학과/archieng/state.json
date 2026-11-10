@@ -1,0 +1,73 @@
+{
+  "schema_version": "1.0",
+  "dataset": "archieng",
+  "updated_at": "2026-11-10T22:08:53+09:00",
+  "items": {
+    "http://archieng.pknu.ac.kr/archieng/1426": {
+      "source_id": "http://archieng.pknu.ac.kr/archieng/1426",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-10T21:57:29+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 505,
+      "name": "공지사항",
+      "updated_at": "2026-11-10T21:57:29+09:00"
+    },
+    "http://archieng.pknu.ac.kr/archieng/1427": {
+      "source_id": "http://archieng.pknu.ac.kr/archieng/1427",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-10T22:01:35+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 272,
+      "name": "일반대학원공지",
+      "updated_at": "2026-11-10T22:01:35+09:00"
+    },
+    "http://archieng.pknu.ac.kr/archieng/1428": {
+      "source_id": "http://archieng.pknu.ac.kr/archieng/1428",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-10T22:02:11+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 14,
+      "name": "산업대학원공지",
+      "updated_at": "2026-11-10T22:02:11+09:00"
+    },
+    "http://archieng.pknu.ac.kr/archieng/1429": {
+      "source_id": "http://archieng.pknu.ac.kr/archieng/1429",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-10T22:04:58+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 95,
+      "name": "구인구직정보",
+      "updated_at": "2026-11-10T22:04:58+09:00"
+    },
+    "http://archieng.pknu.ac.kr/archieng/2782": {
+      "source_id": "http://archieng.pknu.ac.kr/archieng/2782",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-10T22:05:06+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 3,
+      "name": "취업사례",
+      "updated_at": "2026-11-10T22:05:06+09:00"
+    },
+    "http://archieng.pknu.ac.kr/archieng/1430": {
+      "source_id": "http://archieng.pknu.ac.kr/archieng/1430",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-10T22:06:24+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 42,
+      "name": "공모전및경진대회",
+      "updated_at": "2026-11-10T22:06:24+09:00"
+    }
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0",
+  "dataset": "ecoeng",
+  "updated_at": "2026-11-11T01:15:58+09:00",
+  "items": {
+    "http://ecoeng.pknu.ac.kr/ecoeng/5664": {
+      "source_id": "http://ecoeng.pknu.ac.kr/ecoeng/5664",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T01:07:17+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 309,
+      "name": "학과 공지사항",
+      "updated_at": "2026-11-11T01:07:17+09:00"
+    },
+    "http://ecoeng.pknu.ac.kr/ecoeng/5665": {
+      "source_id": "http://ecoeng.pknu.ac.kr/ecoeng/5665",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T01:09:10+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 65,
+      "name": "대학원 공지사항",
+      "updated_at": "2026-11-11T01:09:10+09:00"
+    },
+    "http://ecoeng.pknu.ac.kr/ecoeng/5666": {
+      "source_id": "http://ecoeng.pknu.ac.kr/ecoeng/5666",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T01:12:58+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 38,
+      "name": "취업정보",
+      "updated_at": "2026-11-11T01:12:58+09:00"
+    }
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "schema_version": "1.0",
+  "dataset": "ee",
+  "updated_at": "2026-11-11T01:40:19+09:00",
+  "items": {
+    "https://ee.pknu.ac.kr/ee/1663": {
+      "source_id": "https://ee.pknu.ac.kr/ee/1663",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T01:25:55+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 10,
+      "name": "연구실 및 동아리 소개",
+      "updated_at": "2026-11-11T01:25:55+09:00"
+    },
+    "https://ee.pknu.ac.kr/ee/1665": {
+      "source_id": "https://ee.pknu.ac.kr/ee/1665",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T01:28:02+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 20,
+      "name": "교육과정",
+      "updated_at": "2026-11-11T01:28:02+09:00"
+    },
+    "https://ee.pknu.ac.kr/ee/1667": {
+      "source_id": "https://ee.pknu.ac.kr/ee/1667",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T01:28:13+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 2,
+      "name": "졸업요건",
+      "updated_at": "2026-11-11T01:28:13+09:00"
+    },
+    "https://ee.pknu.ac.kr/ee/1669": {
+      "source_id": "https://ee.pknu.ac.kr/ee/1669",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T01:32:48+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 1219,
+      "name": "전자공학전공",
+      "updated_at": "2026-11-11T01:32:48+09:00"
+    },
+    "https://ee.pknu.ac.kr/ee/1670": {
+      "source_id": "https://ee.pknu.ac.kr/ee/1670",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T01:35:13+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 56,
+      "name": "대학원",
+      "updated_at": "2026-11-11T01:35:13+09:00"
+    },
+    "https://ee.pknu.ac.kr/ee/8203": {
+      "source_id": "https://ee.pknu.ac.kr/ee/8203",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T01:37:00+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 1,
+      "name": "학생회",
+      "updated_at": "2026-11-11T01:37:00+09:00"
+    },
+    "https://ee.pknu.ac.kr/ee/4060": {
+      "source_id": "https://ee.pknu.ac.kr/ee/4060",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T01:40:19+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 127,
+      "name": "취업정보게시판",
+      "updated_at": "2026-11-11T01:40:19+09:00"
+    }
+  }
+}

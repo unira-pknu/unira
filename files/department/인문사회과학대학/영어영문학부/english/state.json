@@ -1,0 +1,95 @@
+{
+  "schema_version": "1.0",
+  "dataset": "english",
+  "updated_at": "2026-11-11T02:09:32+09:00",
+  "items": {
+    "http://english.pknu.ac.kr/english/3936": {
+      "source_id": "http://english.pknu.ac.kr/english/3936",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T01:56:15+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 1400,
+      "name": "학부",
+      "updated_at": "2026-11-11T01:56:15+09:00"
+    },
+    "http://english.pknu.ac.kr/english/3937": {
+      "source_id": "http://english.pknu.ac.kr/english/3937",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T01:59:35+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 361,
+      "name": "일반대학원",
+      "updated_at": "2026-11-11T01:59:35+09:00"
+    },
+    "http://english.pknu.ac.kr/english/3938": {
+      "source_id": "http://english.pknu.ac.kr/english/3938",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T02:02:19+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 123,
+      "name": "교육대학원(영어교육전공)",
+      "updated_at": "2026-11-11T02:02:19+09:00"
+    },
+    "http://english.pknu.ac.kr/english/3939": {
+      "source_id": "http://english.pknu.ac.kr/english/3939",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T02:03:54+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 28,
+      "name": "글로벌정책대학원(TESOL 학과)",
+      "updated_at": "2026-11-11T02:03:54+09:00"
+    },
+    "http://english.pknu.ac.kr/english/3852": {
+      "source_id": "http://english.pknu.ac.kr/english/3852",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T02:06:10+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 421,
+      "name": "채용공고",
+      "updated_at": "2026-11-11T02:06:10+09:00"
+    },
+    "http://english.pknu.ac.kr/english/3853": {
+      "source_id": "http://english.pknu.ac.kr/english/3853",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T02:06:44+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 12,
+      "name": "자료실",
+      "updated_at": "2026-11-11T02:06:44+09:00"
+    },
+    "http://english.pknu.ac.kr/english/5746": {
+      "source_id": "http://english.pknu.ac.kr/english/5746",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T02:09:03+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 16,
+      "name": "재학생 소식",
+      "updated_at": "2026-11-11T02:09:03+09:00"
+    },
+    "http://english.pknu.ac.kr/english/5020": {
+      "source_id": "http://english.pknu.ac.kr/english/5020",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T02:09:32+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 11,
+      "name": "졸업생 동정",
+      "updated_at": "2026-11-11T02:09:32+09:00"
+    }
+  }
+}
