@@ -375,15 +375,18 @@ function SourceCard({ source }: { source: Source }) {
             </span>
           )}
         </div>
-        <a
-          href={source.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="shrink-0 text-[11px] sm:text-xs font-semibold transition-opacity hover:opacity-75"
-          style={{ color: SOURCE_CARD_NAVY }}
-        >
-          원문 보기 ↗
-        </a>
+        {/* 주소 없는 자료는 url 이 "#"이라 누르면 채팅 화면으로 돌아갔다 */}
+        {/^https?:\/\//.test(source.url) && (
+          <a
+            href={source.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="shrink-0 text-[11px] sm:text-xs font-semibold transition-opacity hover:opacity-75"
+            style={{ color: SOURCE_CARD_NAVY }}
+          >
+            원문 보기 ↗
+          </a>
+        )}
       </div>
 
       {/* Body — 제목 + 첨부파일만 (원문 발췌 박스는 길어서 제거, 원문은 "원문 보기"로 확인).
