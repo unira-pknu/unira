@@ -26,7 +26,7 @@ from scripts.preprocessing.preprocessing_pipeline import (  # noqa: E402
     selected_datasets,
 )
 from scripts.preprocessing.file_preprocessing import ARCHIVE_EXTS, ensure_output_path  # noqa: E402
-from scripts.vectorization.load_to_supabase import load as load_to_supabase  # noqa: E402
+from scripts.vectorization.load_to_supabase import PriorityRefreshError, load as load_to_supabase  # noqa: E402
 from scripts.vectorization.vectorization import (  # noqa: E402
     DATASET_PATHS,
     DEFAULT_BATCH_SIZE,
@@ -398,16 +398,27 @@ def vectorize_recent(
 
 
 def load_recent(vectorized_datasets: list[str], args: argparse.Namespace) -> None:
+    # A failed priority refresh used to end the run at the first dataset (ce),
+    # so notices, main pages and rules went unloaded for days (2026-11-03).
+    # Load every dataset first, then fail the run so the job still shows red.
+    refresh_failed: list[str] = []
     for dataset in vectorized_datasets:
         index_path = DATASET_PATHS[dataset]["output_root"] / "index.jsonl"
         log.info("[%s] Loading recent vector index to database", dataset)
-        count = load_to_supabase(
-            index_path=index_path,
-            batch_size=args.load_batch_size,
-            dataset=dataset,
-            replace_sources=True,
-        )
+        try:
+            count = load_to_supabase(
+                index_path=index_path,
+                batch_size=args.load_batch_size,
+                dataset=dataset,
+                replace_sources=True,
+            )
+        except PriorityRefreshError:
+            log.exception("[%s] loaded, priority refresh failed; continuing with the next dataset", dataset)
+            refresh_failed.append(dataset)
+            continue
         log.info("[%s] Loaded %d rows", dataset, count)
+    if refresh_failed:
+        raise RuntimeError(f"priority refresh failed after loading: {', '.join(refresh_failed)}")
 
 
 def main(argv: list[str] | None = None) -> None:
