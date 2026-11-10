@@ -1,7 +1,8 @@
 name: Crawl departments
 
 # 학과 홈페이지(ce 제외 약 100개)를 하루에 1/3씩 돌아가며 증분 크롤링하고,
-# 전처리 -> 벡터화 -> Supabase 적재 -> 그 학과 우선순위 재계산까지 실행한다(3일에 한 바퀴).
+# 학과 하나씩 크롤링 -> 전처리 -> 벡터화 -> Supabase 적재 -> 우선순위 재계산을 끝낸다(3일에 한 바퀴).
+# 끝난 학과의 수집 기록(state.json)은 작업이 시간 제한에 끊겨도 저장해서, 다음 차례엔 새 글만 본다.
 # 학과 사이트는 전부 학교 서버 한 대라, 사람이 적은 03:00 KST에 한 묶음씩만 천천히 본다:
 # 요청마다 0.8초(학과 설정), 학과 사이 5초를 쉬고, 연속 3개 학과가 실패하면
 # 서버가 막기 시작한 것으로 보고 그날은 멈춘다.
@@ -33,7 +34,9 @@ concurrency:
 jobs:
   crawl:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    # GitHub caps a job at 6 hours. The first turn of each slice reads every recent
+    # post (no saved state yet); later turns only read new ones.
+    timeout-minutes: 350
     steps:
       - uses: actions/checkout@v4
 
@@ -57,25 +60,32 @@ jobs:
           echo "value=$shard" >> "$GITHUB_OUTPUT"
           echo "department slice: $shard/3"
 
-      - name: Crawl + preprocess + vectorize + load (one department slice)
+      - name: Crawl + preprocess + vectorize + load (one department at a time)
+        timeout-minutes: 330
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: >-
           python scripts/vectorization/preprocessing_pipeline_recent.py
           --department-shard "${{ steps.shard.outputs.value }}/3"
           --recent-pages "${{ inputs.recent_pages || '2' }}"
+          --time-budget-minutes 300
+          --completed-file "$RUNNER_TEMP/completed-departments.txt"
 
-      - name: Commit updated crawl state
-        # Only after a full success: saving state for posts that were crawled but
-        # never loaded would skip them for good. A failed slice simply re-reads
-        # the same recent pages on its next turn (loads are upserts).
+      - name: Commit crawl state of the departments that finished
+        # Runs even when the step above failed or ran out of time. Only departments
+        # that were crawled AND loaded are listed, so no post is skipped for good;
+        # an unfinished one re-reads the same recent pages next turn (loads are upserts).
+        if: always()
         run: |
+          done_file="$RUNNER_TEMP/completed-departments.txt"
+          [ -s "$done_file" ] || { echo "no department finished"; exit 0; }
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          find files/department -name state.json 2>/dev/null |
-          while IFS= read -r state_path; do
-            git add -f -- "$state_path"
-          done
+          while IFS= read -r name; do
+            find files/department -path "*/$name/state.json" | while IFS= read -r state_path; do
+              git add -f -- "$state_path"
+            done
+          done < "$done_file"
           git diff --cached --quiet && exit 0
           git commit -m "chore(crawler): update department crawl state [skip ci]"
           # A PR may have been merged during the run.

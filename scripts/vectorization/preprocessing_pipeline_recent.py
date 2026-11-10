@@ -133,6 +133,19 @@ def build_parser() -> argparse.ArgumentParser:
         help="Stop crawling after this many departments fail in a row: the server is "
         "probably refusing us, so stop instead of hammering it; tomorrow resumes.",
     )
+    parser.add_argument(
+        "--completed-file",
+        type=Path,
+        help="Department shard: append each department name here once it is crawled and "
+        "loaded, so the workflow can save exactly those crawl states even if the job is cut off.",
+    )
+    parser.add_argument(
+        "--time-budget-minutes",
+        type=float,
+        default=None,
+        help="Department shard: do not start another department after this many minutes; "
+        "the rest wait for the slice's next turn.",
+    )
     return parser
 
 
@@ -181,6 +194,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         parser.error("--between-datasets-delay must not be negative")
     if args.max_consecutive_crawl_failures <= 0:
         parser.error("--max-consecutive-crawl-failures must be positive")
+    if args.time_budget_minutes is not None and args.time_budget_minutes <= 0:
+        parser.error("--time-budget-minutes must be positive")
+    if args.department_shard and args.skip_crawl:
+        parser.error("--department-shard crawls each department; it cannot be combined with --skip-crawl")
     return args
 
 
@@ -469,8 +486,10 @@ def main(argv: list[str] | None = None) -> None:
     if args.department_shard:
         dataset_names = department_shard(args.department_shard, DEPARTMENT_DATASETS)
         log.info("Department shard %s: %s", args.department_shard, ", ".join(dataset_names))
-    else:
-        dataset_names = selected_datasets(args.dataset)
+        run_department_shard(dataset_names, args)
+        return
+
+    dataset_names = selected_datasets(args.dataset)
     crawl_failed: list[str] = []
     if args.skip_crawl:
         run_started_at = datetime.fromisoformat(args.since)
@@ -487,36 +506,63 @@ def main(argv: list[str] | None = None) -> None:
 
 
 def crawl_datasets(dataset_names: list[str], args: argparse.Namespace) -> list[str]:
-    """Crawl each dataset; return the ones that failed.
+    """Crawl the fixed daily set (ce, notices, rules); the first failure stops the run."""
+    for dataset in dataset_names:
+        crawl_dataset(dataset, args)
+    return []
 
-    The fixed daily set (ce, notices, rules) still fails fast. A department
-    shard keeps going past one broken site, pauses between sites, and stops
-    after a run of failures, which usually means the shared school server has
-    started refusing requests.
+
+def run_department_shard(dataset_names: list[str], args: argparse.Namespace) -> None:
+    """Crawl and load one department at a time, recording each finished one.
+
+    The first run of 2026-11-10 crawled every department before loading any and
+    was cut off by the job timeout after 11 of 34: nothing was loaded and no
+    crawl state was saved, so the next run would have started from scratch
+    again. Finishing department by department keeps whatever got done.
+
+    All department sites share one school server, so sites are spaced out and
+    a run of crawl failures (the server probably refusing us) stops the slice.
     """
+    started = time.monotonic()
     failed: list[str] = []
     consecutive = 0
     for position, dataset in enumerate(dataset_names):
-        if args.department_shard and position and args.between_datasets_delay:
+        if args.time_budget_minutes is not None and time.monotonic() - started >= args.time_budget_minutes * 60:
+            log.warning(
+                "Time budget of %.0f minutes used; left for the next turn: %s",
+                args.time_budget_minutes, ", ".join(dataset_names[position:]),
+            )
+            break
+        if position and args.between_datasets_delay:
             time.sleep(args.between_datasets_delay)
+        run_started_at = datetime.now()
         try:
             crawl_dataset(dataset, args)
         except subprocess.CalledProcessError:
-            if not args.department_shard:
-                raise
             log.exception("[%s] crawl failed", dataset)
             failed.append(dataset)
             consecutive += 1
             if consecutive >= args.max_consecutive_crawl_failures:
-                skipped = dataset_names[position + 1:]
                 log.error(
                     "%d departments failed in a row; stopping so the school server is not hammered. "
-                    "Skipped today: %s", consecutive, ", ".join(skipped) or "-",
+                    "Skipped today: %s", consecutive, ", ".join(dataset_names[position + 1:]) or "-",
                 )
                 break
-        else:
-            consecutive = 0
-    return failed
+            continue
+        consecutive = 0
+        try:
+            process_recent([dataset], run_started_at, args)
+        except Exception:
+            # Its crawl state is not recorded, so the next turn reads the same pages again.
+            log.exception("[%s] crawled but preprocessing/loading failed", dataset)
+            failed.append(dataset)
+            continue
+        if args.completed_file:
+            with args.completed_file.open("a", encoding="utf-8") as handle:
+                handle.write(dataset + "\n")
+        log.info("[%s] done (%d/%d)", dataset, position + 1, len(dataset_names))
+    if failed:
+        raise RuntimeError(f"{len(failed)} department(s) failed: {', '.join(failed)}")
 
 
 def process_recent(dataset_names: list[str], run_started_at: datetime, args: argparse.Namespace) -> None:
