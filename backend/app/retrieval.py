@@ -152,6 +152,9 @@ STRICT_QUERY_TERMS = {
     "성적",
     "교직",
     "현장실습",
+    # A dormitory question answered from a chunk that never says "학생생활관"
+    # is about some other university's dormitory (exchange-study notices).
+    "생활관",
 }
 
 DATASET_PRIORITIES = {
@@ -609,9 +612,17 @@ def _is_noisy_row(row: Dict[str, Any]) -> bool:
     return bool(_noise_flags(row))
 
 
+# Compounds that contain a group word without being about it. "학점교류" read as
+# a credits question: the lexical query became "학점 OR 소요학점 OR 이수학점"
+# (statement timeout) and the institution-name fallback never ran.
+_TERM_GROUP_FALSE_FRIENDS = ("학점교류", "학점 교류")
+
+
 def _query_term_groups(query_text: Optional[str]) -> list[tuple[str, tuple[str, ...]]]:
     normalized = _normalize_text(query_text or "")
-    if not normalized:
+    for compound in _TERM_GROUP_FALSE_FRIENDS:
+        normalized = normalized.replace(compound, " ")
+    if not normalized.strip():
         return []
     return [
         (term, variants)

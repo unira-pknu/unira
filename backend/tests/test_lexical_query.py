@@ -2,6 +2,7 @@
 
 import unittest
 
+from app.query_transform import transform_query
 from app.retrieval import _lexical_fallback_query, _lexical_query_text, _query_term_groups
 
 
@@ -38,6 +39,25 @@ class LexicalFallbackTests(unittest.TestCase):
         # A bare common word would scan most of the table; keep the AND narrower.
         self.assertEqual(lexical("기준"), "기준")
         self.assertEqual(_lexical_fallback_query("졸업 기준"), "졸업 기준")
+
+
+class CreditExchangeTermTests(unittest.TestCase):
+    def test_credit_exchange_is_not_a_credits_question(self):
+        # 2026-11-10: "학점교류" searched "학점 OR 소요학점 OR 이수학점" and timed out.
+        self.assertNotIn("학점", [term for term, _ in _query_term_groups("충북대학교 학점교류 신청 방법")])
+        self.assertEqual(lexical("충북대학교 학점교류 신청 방법"), "충북대학교 학점교류 신청")
+
+    def test_a_real_credits_question_about_exchange_still_counts(self):
+        self.assertIn("학점", [term for term, _ in _query_term_groups("학점교류 학점 인정 몇 학점까지")])
+
+
+class DormitoryTermTests(unittest.TestCase):
+    def test_dormitory_searches_the_school_word(self):
+        # 2026-11-06: "기숙사" alone ranked exchange notices about other universities' dorms first.
+        query = transform_query("기숙사 신청은 어떻게 해?")
+        self.assertIn("학생생활관", query)
+        self.assertEqual(lexical(query), "학생생활관")
+        self.assertIn("생활관", [term for term, _ in _query_term_groups(query)])
 
 
 if __name__ == "__main__":
