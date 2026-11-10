@@ -32,8 +32,8 @@
   --clr-text-muted: #7b90b8;
   --clr-glass-bg: rgba(255, 255, 255, 0.62);
   --clr-glass-border: rgba(255, 255, 255, 0.82);
-  /* .bg-app 그라데이션 시작색. layout.tsx의 viewport.themeColor와 같은 값 */
-  --clr-app-bg: #c6daf0;
+  /* .bg-app 바탕색. layout.tsx의 viewport.themeColor와 같은 값 */
+  --clr-app-bg: #dde7f5;
 }
 
 html,
@@ -57,10 +57,16 @@ body {
 
 /* ── 배경 그라데이션 (이미지 기준) ─────────────────── */
 .bg-app {
+  /* 얼룩 크기는 vmax: 세로로 긴 휴대폰에서도 길쭉해지지 않고 둥글게 보인다 */
   background:
-    radial-gradient(ellipse 68% 68% at 26% 58%, rgba(255, 255, 255, 0.95) 0%, rgba(220, 238, 255, 0.35) 55%, transparent 100%),
-    radial-gradient(ellipse 58% 58% at 74% 37%, rgba(148, 196, 236, 0.85) 0%, rgba(195, 224, 248, 0.2) 55%, transparent 100%),
-    linear-gradient(145deg, #c6daf0 0%, #b6cae4 40%, #b2c8e2 65%, #c3d4ea 100%);
+    radial-gradient(ellipse 24vmax 21vmax at 56% 60%, rgba(174, 200, 232, 0.95) 0%, rgba(184, 208, 236, 0.6) 45%, rgba(200, 218, 242, 0) 100%),
+    radial-gradient(ellipse 26vmax 11vmax at 22% 56%, rgba(250, 252, 255, 0.95) 0%, rgba(250, 252, 255, 0) 100%),
+    radial-gradient(ellipse 34vmax 14vmax at 56% 4%, rgba(250, 252, 255, 0.9) 0%, rgba(250, 252, 255, 0) 100%),
+    radial-gradient(ellipse 34vmax 10vmax at 45% 98%, rgba(250, 252, 255, 0.95) 0%, rgba(250, 252, 255, 0) 100%),
+    radial-gradient(ellipse 28vmax 24vmax at 2% 14%, rgba(170, 200, 234, 0.95) 0%, rgba(170, 200, 234, 0) 100%),
+    radial-gradient(ellipse 26vmax 18vmax at 4% 94%, rgba(176, 208, 236, 0.95) 0%, rgba(176, 208, 236, 0) 100%),
+    radial-gradient(ellipse 14vmax 22vmax at 100% 62%, rgba(194, 216, 244, 0.9) 0%, rgba(194, 216, 244, 0) 100%),
+    var(--clr-app-bg);
   min-height: 100vh; /* dvh 미지원 브라우저 대비 */
   min-height: 100dvh; /* 모바일 주소창·하단 바를 뺀 실제 보이는 높이 */
 }
