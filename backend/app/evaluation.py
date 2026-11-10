@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import hashlib
 import os
+import re
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from .generation import _format_source_block, _source_content
 from .search_status import SearchResults
+from .retrieval_trace import candidate_key, source_identity
 
 # Explicitly exclude API keys, tokens, user identity and database credentials.
 SETTING_NAMES = (
@@ -26,10 +28,12 @@ METADATA_NAMES = (
     "source_link_kind", "structured_table",
     "request_query",
     "retrieval_incomplete", "unresolved_request",
+    "catalog_table",
 )
 
 
-def evidence_snapshot(state: Any, plan: Any, rows: list[dict], sources: list[Any], *, question: str | None = None) -> dict:
+def evidence_snapshot(state: Any, plan: Any, rows: list[dict], sources: list[Any], *, question: str | None = None,
+                      answer: str | None = None) -> dict:
     """Keep full retrieved chunks separately from the short UI source excerpts."""
     direct = bool(rows and "_direct_answer" in rows[0])
     evidence_rows = rows[1:] if direct else rows
@@ -37,6 +41,7 @@ def evidence_snapshot(state: Any, plan: Any, rows: list[dict], sources: list[Any
         raise ValueError("evaluation source rows do not match citation numbering")
     limit = state.settings.max_chars_per_chunk
     question = question if question is not None else (plan.resolved_question or " ".join(plan.queries))
+    cited = sorted({int(n) for n in re.findall(r"\[(\d+)\]", answer or "")}) if answer is not None else None
     captured = []
     for index, (row, source) in enumerate(zip(evidence_rows, sources), start=1):
         metadata = row.get("metadata") or {}
@@ -46,15 +51,13 @@ def evidence_snapshot(state: Any, plan: Any, rows: list[dict], sources: list[Any
             "content": content,
             "shown_content": None if direct else _source_content(row, limit, question),
             "content_sha256": hashlib.sha256(content.encode("utf-8")).hexdigest(),
-            "source_id": row.get("source_id"),
-            "chunk_id": row.get("chunk_id") or row.get("id"),
-            "rpc_name": row.get("_rpc_name") or metadata.get("rpc_name"),
+            **source_identity(row), "key": candidate_key(row),
+            "cited_in_answer": index in cited if cited is not None else None,
             "metadata": {key: metadata[key] for key in METADATA_NAMES if key in metadata},
         }
         if row.get("_context_chunks"):
             item["context_chunks"] = [{
-                "chunk_id": chunk.get("chunk_id"), "id": chunk.get("id"),
-                "source_id": chunk.get("source_id"), "chunk_index": chunk.get("chunk_index"),
+                **source_identity(chunk), "key": candidate_key(chunk), "id": chunk.get("id"),
                 "content": chunk["content"],
                 "content_sha256": hashlib.sha256(chunk["content"].encode("utf-8")).hexdigest(),
                 "metadata": {key: value for key, value in (chunk.get("metadata") or {}).items() if key in METADATA_NAMES},
@@ -72,4 +75,11 @@ def evidence_snapshot(state: Any, plan: Any, rows: list[dict], sources: list[Any
         "prompt_source_block": None if direct else _format_source_block(evidence_rows, limit, question),
         "sources": captured,
         "retrieval": rows.diagnostics() if isinstance(rows, SearchResults) else None,
+        "generation": {
+            "status": "not_recorded" if answer is None else ("direct" if direct else (
+                plan.route if plan.route != "search" else ("generated" if evidence_rows else "no_sources"))),
+            "answer_sha256": hashlib.sha256(answer.encode()).hexdigest() if answer is not None else None,
+            "cited_source_indices": cited,
+            "invalid_citation_indices": [n for n in cited if not 1 <= n <= len(sources)] if cited is not None else None,
+        },
     }

@@ -29,6 +29,7 @@ from .freshness import (
 from . import department_focus, title_anchor
 from .reranking import normalize_scores
 from .search_status import SearchResults, SearchUnavailable
+from .retrieval_trace import RetrievalTrace
 
 logger = logging.getLogger(__name__)
 
@@ -799,6 +800,7 @@ def _cap_per_url(
     *,
     max_chunks_per_url: int,
     max_lexical_chunks_per_url: Optional[int] = None,
+    trace: Optional[RetrievalTrace] = None,
 ) -> List[Dict[str, Any]]:
     """Preserve input order, keep at most `max_chunks_per_url` rows per URL.
 
@@ -816,12 +818,16 @@ def _cap_per_url(
     for row in rows:
         url_key = _url_key(row)
         if counts.get(url_key, 0) >= max_chunks_per_url:
+            if trace is not None:
+                trace.reject("selection_cap", row, "per_source_cap")
             continue
         if (
             max_lexical_chunks_per_url is not None
             and _is_lexical_only(row)
             and lexical_counts.get(url_key, 0) >= max_lexical_chunks_per_url
         ):
+            if trace is not None:
+                trace.reject("selection_cap", row, "lexical_per_source_cap")
             continue
         counts[url_key] = counts.get(url_key, 0) + 1
         if _is_lexical_only(row):
@@ -842,11 +848,25 @@ def _rerank_candidates(
     dataset_priority_weight: float,
     source_kind_weight: float,
     max_lexical_chunks_per_url: Optional[int] = None,
+    trace: Optional[RetrievalTrace] = None,
 ) -> List[Dict[str, Any]]:
+    def finish(ordered):
+        if trace is not None:
+            trace.snapshot("rerank_ordered", ordered)
+        capped = _cap_per_url(ordered, max_chunks_per_url=max_chunks_per_url,
+                              max_lexical_chunks_per_url=max_lexical_chunks_per_url, trace=trace)
+        if trace is not None:
+            trace.snapshot("after_source_caps", capped, top_k=top_k)
+        return capped[:top_k]
+
     if not candidates:
-        return []
+        if trace is not None:
+            trace.reranker = {"status": "no_candidates"}
+        return finish([])
 
     if not reranker or not question.strip():
+        if trace is not None:
+            trace.reranker = {"status": "disabled" if not reranker else "empty_question"}
         ordered = sorted(
             candidates,
             key=lambda row: _final_score(
@@ -857,16 +877,14 @@ def _rerank_candidates(
             ),
             reverse=True,
         )
-        return _cap_per_url(
-            ordered,
-            max_chunks_per_url=max_chunks_per_url,
-            max_lexical_chunks_per_url=max_lexical_chunks_per_url,
-        )[:top_k]
+        return finish(ordered)
 
     try:
         raw_scores = reranker.score(question, candidates)
-    except Exception:
+    except Exception as exc:
         logger.exception("retrieval: reranker failed, falling back to initial scores")
+        if trace is not None:
+            trace.reranker = {"status": "fallback", "error_type": type(exc).__name__}
         ordered = sorted(
             candidates,
             key=lambda row: _final_score(
@@ -877,13 +895,12 @@ def _rerank_candidates(
             ),
             reverse=True,
         )
-        return _cap_per_url(
-            ordered,
-            max_chunks_per_url=max_chunks_per_url,
-            max_lexical_chunks_per_url=max_lexical_chunks_per_url,
-        )[:top_k]
+        return finish(ordered)
 
     normalized_scores = normalize_scores(raw_scores)
+    if trace is not None:
+        trace.reranker = {"status": "applied" if len(normalized_scores) == len(candidates) else "score_count_mismatch",
+                          "input_count": len(candidates), "score_count": len(normalized_scores)}
     bounded_reranker_weight = max(0.0, min(1.0, reranker_weight))
     initial_weight = 1.0 - bounded_reranker_weight
     rescored: List[Dict[str, Any]] = []
@@ -915,11 +932,7 @@ def _rerank_candidates(
         rescored.append(copied)
 
     rescored.sort(key=lambda row: float(row.get("rerank_final_score") or 0.0), reverse=True)
-    return _cap_per_url(
-        rescored,
-        max_chunks_per_url=max_chunks_per_url,
-        max_lexical_chunks_per_url=max_lexical_chunks_per_url,
-    )[:top_k]
+    return finish(rescored)
 
 
 def _process_candidate_row(
@@ -1695,6 +1708,7 @@ def search(
     per_rpc_metadata_filters: Optional[Dict[str, Dict[str, Any]]] = None,
     title_anchor: bool = False,
     scope_check: Optional[Callable[[Dict[str, Any]], bool]] = None,
+    capture_trace: bool = False,
 ) -> SearchResults:
     """Fan out across RPCs, merge rows, then return a diverse top_k set.
 
@@ -1705,9 +1719,11 @@ def search(
     An empty result with channel failures raises SearchUnavailable instead
     of asserting that no matching evidence exists.
     """
+    trace = RetrievalTrace() if capture_trace else None
     if not rpc_names:
         raise SearchUnavailable([{"rpc_name": None, "channel": "configuration", "status": "error",
-                                  "result_count": None, "elapsed_ms": 0.0, "error_type": "NoSearchChannels"}])
+                                  "result_count": None, "elapsed_ms": 0.0, "error_type": "NoSearchChannels"}],
+                                trace=trace.export() if trace is not None else None)
     query_terms = _query_term_groups(query_text)
     lexical_query = _lexical_query_text(query_text, query_terms)
     candidate_count = max(first_stage_k, top_k)
@@ -1731,6 +1747,11 @@ def search(
         rpc_name: max((per_rpc_first_stage_k or {}).get(rpc_name, first_stage_k), top_k)
         for rpc_name in rpc_names
     }
+    if trace is not None:
+        trace.parameters = {"rpc_names": list(rpc_names), "candidate_counts": candidate_counts,
+                            "lexical_query": lexical_query, "min_similarity": min_similarity,
+                            "top_k": top_k, "max_chunks_per_url": max_chunks_per_url,
+                            "max_lexical_chunks_per_url": max_lexical_chunks_per_url}
     # The vector and lexical RPCs are independent round trips; rpc_concurrency
     # controls how many run at once (1 = one after another, the default -- see
     # Settings.rag_rpc_concurrency for why). Ranking below is unchanged.
@@ -1751,6 +1772,9 @@ def search(
                          "elapsed_ms": round(elapsed_ms, 2), "error_type": type(error).__name__ if error else None})
         if error is not None:
             logger.warning("retrieval: vector rpc=%s failed; preserving other channels", rpc_name, exc_info=error)
+        if trace is not None:
+            trace.snapshot("vector_returned", response.data if error is None else [], rpc_name=rpc_name,
+                           status="error" if error else "ok")
 
         rows: List[Dict[str, Any]] = []
         filtered_noise = 0
@@ -1759,6 +1783,8 @@ def search(
         for row in (response.data if error is None else []):
             if scope_check is not None and not scope_check(row):
                 scope_rejected += 1
+                if trace is not None:
+                    trace.reject("initial_filter", row, "applicability", rpc_name)
                 continue
             processed, outcome = _process_candidate_row(
                 row,
@@ -1771,6 +1797,8 @@ def search(
             )
             if outcome == "noise":
                 filtered_noise += 1
+                if trace is not None:
+                    trace.reject("initial_filter", row, "noise", rpc_name)
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug(
                         "retrieval: filtered_noise rpc=%s title=%r sim=%.4f",
@@ -1781,6 +1809,8 @@ def search(
                 continue
             if outcome == "dataset_mismatch":
                 filtered_dataset_mismatch += 1
+                if trace is not None:
+                    trace.reject("initial_filter", row, "dataset_mismatch", rpc_name)
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug(
                         "retrieval: filtered_dataset_mismatch rpc=%s title=%r sim=%.4f",
@@ -1816,11 +1846,16 @@ def search(
                     "retrieval: lexical rpc=%s failed, skipping", lexical_rpc_name, exc_info=lexical_error
                 )
                 lexical_response = None
+            if trace is not None:
+                trace.snapshot("lexical_returned", lexical_response.data if lexical_response else [],
+                               rpc_name=rpc_name, status="error" if lexical_error else "ok")
 
             rank_index = 0
             for row in (lexical_response.data if lexical_response else None) or []:
                 if scope_check is not None and not scope_check(row):
                     scope_rejected += 1
+                    if trace is not None:
+                        trace.reject("initial_filter", row, "applicability", rpc_name)
                     continue
                 processed, outcome = _process_candidate_row(
                     row,
@@ -1832,6 +1867,8 @@ def search(
                     source_kind_weight,
                 )
                 if outcome in ("noise", "dataset_mismatch") or processed is None:
+                    if trace is not None:
+                        trace.reject("initial_filter", row, outcome, rpc_name)
                     continue
                 dedupe_key = _dedupe_key(processed)
                 if dedupe_key in vector_keys:
@@ -1912,6 +1949,8 @@ def search(
         )
         per_rpc_rows.append((rpc_name, rows))
         merged.extend(rows)
+        if trace is not None:
+            trace.snapshot("channel_merged", rows, rpc_name=rpc_name)
 
     candidates: List[Dict[str, Any]] = []
     seen: set[str] = set()
@@ -1980,6 +2019,9 @@ def search(
             max_lexical_chunks_per_url=max_lexical_chunks_per_url,
         )
 
+    if trace is not None:
+        trace.snapshot("candidate_pool", candidates, candidate_limit=overall_candidate_count)
+
     if title_anchor:
         candidates.extend(
             _title_anchor_chunks(
@@ -2038,6 +2080,8 @@ def search(
             )
         )
 
+    if trace is not None:
+        trace.snapshot("expanded_candidates", candidates)
     candidates = _focus_department(
         client,
         embedding,
@@ -2048,13 +2092,25 @@ def search(
         dataset_priority_weight,
         source_kind_weight,
     )
+    if trace is not None:
+        trace.snapshot("department_focus", candidates)
 
     if scope_check is not None:
         before = len(candidates)
-        candidates = [row for row in candidates if scope_check(row)]
+        kept = []
+        for row in candidates:
+            if scope_check(row):
+                kept.append(row)
+            elif trace is not None:
+                trace.reject("expanded_filter", row, "applicability")
+        candidates = kept
         logger.info("retrieval: applicability kept=%d rejected=%d", len(candidates), scope_rejected + before - len(candidates))
 
+    if trace is not None:
+        trace.snapshot("applicability_checked", candidates)
     candidates = _explicit_attachment_candidates(candidates, query_text)
+    if trace is not None:
+        trace.snapshot("rerank_input", candidates)
     selected = _rerank_candidates(
         question=query_text or "",
         candidates=candidates,
@@ -2066,7 +2122,10 @@ def search(
         dataset_priority_weight=dataset_priority_weight,
         source_kind_weight=source_kind_weight,
         max_lexical_chunks_per_url=max_lexical_chunks_per_url,
+        **({"trace": trace} if trace is not None else {}),
     )
+    if trace is not None:
+        trace.snapshot("task_selected", selected)
 
     logger.info(
         "retrieval: overall_candidate_count=%d merged=%d candidates=%d trimmed=%d top_sim=%.3f top_priority=%.3f top_dataset_priority=%.2f top_source_kind_priority=%.2f top_final=%.3f top_rerank=%.3f priority_weight=%.2f dataset_priority_weight=%.2f source_kind_weight=%.2f reranker=%s",
@@ -2129,10 +2188,10 @@ def search(
                 }
             )
         logger.debug("retrieval: selected=%s", selected_summaries)
-    result = SearchResults(selected, channels=channels)
+    result = SearchResults(selected, channels=channels, trace=trace.export() if trace is not None else None)
     if result.degraded:
         logger.warning("retrieval: partial search failed_channels=%d selected=%d",
                        sum(c["status"] == "error" for c in channels), len(result))
         if not result:
-            raise SearchUnavailable(channels)
+            raise SearchUnavailable(channels, trace=result.trace)
     return result

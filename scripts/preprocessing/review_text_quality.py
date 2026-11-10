@@ -374,5 +374,10 @@ def main(argv=None):
     return legacy_main("quality", argv)
 
 
+def audit(run, *, database=False, datasets=None):
+    from scripts.preprocessing.quality_audit import audit as inspect_current
+    return inspect_current(ROOT, run, database=database, datasets=datasets)
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

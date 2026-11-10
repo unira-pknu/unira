@@ -392,6 +392,57 @@ DB 조회·원본 추출·동기화·검색·테스트 실행은 모두 보류�
 
 ## 문자 깨짐과 LMS·ZOOM PDF의 원본 대조
 
+### 현재 잔존 여부·적용 조건의 읽기 전용 점검
+
+과거 `garbled_chunks`와 `review_required`는 해당 실행의 기록이며 현재 DB 상태가 아닙니다.
+기존 실행에 `audit`를 사용하면 frozen plan의 원문 ID·청크 위치·텍스트 해시를 현재 자료와 대조합니다.
+역사적 경로는 `scripts/artifact_paths.py`로 해석하며, 이전 receipt·계획·결정을 수정하지 않습니다.
+원본 추출·OCR·임베딩·검색·동기화는 실행하지 않고 점검 결과를 표준 출력에만 표시합니다.
+`audit`는 쓰기 단계와 함께 실행할 수 없으며 잠금/작업 표식/새 receipt도 생성하지 않습니다.
+
+```powershell
+$qualityRun = "var/recovery/text_quality_20261109_review2"
+# 현재 로컬 인덱스 전체: 큰 데이터셋에서는 오래 걸릴 수 있음. 진행 상황은 표준 오류에 표시
+.\.venv\Scripts\python.exe -m scripts.recovery --task quality --run $qualityRun --phase audit
+# 빠른 조건 점검: 규정 인덱스만. 다른 데이터셋의 과거 청크는 not_scanned로 남음
+.\.venv\Scripts\python.exe -m scripts.recovery --task quality --run $qualityRun --phase audit --audit-dataset rule
+# 실제 DB: repeatable-read/read-only 트랜잭션. 활성 원문의 누락률과 과거 선택 청크의 활성/비활성 상태를 별도 확인
+.\.venv\Scripts\python.exe -m scripts.recovery --task quality --run $qualityRun --phase audit --database
+```
+
+로컬 점검은 `vectorized/*/index.jsonl`을 읽습니다. 개별 벡터 JSON이나 전처리 원문이 남아 있는 것과
+현재 인덱스에 포함되는 것은 다르며, 로컬 인덱스도 DB의 활성 상태를 보장하지 않습니다.
+`--database`는 기존 PostgreSQL 연결 설정을 사용하고 임베딩을 조회하지 않습니다. 현재 트랜잭션의
+관측 시각과 snapshot 식별자를 출력하며, 영구 DB 백업을 만들지는 않습니다.
+`--audit-dataset` 필터는 DB의 현재 품질 집계 범위를 제한하며 과거 선택 청크 확인은 모든 선택 ID에 수행합니다.
+
+적용 조건 집계는 원문 ID별로 묶고 다음을 구분합니다.
+
+- `all_documents_missing_rate`: 전체 관측 문서 중 사용할 수 있는 조건 metadata가 없는 비율. 모든 문서가 그 조건을 필요로 한다는 뜻이 아님
+- `condition_indicated` / `indicated_missing_rate`: 본문·제목에 조건 단서가 있거나 명시적인 조건 metadata가 있는 문서 중 구조화된 조건이 없는 비율. 규정 계열은 시행일 점검 대상으로 포함
+- `not_indicated`: 자동 규칙에서 단서가 관측되지 않은 문서. 적용 대상 아님이나 누락 없음으로 확정하지 않음
+- 청크별 metadata 미기재 수, 원문별 시행일 확인 상태, 게시 학과 `department_id` 기재 여부는 별도로 표시
+
+학과 조건은 `applicable_department`, 학번 조건은 연도 목록인 `applicable_admission_years`, 시행일은
+유효한 ISO 날짜 `effective_at`을 확인합니다. 명시적으로 `unconfirmed`인 시행일은 사용 가능으로 세지 않습니다.
+유효한 날짜 문자열이 있다는 사실만으로 원문에서 시행일을 확인했다는 뜻은 아니므로
+`rule_effective_statuses`도 함께 봐야 합니다. 게시일·파일명 날짜·강좌 개설 연도는 시행일/입학연도를 대신하지 않습니다.
+게시 학과와 실제 적용 학과도 서로 대체하지 않습니다.
+
+`current_replacement`는 과거 청크의 현재 U+FFFD 잔존 수이며, DB 점검에서는
+`active_current_replacement`와 개별 `database_source_status`로 검색 노출 범위를 구분합니다.
+청크가 없거나 비활성화되었다고 원본 복구가 완료된 것으로 표시하지 않습니다. 중복 위치에 다른 본문이 있으면
+`ambiguous_duplicate`로 남깁니다. U+FFFD 탐지는 전체 OCR 정확도·모든 문자 깨짐을 측정하지 못합니다.
+
+이 변경의 새 `audit` 명령·DB 조회·전체 로컬 감사·테스트는 에이전트가 실행하지 않았습니다.
+필요한 회귀 검증 명령은 다음과 같습니다.
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest scripts/tests/test_recovery_control.py
+```
+
+### 원본 비교와 승인된 복구
+
 `probe --ocr`는 기본 32쪽을 넘는 PDF의 OCR을 보류하고 `ocr_deferred`로 남깁니다.
 원본 손상이나 복구 불가 판정이 아니며, 별도 범위 검토 후 `--max-ocr-pages`로 상한을 지정합니다.
 문서 시작 진행 상황과 `comparisons.partial.json` 중간 결과를 보존합니다. 완료된 대조의 오류만

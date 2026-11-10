@@ -43,6 +43,15 @@ class Source(BaseModel):
     rerank_score: float = 0.0
     rerank_final_score: float = 0.0
     attachments: List[Attachment] = Field(default_factory=list)
+    source_id: str | None = None
+    source_ids: List[str] | None = None  # Aggregate catalogue: actual component documents.
+    chunk_id: str | int | None = None
+    chunk_row_id: str | None = None
+    chunk_index: int | None = None
+    source_dataset: str | None = None
+    ingestion_dataset: str | None = None
+    department_id: str | None = None
+    rpc_name: str | None = None
 
 
 class AskResponse(BaseModel):

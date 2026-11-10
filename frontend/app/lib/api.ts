@@ -10,7 +10,19 @@ import { supabase } from "@/app/lib/supabase/client";
 
 export type Attachment = { name: string; url: string };
 
-export type ChatSource = {
+type SourceIdentity = {
+  source_id?: string | null;
+  source_ids?: string[] | null;
+  chunk_id?: string | number | null;
+  chunk_row_id?: string | null;
+  chunk_index?: number | null;
+  source_dataset?: string | null;
+  ingestion_dataset?: string | null;
+  department_id?: string | null;
+  rpc_name?: string | null;
+};
+
+export type ChatSource = SourceIdentity & {
   id: number;
   title: string;
   category: string;
@@ -28,7 +40,7 @@ export type AskResult = {
   retrievalStatus?: "complete" | "partial";
 };
 
-type BackendSource = {
+type BackendSource = SourceIdentity & {
   title?: string;
   uri?: string;
   content?: string;
@@ -53,6 +65,15 @@ function adaptSource(src: BackendSource, index: number): ChatSource {
     category: DEFAULT_CATEGORY,
     quote: (src.content ?? "").trim(),
     url: (src.uri ?? "").trim() || "#",
+    source_id: src.source_id,
+    source_ids: src.source_ids,
+    chunk_id: src.chunk_id,
+    chunk_row_id: src.chunk_row_id,
+    chunk_index: src.chunk_index,
+    source_dataset: src.source_dataset,
+    ingestion_dataset: src.ingestion_dataset,
+    department_id: src.department_id,
+    rpc_name: src.rpc_name,
     attachments: (src.attachments ?? []).flatMap((attachment) => {
       const name = typeof attachment.name === "string" ? attachment.name.trim() : "";
       const url = typeof attachment.url === "string" ? attachment.url.trim() : "";
