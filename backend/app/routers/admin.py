@@ -12,10 +12,12 @@ import re
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from typing import Any, Dict, Iterable, List, Optional
+from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 
 from ..deps import AppState, get_state, is_admin_request, require_admin, require_user
+from ..feedback_training import build_training_candidate
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/admin")
@@ -111,6 +113,51 @@ def build_dashboard(
 def _count(query: Any) -> int:
     response = query.execute()
     return int(response.count or 0)
+
+
+@router.get("/feedback/training-candidates")
+def training_candidates(
+    response: Response,
+    after_id: Optional[UUID] = None,
+    limit: int = Query(default=20, ge=1, le=50),
+    state: AppState = Depends(get_state),
+    _admin_id: str = Depends(require_admin),
+) -> Dict[str, Any]:
+    """Read current downvotes with UUID keyset pagination, beyond the dashboard's 500 rows."""
+    response.headers["Cache-Control"] = "no-store"
+    client = state.supabase
+    try:
+        query = (
+            client.table("message_feedback")
+            .select("id, rating, reasons, comment, updated_at, "
+                    "chat_messages(role, content, sources, chat_id, created_at)")
+            .eq("rating", "down")
+            .order("id")
+            .limit(limit + 1)
+        )
+        if after_id:
+            query = query.gt("id", str(after_id))
+        rows = query.execute().data or []
+        items = []
+        for row in rows[:limit]:
+            answer = row.get("chat_messages") or {}
+            questions = []
+            if answer.get("chat_id") and answer.get("created_at"):
+                questions = (
+                    client.table("chat_messages")
+                    .select("content, created_at")
+                    .eq("chat_id", answer["chat_id"])
+                    .eq("role", "user")
+                    .lte("created_at", answer["created_at"])
+                    .order("created_at", desc=True)
+                    .limit(2)
+                    .execute().data or []
+                )
+            items.append(build_training_candidate(row, questions))
+        return {"items": items, "nextCursor": rows[limit - 1]["id"] if len(rows) > limit else None}
+    except Exception:
+        logger.exception("feedback training candidate query failed")
+        raise HTTPException(status_code=502, detail="학습 후보를 불러오지 못했습니다.")
 
 
 @router.get("/me")

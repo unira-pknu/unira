@@ -144,7 +144,9 @@ curl -X POST http://localhost:8000/ask `
 ## 알려진 제약 / 다음 단계
 
 - 회수된 청크가 0건이면 즉시 fallback. 청크가 있으면 LLM은 관련 근거가 있는 범위까지 답하고, 질문의 핵심에 대한 근거가 전혀 없을 때만 "관련 정보를 찾을 수 없습니다."라고 답함. 검색 임계값은 `RAG_MIN_SIMILARITY`로 조정.
-- 스트리밍 응답, 대화 히스토리, 피드백 엔드포인트는 미구현. 추후 `routers/` 에 추가하면 됨.
+- 사용자 피드백은 프론트엔드가 Supabase RLS로 저장합니다. 관리자 전용
+  `GET /admin/feedback/training-candidates`는 싫어요 검수 초안을 페이지별로 제공합니다.
+  [피드백 학습 데이터](../evaluation/FEEDBACK_TRAINING.md)에 검수·변환 절차가 있습니다.
 - 모델 자동 워밍업 외 헬스체크는 `/health` (단순 ok) 만 제공.
 # 데이터셋별 검색 테이블
 

@@ -284,6 +284,43 @@ export async function fetchAdminDashboard(signal?: AbortSignal): Promise<AdminDa
   return (await res.json()) as AdminDashboard;
 }
 
+/** 현재 싫어요를 모두 순회한다. 도중 실패하면 부분 파일을 내려받지 않는다. */
+export async function fetchFeedbackTrainingDrafts(
+  onProgress?: (count: number) => void,
+): Promise<{ jsonl: string; count: number }> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new AdminApiError("로그인이 필요합니다.", 401);
+  const lines: string[] = [];
+  const seen = new Set<string>();
+  let cursor: string | null = null;
+  do {
+    const params = new URLSearchParams({ limit: "20" });
+    if (cursor) params.set("after_id", cursor);
+    const res = await fetch(`/api/admin/feedback/training-candidates?${params}`, {
+      headers: { Accept: "application/json", Authorization: `Bearer ${session.access_token}` },
+      cache: "no-store",
+    });
+    if (!res.ok) throw new AdminApiError(await readErrorMessage(res), res.status);
+    const page = (await res.json()) as { items: { id: string }[]; nextCursor: string | null };
+    if (!Array.isArray(page.items) || (page.nextCursor !== null && typeof page.nextCursor !== "string")) {
+      throw new Error("학습 후보 응답 형식이 올바르지 않습니다.");
+    }
+    for (const item of page.items) {
+      if (!item || typeof item.id !== "string" || seen.has(item.id)) {
+        throw new Error("학습 후보에 중복 또는 잘못된 항목이 있습니다. 다시 내려받아 주세요.");
+      }
+      seen.add(item.id);
+      lines.push(JSON.stringify(item));
+    }
+    if (page.nextCursor && (page.nextCursor === cursor || !seen.has(page.nextCursor))) {
+      throw new Error("학습 후보 페이지를 이어서 불러올 수 없습니다.");
+    }
+    cursor = page.nextCursor;
+    onProgress?.(lines.length);
+  } while (cursor);
+  return { jsonl: lines.length ? lines.join("\n") + "\n" : "", count: lines.length };
+}
+
 /** 여러 사용자가 물어본 인기 질문(없으면 빈 배열). 실패해도 던지지 않는다. */
 export async function fetchPopularQuestions(signal?: AbortSignal): Promise<string[]> {
   try {

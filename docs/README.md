@@ -21,6 +21,7 @@
 | 프론트엔드 | [프론트엔드 가이드](frontend/README.md) | 개발 서버와 Supabase 공개 설정 |
 | 데이터 | [데이터 구조](data/STRUCTURE.md) | 수집 스키마, 저장 구조와 마이그레이션 |
 | 평가 | [평가 데이터·절차](evaluation/README.md) | 질문 세트, 라벨 검수와 평가 결과 |
+| 평가 | [피드백 학습 데이터](evaluation/FEEDBACK_TRAINING.md) | 싫어요 질문 수집, 정답 검수, 학습/평가 JSONL 생성 |
 | 평가 | [기준점 관리](evaluation/BASELINES.md) | baseline 파일과 기록 규칙 |
 | 테스트 | [테스트 가이드](testing/README.md) | 테스트 구조·추가 기준·실행 |
 | 개발 | [스크립트 구조](development/SCRIPTS.md) | 코드 경로, 공통 모듈과 책임 |
