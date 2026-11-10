@@ -141,6 +141,7 @@ def checked_rows(rows: list[dict], task: SearchTask) -> list[dict]:
         m["validated_target"] = task.target.model_dump()
         m["query_conditions"] = task.conditions.model_dump(mode="json")
         m["request_purpose"] = task.purpose
+        m["request_query"] = task.text
         # This label travels with the evidence into generation; URL alone is not scope.
         m["applicability_note"] = "공통 규정과 특정 대상의 예외를 구분하고, 신청자격을 이수조건으로 대체하지 마세요. 학번·학년·개인 자격을 확인하지 못했으면 해당 학생에게 적용된다고 확정하지 마세요."
         kept.append({**row, "metadata": m})

@@ -45,7 +45,9 @@ class NumberEvidenceTests(unittest.TestCase):
 
     def test_validation_uses_the_same_content_window_as_the_prompt(self):
         cases = [
-            ({"content": "가" * 600 + " 총 130학점"}, True),
+            # Complete prose may exceed the target; the check must see exactly
+            # the same protected text as the prompt, rather than its old prefix.
+            ({"content": "가" * 600 + " 총 130학점"}, False),
             ({"content": "가" * 600 + " 총 130학점", "_syllabus": True}, False),
             ({"content": "가" * 4100 + " 총 130학점", "_syllabus": True}, True),
         ]

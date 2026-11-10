@@ -15,6 +15,7 @@ from fastapi.responses import StreamingResponse
 from ..deps import AppState, get_state
 from ..excerpts import extract_relevant_excerpt
 from ..evaluation import evidence_snapshot
+from ..evidence_context import supplement_neighbors
 from ..generation import generate_answer, generate_small_talk, stream_answer
 from ..query_rewrite import plan_question
 from ..query_plan import QuestionPlan, SearchTask, finish_plan, rule_plan
@@ -277,6 +278,22 @@ def _retrieve(
         raise HTTPException(status_code=502, detail="retrieval failed")
 
     rows = _merge_rows(rows_by_query, state.settings.rag_top_k)
+
+    def neighbor_in_scope(parent: dict, candidate: dict) -> bool:
+        metadata = parent.get("metadata") or {}
+        return any(
+            task.target.model_dump() == metadata.get("validated_target")
+            and task.conditions.model_dump(mode="json") == metadata.get("query_conditions")
+            and task.text == metadata.get("request_query")
+            and scope_reason(candidate, task) is None
+            for task in tasks
+        )
+
+    rows = supplement_neighbors(
+        state.supabase, rows,
+        max_sources=getattr(state.settings, "rag_context_neighbor_sources", 4),
+        scope_check=neighbor_in_scope,
+    )
     for row in rows:
         row.setdefault("metadata", {})["request_response_format"] = plan.response_format
 
@@ -332,7 +349,7 @@ def ask(
     def respond(answer: str, sources: List[Source], answerable: bool, rows: list | None = None) -> AskResponse:
         return AskResponse(
             answer=answer, sources=sources, answerable=answerable,
-            evaluation_evidence=evidence_snapshot(state, plan, rows or [], sources) if payload.include_evidence else None,
+            evaluation_evidence=evidence_snapshot(state, plan, rows or [], sources, question=question) if payload.include_evidence else None,
         )
 
     if plan.route in {"clarification", "refused"}:
