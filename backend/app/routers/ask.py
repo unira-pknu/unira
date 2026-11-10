@@ -14,6 +14,7 @@ from fastapi.responses import StreamingResponse
 
 from ..deps import AppState, get_state
 from ..excerpts import extract_relevant_excerpt
+from ..evaluation import evidence_snapshot
 from ..generation import generate_answer, generate_small_talk, stream_answer
 from ..query_rewrite import plan_question
 from ..query_plan import QuestionPlan, SearchTask, finish_plan, rule_plan
@@ -301,7 +302,7 @@ def _retrieve(
     return rows, sources
 
 
-@router.post("/ask", response_model=AskResponse)
+@router.post("/ask", response_model=AskResponse, response_model_exclude_none=True)
 def ask(
     payload: AskRequest,
     state: AppState = Depends(get_state),
@@ -311,6 +312,8 @@ def ask(
     if not question:
         raise HTTPException(status_code=400, detail="question must not be empty")
     chat_history = [turn.model_dump() for turn in payload.chat_history]
+    if payload.include_evidence and payload.stream:
+        raise HTTPException(status_code=400, detail="include_evidence requires stream=false")
     if payload.stream:
         return StreamingResponse(
             _ask_events(state=state, user_id=user_id, question=question, chat_history=chat_history),
@@ -325,8 +328,15 @@ def ask(
         question=question,
         chat_history=chat_history,
     )
+
+    def respond(answer: str, sources: List[Source], answerable: bool, rows: list | None = None) -> AskResponse:
+        return AskResponse(
+            answer=answer, sources=sources, answerable=answerable,
+            evaluation_evidence=evidence_snapshot(state, plan, rows or [], sources) if payload.include_evidence else None,
+        )
+
     if plan.route in {"clarification", "refused"}:
-        return AskResponse(answer=plan.clarification, sources=[], answerable=False)
+        return respond(plan.clarification, [], False)
     sub_questions = plan.queries
     if not sub_questions:
         # 인사·잡담: 찾아볼 게 없으니 검색 없이 짧게 답한다(전에는 "관련 정보를 찾을 수 없습니다").
@@ -342,7 +352,7 @@ def ask(
         except Exception:
             logger.exception("small talk generation failed")
             raise HTTPException(status_code=502, detail="generation failed")
-        return AskResponse(answer=reply or NO_INFO_ANSWER, sources=[], answerable=bool(reply))
+        return respond(reply or NO_INFO_ANSWER, [], bool(reply))
 
     rows, sources = _retrieve(
         state=state,
@@ -354,9 +364,9 @@ def ask(
     )
 
     if rows and "_direct_answer" in rows[0]:
-        return AskResponse(answer=rows[0]["_direct_answer"], sources=sources, answerable=rows[0]["_answerable"])
+        return respond(rows[0]["_direct_answer"], sources, rows[0]["_answerable"], rows)
     if not sources:
-        return AskResponse(answer=NO_INFO_ANSWER, sources=[], answerable=False)
+        return respond(NO_INFO_ANSWER, [], False, rows)
 
     try:
         answer = generate_answer(
@@ -377,7 +387,7 @@ def ask(
 
     sources = _with_excerpts(sources, question=question, answer=answer, state=state)
     answer = answer or NO_INFO_ANSWER
-    return AskResponse(answer=answer, sources=sources, answerable=not _is_no_info_answer(answer))
+    return respond(answer, sources, not _is_no_info_answer(answer), rows)
 
 
 def _with_excerpts(sources: List[Source], *, question: str, answer: str, state: AppState) -> List[Source]:

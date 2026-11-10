@@ -15,6 +15,7 @@ from .grounding import miscited_numbers, unsupported_numbers
 logger = logging.getLogger(__name__)
 
 PROMPTS_DIR = Path(__file__).resolve().parent.parent / "prompts"
+_NUMBER_CHECK_FALLBACK = "관련 정보를 찾을 수 없습니다."
 
 
 def load_system_prompt() -> str:
@@ -45,6 +46,13 @@ def _format_score(value: Any) -> str:
         return "0.0000"
 
 
+def _source_content(row: Dict[str, Any], max_chars_per_chunk: int) -> str:
+    # Syllabus retrieval already selected an evidence window inside an exact
+    # offering. A generic 500-character cutoff can remove the table values.
+    limit = 4000 if row.get("_syllabus") else max_chars_per_chunk
+    return _truncate(str(row.get("content") or ""), limit)
+
+
 def _format_source_block(rows: List[Dict[str, Any]], max_chars_per_chunk: int) -> str:
     lines: List[str] = []
     for index, row in enumerate(rows, start=1):
@@ -71,9 +79,7 @@ def _format_source_block(rows: List[Dict[str, Any]], max_chars_per_chunk: int) -
         dataset_priority_text = _format_score(row.get("dataset_priority"))
         final_score_text = _format_score(row.get("final_score"))
         rerank_score_text = _format_score(row.get("rerank_score"))
-        # Syllabus retrieval already selected an evidence window inside an exact
-        # offering. A generic 500-character cutoff can remove the table values.
-        content = _truncate(str(row.get("content") or ""), 4000 if row.get("_syllabus") else max_chars_per_chunk)
+        content = _source_content(row, max_chars_per_chunk)
         posted = _posted_date(metadata)
         lines.append(f"[{index}]")
         lines.append(f"제목: {str(title).strip() or '제목 없음'}")
@@ -204,10 +210,11 @@ def generate_answer(
         len(chat_history or []),
     )
     answer = _complete(openai_client, model, messages, temperature, max_tokens, timeout)
-    problems = _number_problems(answer, question, rows, max_chars_per_chunk)
+    problems = _number_problems(answer, rows, max_chars_per_chunk)
     if not problems:
         return answer
-    return _complete(openai_client, model, _retry_messages(messages, answer, problems), temperature, max_tokens, timeout)
+    revised = _complete(openai_client, model, _retry_messages(messages, answer, problems), temperature, max_tokens, timeout)
+    return _validated_revision(revised, rows, max_chars_per_chunk)
 
 
 def stream_answer(
@@ -226,8 +233,8 @@ def stream_answer(
     """generate_answer, but yields ("token", text) while the model writes.
 
     The number check still runs on the finished text; when it fails, yields
-    ("revising", "") and then ("replace", rewritten answer) so the screen can
-    swap out what it already showed. Always ends with ("final", answer).
+    ("revising", "") and then ("replace", checked revision or fallback) so the
+    screen can swap out what it already showed. Always ends with ("final", answer).
     """
     messages = build_messages(system_prompt, question, rows, max_chars_per_chunk, chat_history)
     logger.info(
@@ -241,23 +248,33 @@ def stream_answer(
         parts.append(delta)
         yield "token", delta
     answer = "".join(parts).strip()
-    problems = _number_problems(answer, question, rows, max_chars_per_chunk)
+    problems = _number_problems(answer, rows, max_chars_per_chunk)
     if problems:
         yield "revising", ""
         answer = _complete(openai_client, model, _retry_messages(messages, answer, problems), temperature, max_tokens, timeout)
+        answer = _validated_revision(answer, rows, max_chars_per_chunk)
         yield "replace", answer
     yield "final", answer
 
 
-def _number_problems(answer: str, question: str, rows: List[Dict[str, Any]], max_chars_per_chunk: int) -> List[str]:
+def _validated_revision(answer: str, rows: List[Dict[str, Any]], max_chars_per_chunk: int) -> str:
+    """Allow one rewrite, but never return a revision that still fails the check."""
+    if _number_problems(answer, rows, max_chars_per_chunk):
+        logger.warning("generation: revised answer failed number check; returning fallback")
+        return _NUMBER_CHECK_FALLBACK
+    return answer
+
+
+def _number_problems(answer: str, rows: List[Dict[str, Any]], max_chars_per_chunk: int) -> List[str]:
     """Figures in the answer its sources don't back up, as retry instructions."""
     # What the model was shown: each chunk as truncated in the prompt.
-    shown = [_truncate(str(row.get("content") or ""), max_chars_per_chunk) for row in rows]
-    missing = unsupported_numbers(answer, [question] + shown)
-    miscited = miscited_numbers(answer, question, shown)
+    # Questions and chat history are context, never evidence for numeric claims.
+    shown = [_source_content(row, max_chars_per_chunk) for row in rows]
+    missing = unsupported_numbers(answer, shown)
+    miscited = miscited_numbers(answer, shown)
     if not missing and not miscited:
         return []
-    logger.info("generation: retry unsupported_numbers=%s miscited_numbers=%s", missing, miscited)
+    logger.info("generation: number_check unsupported_numbers=%s miscited_numbers=%s", missing, miscited)
     problems = []
     if missing:
         problems.append(f"수치 {', '.join(missing)}는 참고 자료 본문에 없습니다")
@@ -273,6 +290,7 @@ def _retry_messages(messages: List[Dict[str, str]], answer: str, problems: List[
             "role": "user",
             "content": (
                 f"방금 답변에서 {'; '.join(problems)}. "
+                "질문이나 이전 대화의 수치는 근거로 삼지 말고 참고 자료 본문만으로 검증하세요. "
                 "자료에 없는 수치는 빼고 없다고 밝히며, 다른 자료의 수치는 그 자료가 질문과 같은 대상·조건일 때만 "
                 "그 자료 번호를 달아 쓰세요. 이 점만 고쳐서 다시 답하세요."
             ),

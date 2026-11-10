@@ -1,7 +1,7 @@
 # Evaluation datasets
 
 아래 데이터 경로(`cases/`, `baselines/`, `results/` 등)는 코드·데이터 폴더
-[`eval/`](../../eval) 기준입니다. `baselines/`는 기준점 보관을 위한 계획 경로이며, 현재 별도 기준점 관리 문서는 없습니다.
+[`eval/`](../../eval) 기준입니다. 전체 기준점 실행 절차와 지표 정의는 [BASELINES.md](BASELINES.md)에 있습니다. 실제 전체 평가를 실행하기 전에는 현재 정답률을 알 수 없습니다.
 
 Evaluation commands are in `eval/tools/` and run from the repository root with
 `python -m eval.tools.<command>`.
@@ -45,9 +45,10 @@ Evaluation commands are in `eval/tools/` and run from the repository root with
   regression에서는 `학칙`·`학과공지` 같은 사람이 작성한 분류를 사용합니다.
   향후 데이터셋 일치율을 자동 채점하기 전에 라벨 의미를 통일하고 기존 라벨을 출처와 대조해 검수해야 합니다.
   `ready`의 현재 구조 검사는 DB 출처 일치나 검색 정확도 검사가 아닙니다.
-- 현재 `/ask.sources`에는 `source_id`, `chunk_id`, 데이터셋 및 학과 식별자가 포함되지 않습니다.
-  `expected_source` 조건도 현재 채점기에서 자동 판정하지 않습니다. 분류별 Recall@k·MRR 및 학과별 정확도를
-  측정하려면 검색 결과의 ID·계열·원본 데이터셋·`department_id`를 평가 경로에 전달하는 기능이 필요합니다.
+- 일반 `/ask.sources`는 화면용 발췌입니다. 평가 요청의 `include_evidence=true`는 별도
+  `evaluation_evidence`에 검색 청크 원문과 존재하는 source/chunk ID, RPC, 데이터셋·학과 metadata를 전달합니다.
+  채점기는 실제 인용 본문을 사용해 근거 정확도와 학과·시점 오류를 정답 체크리스트와 별개로 판정합니다.
+  `expected_source`의 별칭 정규화와 ID 기준 Recall@k·MRR 계산은 아직 구현하지 않았습니다.
 - 현재 smoke 8문항과 regression 100문항에는 강의계획서용 명시적 분류가 없습니다.
   공지 외 본교 자료 및 여러 학과를 포함한 분류별 평가 질문을 출처 검수 후 보강해야 합니다.
 - 현재 repo에는 별도 모델 파인튜닝 실행 파이프라인이 없습니다. 향후 학습셋을 만들 때는 이관 후 출처 ID를

@@ -10,7 +10,8 @@ Evaluation commands and datasets live under `eval/`; see the [evaluation guide](
 Main-site page routes and discovery tools live under `scripts/crawlers/main/`; see [메인 홈페이지 크롤링 명령어](../crawlers/MAIN.md) for full, category, page and limited-board runs.
 Main-site collection settings are in `scripts/crawlers/main/pages.json`. Its results share
 `files/pknu_main/`, organized by site category and then file format. Incremental
-state is in `_state/`; RAG intermediates are in `_derived/<logical-dataset>/`.
+state is in `_state/`; RAG preprocessing and vectors are stored centrally in
+`preprocessed/<logical-dataset>/` and `vectorized/<logical-dataset>/`.
 
 College, faculty, department, and major websites use the common department
 crawler. Their explicit `storage_path` in `crawlers/departments/registry.json`

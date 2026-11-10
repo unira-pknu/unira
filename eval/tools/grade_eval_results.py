@@ -1,10 +1,11 @@
 """LLM-judge qualitative grading for eval_ask.py result files.
 
-Checks each answerable case's generated answer against its structured
+Checks each generated answer against its structured
 `required_facts` (covered/partial/missing) and `forbidden_claims`
 (violated/ok) using an LLM judge, since keyword matching alone can't tell
 whether an answer actually conveys a fact when `keywords` is empty (common
-in this dataset) or phrases it differently than the label.
+in this dataset) or phrases it differently than the label. Separately checks
+claim support against captured citation bodies, over-refusal and scope errors.
 
 Usage:
     python -m eval.tools.grade_eval_results --results eval/results/regression_category2_fix_20260915.jsonl
@@ -13,17 +14,20 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
 import os
 import re
-import sys
 import time
 from pathlib import Path
 from typing import Any
 
 from dotenv import load_dotenv
 from openai import OpenAI
+
+from .provenance import backend_configurations, code_state, file_sha256, timestamp
+from .quality import JUDGE_CONTRACT_VERSION, JUDGE_RULES, answer_units, quality_summary, source_context, validate_judgment
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 load_dotenv(PROJECT_ROOT / "backend" / ".env")
@@ -33,11 +37,12 @@ log = logging.getLogger(__name__)
 
 JUDGE_SYSTEM_PROMPT = (
     "당신은 대학 RAG 챗봇의 답변 품질을 채점하는 엄격하지만 공정한 평가자입니다. "
-    "질문, 실제로 생성된 답변, 정답 체크리스트(required_facts), 금지된 주장(forbidden_claims)이 주어집니다.\n\n"
+    "질문, 실제 답변, 정답 체크리스트, 금지된 주장 및 실제 인용 출처 본문이 주어집니다.\n\n"
     "각 required_fact에 대해 답변이 그 사실을 얼마나 반영했는지 판정하세요:\n"
     "- covered: 사실이 정확하게 답변에 포함됨\n"
     "- partial: 관련은 있지만 불완전하거나 모호하게 언급됨\n"
     "- missing: 답변에 전혀 언급되지 않음\n\n"
+    "사실과 다른 값을 말한 경우도 missing입니다. facts에는 violated를 쓰지 마세요.\n\n"
     "각 forbidden_claim에 대해 답변이 실제로 그 주장을 '사실인 것처럼 확정 제시'하고 있는지 판정하세요. "
     "세 가지 중 하나로만 답하세요:\n"
     "- violated: 답변이 금지된 주장을 별다른 단서 없이 확정된 사실처럼 제시함\n"
@@ -60,11 +65,11 @@ JUDGE_SYSTEM_PROMPT = (
     "주장과 반대되는 내용(예: 금지 주장 'X가 가능하다고 안내'인데 답변은 'X는 불가능하다')이거나, "
     "같은 주제의 다른 내용(예: 조건을 구분해 설명, 다른 부서 번호 안내)을 말하는 것이라면 ok입니다. "
     "금지된 주장과 주제가 겹친다는 이유만으로 violated로 판정하지 마세요.\n\n"
-    "반드시 아래 JSON 스키마로만 답하세요. 다른 텍스트를 추가하지 마세요:\n"
-    '{"facts": [{"id": "<fact id>", "verdict": "covered|partial|missing", "reason": "<한 문장 근거>"}], '
-    '"forbidden": [{"index": <0-based int>, "verdict": "violated|hedged|ok", '
-    '"evidence": "<violated/hedged일 때 답변 원문 인용, ok면 빈 문자열>", "reason": "<한 문장 근거>"}]}'
+    "facts에는 모든 fact ID를, forbidden에는 모든 0-based index를 중복 없이 반환하세요.\n"
+    "forbidden 항목에는 index, verdict, evidence, reason을 넣으세요. "
+    "evidence는 violated/hedged일 때 답변 원문, ok일 때 빈 문자열입니다.\n"
 )
+JUDGE_SYSTEM_PROMPT += JUDGE_RULES
 
 
 def build_user_prompt(case: dict[str, Any]) -> str:
@@ -79,39 +84,58 @@ def build_user_prompt(case: dict[str, Any]) -> str:
     return (
         f"질문: {case.get('question', '')}\n\n"
         f"생성된 답변:\n{case.get('answer', '')}\n\n"
+        f"고정 답변 단위 answer_units(JSON; 모든 ID를 claims에서 한 번씩 판정):\n"
+        f"{json.dumps(answer_units(case.get('answer') or ''), ensure_ascii=False)}\n\n"
         f"필수 사실 체크리스트:\n{facts_block}\n\n"
         f"금지된 주장:\n{forbidden_block}"
+        f"\n\n정답 라벨상 답변 가능: {case.get('answerable')}"
+        f"\n기대 행동: {case.get('expected_behavior', '')}"
+        f"\n기대 출처: {json.dumps(case.get('expected_source'), ensure_ascii=False)}"
+        f"\n실제 API 답변 가능 표시: {case.get('response_answerable')}"
+        f"\n\n실제 인용 출처와 평가 시각(JSON 데이터):\n{json.dumps(source_context(case), ensure_ascii=False)}"
     )
 
 
-def grade_case(client: OpenAI, model: str, case: dict[str, Any], timeout: float) -> dict[str, Any]:
-    facts = case.get("required_facts") or []
+def grade_case(
+    client: OpenAI, model: str, case: dict[str, Any], timeout: float, *, schema_retries: int = 1,
+) -> dict[str, Any]:
     forbidden = case.get("forbidden_claims") or []
-    if not facts and not forbidden:
-        return {"facts": [], "forbidden": []}
-
-    response = client.chat.completions.create(
-        model=model,
-        messages=[
-            {"role": "system", "content": JUDGE_SYSTEM_PROMPT},
-            {"role": "user", "content": build_user_prompt(case)},
-        ],
-        temperature=0.0,
-        max_tokens=1200,
-        timeout=timeout,
-        response_format={"type": "json_object"},
-    )
-    raw = (response.choices[0].message.content or "{}").strip()
-    try:
-        parsed = json.loads(raw)
-    except json.JSONDecodeError:
-        log.error("judge returned invalid JSON for id=%s: %r", case.get("id"), raw[:200])
-        return {"facts": [], "forbidden": [], "judge_error": "invalid_json"}
-    parsed.setdefault("facts", [])
-    parsed.setdefault("forbidden", [])
-    verify_forbidden_evidence(parsed["forbidden"], case.get("answer") or "")
-    confirm_forbidden_violations(client, model, parsed["forbidden"], forbidden, timeout)
-    return parsed
+    messages = [
+        {"role": "system", "content": JUDGE_SYSTEM_PROMPT},
+        {"role": "user", "content": build_user_prompt(case)},
+    ]
+    errors = []
+    for attempt in range(schema_retries + 1):
+        response = client.chat.completions.create(
+            model=model, messages=messages, temperature=0.0, max_tokens=4096,
+            timeout=timeout, response_format={"type": "json_object"},
+        )
+        raw = (response.choices[0].message.content or "{}").strip()
+        try:
+            parsed = validate_judgment(json.loads(raw), case, require_unit_ids=True)
+        except (ValueError, TypeError, KeyError) as exc:
+            kind = "invalid_json" if isinstance(exc, json.JSONDecodeError) else "invalid_schema"
+            errors.append({"attempt": attempt + 1, "kind": kind, "reason": str(exc), "raw": raw})
+            log.warning("judge validation failed id=%s attempt=%d: %s", case.get("id"), attempt + 1, exc)
+            if attempt == schema_retries:
+                return {"facts": [], "forbidden": [], "judge_error": kind, "reason": str(exc),
+                        "judge_raw": raw, "schema_errors": errors, "judge_contract_version": JUDGE_CONTRACT_VERSION}
+            messages = messages + [
+                {"role": "assistant", "content": raw},
+                {"role": "user", "content": (
+                    f"JSON 검증 실패: {exc}. 제공된 answer_units의 모든 unit_id를 정확히 한 번씩 쓰고, "
+                    "claims에서 text와 citations는 생략하세요. facts는 covered/partial/missing만 쓰며 "
+                    "covered/partial에는 실제 answer_unit_ids를 붙이세요. 원문·출처·질문은 변경하지 말고 "
+                    "여섯 필수 키를 갖춘 완전한 채점 JSON을 다시 반환하세요."
+                )},
+            ]
+            continue
+        parsed.update(judge_contract_version=JUDGE_CONTRACT_VERSION, schema_repair_count=attempt,
+                      schema_errors=errors, judge_raw=raw)
+        verify_forbidden_evidence(parsed["forbidden"], case.get("answer") or "")
+        confirm_forbidden_violations(client, model, parsed["forbidden"], forbidden, timeout)
+        return parsed
+    raise ValueError("schema_retries must be non-negative")
 
 
 CONFIRM_SYSTEM_PROMPT = (
@@ -205,10 +229,10 @@ def summarize(graded: list[dict[str, Any]]) -> dict[str, Any]:
 
     for row in graded:
         judged = row.get("judged") or {}
+        if row.get("error") or row.get("skipped") or judged.get("judge_error") or not judged:
+            continue
         facts_judged = judged.get("facts") or []
         forbidden_judged = judged.get("forbidden") or []
-        if not facts_judged and not forbidden_judged and not row.get("required_facts") and not row.get("forbidden_claims"):
-            continue
         graded_case_count += 1
 
         case_missing = False
@@ -224,7 +248,7 @@ def summarize(graded: list[dict[str, Any]]) -> dict[str, Any]:
                 case_missing = True
         if case_missing:
             cases_with_missing.append(row["id"])
-        elif facts_judged:
+        elif facts_judged and all(fact.get("verdict") == "covered" for fact in facts_judged):
             cases_fully_covered.append(row["id"])
 
         case_violated = False
@@ -244,8 +268,44 @@ def summarize(graded: list[dict[str, Any]]) -> dict[str, Any]:
             cases_with_hedge.append(row["id"])
 
     fact_coverage = (covered + 0.5 * partial) / total_facts if total_facts else None
+    labeled = [row for row in graded if type(row.get("answerable")) is bool]
+    evaluated = [row for row in labeled if row.get("judged") and not row["judged"].get("judge_error")
+                 and not row.get("error") and not row.get("skipped")]
+    correct_ids = []
+    for row in evaluated:
+        judged = row["judged"]
+        correct = all(fact.get("verdict") == "covered" for fact in judged.get("facts", []))
+        correct = correct and all(item.get("verdict") != "violated" for item in judged.get("forbidden", []))
+        correct = correct and not any(item.get("downgraded") in {"evidence_missing", "evidence_not_in_answer"}
+                                      for item in judged.get("forbidden", []))
+        refusal = judged.get("refusal", {}).get("verdict")
+        correct = correct and (refusal in {"not_refusal", "appropriate"} if row["answerable"] else refusal == "appropriate")
+        if correct:
+            correct_ids.append(row["id"])
     return {
+        "total_case_count": len(graded),
         "graded_case_count": graded_case_count,
+        "api_error_case_ids": [row["id"] for row in graded if row.get("error")],
+        "judge_error_case_ids": [row["id"] for row in graded if (row.get("judged") or {}).get("judge_error")],
+        "judge_error_reasons": {
+            row["id"]: {"kind": (row.get("judged") or {}).get("judge_error"),
+                        "reason": (row.get("judged") or {}).get("reason")}
+            for row in graded if (row.get("judged") or {}).get("judge_error")
+        },
+        "schema_repaired_case_ids": [row["id"] for row in graded if (row.get("judged") or {}).get("schema_repair_count", 0) > 0],
+        "skipped_case_ids": [row["id"] for row in graded if row.get("skipped")],
+        "unverified_forbidden_case_ids": [row["id"] for row in evaluated if any(
+            item.get("downgraded") in {"evidence_missing", "evidence_not_in_answer"}
+            for item in row["judged"].get("forbidden", []))],
+        "answer_accuracy": {
+            "labeled_cases": len(labeled), "evaluated_cases": len(evaluated), "correct_cases": len(correct_ids),
+            "strict_rate_all_labeled": round(len(correct_ids) / len(labeled), 4) if labeled else None,
+            "rate_evaluated_only": round(len(correct_ids) / len(evaluated), 4) if evaluated else None,
+            "correct_case_ids": correct_ids,
+        },
+        "quality": quality_summary(graded),
+        "by_category": {category: quality_summary([row for row in graded if row.get("category", "uncategorized") == category])
+                        for category in sorted({row.get("category", "uncategorized") for row in graded})},
         "total_facts": total_facts,
         "facts_covered": covered,
         "facts_partial": partial,
@@ -261,7 +321,15 @@ def summarize(graded: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def run(results_path: Path, output_path: Path, model: str, timeout: float, limit: int | None, sleep_seconds: float) -> None:
+def run(
+    results_path: Path, output_path: Path, model: str, timeout: float,
+    limit: int | None, sleep_seconds: float, schema_retries: int = 1,
+) -> dict[str, Any]:
+    if results_path.resolve() == output_path.resolve():
+        raise ValueError("graded output must differ from input results")
+    if limit is not None and limit <= 0:
+        raise ValueError("limit must be positive")
+    results_hash = file_sha256(results_path)
     api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
         raise SystemExit("OPENAI_API_KEY not set (checked backend/.env)")
@@ -273,43 +341,47 @@ def run(results_path: Path, output_path: Path, model: str, timeout: float, limit
             line = line.strip()
             if line:
                 cases.append(json.loads(line))
-    if limit:
+    if limit is not None:
         cases = cases[:limit]
 
     graded: list[dict[str, Any]] = []
-    for i, case in enumerate(cases, start=1):
-        case_id = case.get("id", f"row_{i}")
-        if case.get("error") or not (case.get("answer") or "").strip():
-            log.info("[%d/%d] %s SKIP (no answer / error)", i, len(cases), case_id)
-            graded.append({**case, "judged": {"facts": [], "forbidden": []}, "skipped": "no_answer"})
-            continue
-        try:
-            judged = grade_case(client, model, case, timeout)
-        except Exception:
-            log.exception("[%d/%d] %s grading failed", i, len(cases), case_id)
-            judged = {"facts": [], "forbidden": [], "judge_error": "exception"}
-        graded.append({**case, "judged": judged})
-        n_facts = len(judged.get("facts") or [])
-        n_forbidden = len(judged.get("forbidden") or [])
-        log.info("[%d/%d] %s OK facts=%d forbidden=%d", i, len(cases), case_id, n_facts, n_forbidden)
-        if sleep_seconds:
-            time.sleep(sleep_seconds)
-
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with output_path.open("w", encoding="utf-8") as f:
-        for row in graded:
-            slim = {
-                "id": row["id"],
-                "question": row.get("question"),
-                "answer": row.get("answer"),
-                "required_facts": row.get("required_facts"),
-                "forbidden_claims": row.get("forbidden_claims"),
-                "judged": row.get("judged"),
-                "skipped": row.get("skipped"),
-            }
-            f.write(json.dumps(slim, ensure_ascii=False) + "\n")
+        for i, case in enumerate(cases, start=1):
+            case_id = case.get("id", f"row_{i}")
+            if case.get("error") or not (case.get("answer") or "").strip():
+                log.info("[%d/%d] %s SKIP (no answer / error)", i, len(cases), case_id)
+                row = {**case, "judged": {"facts": [], "forbidden": []}, "skipped": "no_answer"}
+            else:
+                try:
+                    judged = grade_case(client, model, case, timeout, schema_retries=schema_retries)
+                except Exception as exc:
+                    log.exception("[%d/%d] %s grading failed", i, len(cases), case_id)
+                    judged = {"facts": [], "forbidden": [], "judge_error": "exception", "reason": type(exc).__name__}
+                row = {**case, "judged": judged}
+                log.info("[%d/%d] %s %s facts=%d forbidden=%d", i, len(cases), case_id,
+                         "JUDGE_ERROR" if judged.get("judge_error") else "OK",
+                         len(judged.get("facts") or []), len(judged.get("forbidden") or []))
+                if sleep_seconds:
+                    time.sleep(sleep_seconds)
+            # Keep the original evidence and labels so every judgment is auditable.
+            graded.append(row)
+            f.write(json.dumps(row, ensure_ascii=False) + "\n")
+            f.flush()
 
     summary = summarize(graded)
+    manifest_path = results_path.with_suffix(".manifest.json")
+    summary["provenance"] = {
+        "schema_version": 2, "judged_at": timestamp(), "judge_model": model,
+        "judge_prompt_sha256": hashlib.sha256(JUDGE_SYSTEM_PROMPT.encode("utf-8")).hexdigest(),
+        "results_sha256": results_hash, "graded_sha256": file_sha256(output_path),
+        "run_manifest": json.loads(manifest_path.read_text(encoding="utf-8")) if manifest_path.exists() else None,
+        "limit": limit,
+        "backend_configurations": backend_configurations(graded),
+        "judge_contract_version": JUDGE_CONTRACT_VERSION,
+        "schema_retries": schema_retries,
+        "judge_code": code_state(),
+    }
     summary_path = output_path.with_suffix(".summary.json")
     with summary_path.open("w", encoding="utf-8") as f:
         json.dump(summary, f, ensure_ascii=False, indent=2)
@@ -330,6 +402,7 @@ def run(results_path: Path, output_path: Path, model: str, timeout: float, limit
         summary["total_forbidden_claims"],
     )
     log.info("saved details=%s summary=%s", output_path, summary_path)
+    return summary
 
 
 def parse_args() -> argparse.Namespace:
@@ -340,13 +413,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--timeout", type=float, default=30.0)
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--sleep", type=float, default=0.2)
+    parser.add_argument("--schema-retries", type=int, choices=(0, 1, 2), default=1,
+                        help="Bounded JSON/schema repair attempts per case (default: 1).")
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
     output = args.output or args.results.with_suffix(".graded.jsonl")
-    run(args.results, output, args.model, args.timeout, args.limit, args.sleep)
+    summary = run(args.results, output, args.model, args.timeout, args.limit, args.sleep, args.schema_retries)
+    if summary["judge_error_case_ids"]:
+        log.error("grading incomplete: %d judge errors; summary saved for diagnosis", len(summary["judge_error_case_ids"]))
+        return 2
     return 0
 
 

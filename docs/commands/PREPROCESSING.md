@@ -5,9 +5,9 @@
 
 전체 수집 범위 점검과 새 실행 경로는
 [`scripts/preprocessing/README.md`](../../scripts/preprocessing/README.md)를 참고하세요.
-이전 전처리 경로의 호환 파일은 제거했습니다. 아래 `files/ce`, `files/cse` 예시의
-학과 경로는 현재 레지스트리의 `files/department/.../<dataset>/` 경로로 바꾸어
-사용해야 합니다. `--dataset ce` 실행은 레지스트리 경로를 자동으로 사용합니다.
+이전 전처리 경로의 호환 파일은 제거했습니다. `--dataset ce` 실행은 레지스트리의
+`files/department/.../ce/` 경로를 자동으로 사용합니다. 직접 파일 경로를 지정하는
+아래 예시는 현재 CE 저장 위치를 사용하며, 다른 학과는 레지스트리의 `storage_path`를 확인합니다.
 
 ```powershell
 .venv/Scripts/python.exe -m scripts.preprocessing.collected
@@ -41,9 +41,10 @@
 자주 쓰는 예시:
 
 ```powershell
-.\.venv\Scripts\python.exe scripts\preprocessing\file_preprocessing.py --input-root files\ce\output\json --output-root preprocessed\ce\json --output-json-root files\ce\output\json --layout flat
-.\.venv\Scripts\python.exe scripts\preprocessing\file_preprocessing.py --input-root files\ce\output\files --output-root preprocessed\ce\files --output-json-root files\ce\output\json
-.\.venv\Scripts\python.exe scripts\preprocessing\file_preprocessing.py --input-root files\ce\output\files --output-root preprocessed\ce\files --file-ext pdf hwp xls xlsx pptx zip
+$ceOutput = "files/department/정보융합대학/컴퓨터·인공지능공학부/ce/output"
+.\.venv\Scripts\python.exe -m scripts.preprocessing.file_preprocessing --input-root "$ceOutput/json" --output-root preprocessed/ce/json --output-json-root "$ceOutput/json" --layout flat
+.\.venv\Scripts\python.exe -m scripts.preprocessing.file_preprocessing --input-root "$ceOutput/files" --output-root preprocessed/ce/files --output-json-root "$ceOutput/json"
+.\.venv\Scripts\python.exe -m scripts.preprocessing.file_preprocessing --input-root "$ceOutput/files" --output-root preprocessed/ce/files --file-ext pdf hwp xls xlsx pptx zip
 ```
 
 주요 옵션:
@@ -69,9 +70,9 @@
 CE 외의 다른 학과 크롤링 결과도 같은 JSON/파일 구조를 쓰면 이 명령을 그대로 사용할 수 있습니다.
 
 ```powershell
-.\.venv\Scripts\python.exe scripts\preprocessing\preprocess_files.py --input-root files\ce\output\files --output-root preprocessed\ce\files --output-json-root files\ce\output\json
-.\.venv\Scripts\python.exe scripts\preprocessing\preprocess_files.py --input-root files\cse\output\files --output-root preprocessed\cse\files --output-json-root files\cse\output\json
-.\.venv\Scripts\python.exe scripts\preprocessing\preprocess_files.py --input-root files\cse\output\files --output-root preprocessed\cse\files --file-ext pdf hwp xls xlsx pptx zip
+$ceOutput = "files/department/정보융합대학/컴퓨터·인공지능공학부/ce/output"
+.\.venv\Scripts\python.exe -m scripts.preprocessing.preprocess_files --input-root "$ceOutput/files" --output-root preprocessed/ce/files --output-json-root "$ceOutput/json"
+.\.venv\Scripts\python.exe -m scripts.preprocessing.preprocess_files --input-root "$ceOutput/files" --output-root preprocessed/ce/files --file-ext pdf hwp xls xlsx pptx zip
 ```
 
 주요 옵션은 `scripts/preprocessing/file_preprocessing.py`의 파일 전처리 옵션과 같습니다. `--output-json-root`가 없거나 비어 있으면 게시글 메타데이터 없이 파일 자체 provenance로 처리합니다.

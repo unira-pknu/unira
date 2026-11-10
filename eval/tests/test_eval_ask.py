@@ -12,6 +12,7 @@ from eval.tools.eval_ask import (
     DEFAULT_QUESTIONS_PATH,
     _is_structured_case,
     _read_jsonl,
+    _result_row,
     _validate_structured_case,
     _validate_unique_ids,
 )
@@ -40,6 +41,17 @@ def valid_case() -> dict:
 
 
 class EvalSchemaTests(unittest.TestCase):
+    def test_result_keeps_label_and_response_answerability_separate_and_retains_evidence(self):
+        evidence = {"schema_version": 1, "body_scope": "retrieved_chunks", "sources": [{"index": 1, "content": "원문"}]}
+        row = _result_row(
+            question_row=valid_case(), status_code=200, elapsed_seconds=1.25,
+            response={"answer": "관련 정보를 찾을 수 없습니다.", "answerable": False,
+                      "sources": [], "evaluation_evidence": evidence},
+        )
+        self.assertIs(row["answerable"], True)
+        self.assertIs(row["response_answerable"], False)
+        self.assertEqual(evidence, row["evaluation_evidence"])
+
     def test_accepts_answerable_case(self) -> None:
         _validate_structured_case(valid_case(), location="case")
 

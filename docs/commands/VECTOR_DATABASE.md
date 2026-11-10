@@ -209,8 +209,7 @@ DB 상태 점검용 읽기 전용 스크립트는 `supabase/audit/`에 있습니
 
 ```powershell
 .\.venv\Scripts\python.exe scripts\crawlers\departments\engine.py --dataset ce --once
-.\.venv\Scripts\python.exe scripts\preprocessing\preprocess_files.py --input-root files\ce\output\json --output-root preprocessed\ce\json --output-json-root files\ce\output\json --layout flat
-.\.venv\Scripts\python.exe scripts\preprocessing\preprocess_files.py --input-root files\ce\output\files --output-root preprocessed\ce\files --output-json-root files\ce\output\json
+.\.venv\Scripts\python.exe -m scripts.preprocessing.preprocessing_pipeline --dataset ce
 .\.venv\Scripts\python.exe scripts\vectorization\vectorization.py --dataset ce --backend sentence-transformers
 .\.venv\Scripts\python.exe scripts\vectorization\load_to_supabase.py --dataset ce
 .\.venv\Scripts\python.exe scripts\priority\department\update_priorities.py

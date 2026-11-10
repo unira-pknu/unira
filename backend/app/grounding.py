@@ -6,7 +6,9 @@ retrieved chunk contained 130 (the per-department 132/140/160 table was not
 retrieved). It also borrows a real figure from the wrong source: "졸업학점
 50학점" came from a 교직과목 table. The prompt already forbids both
 (system.txt rules 13, 20); generation.generate_answer() uses this check to
-send such an answer back once instead of trusting the prompt alone.
+send such an answer back once, then recheck the revision and fall back if it
+still fails. Only source bodies shown to the model count as evidence;
+questions and conversation history do not.
 """
 
 from __future__ import annotations
@@ -61,7 +63,7 @@ def unsupported_numbers(answer: str, texts: Iterable[str]) -> List[str]:
     return missing
 
 
-def miscited_numbers(answer: str, question: str, sources: Sequence[str]) -> List[str]:
+def miscited_numbers(answer: str, sources: Sequence[str]) -> List[str]:
     """Figures a line attributes to sources [n] that don't contain them although
     another source does (a real number borrowed from the wrong document).
 
@@ -72,7 +74,7 @@ def miscited_numbers(answer: str, question: str, sources: Sequence[str]) -> List
         cited = {int(n) for n in _CITE_RE.findall(line) if 1 <= int(n) <= len(sources)}
         if not cited:
             continue
-        pool = question + " " + " ".join(sources[n - 1] for n in sorted(cited))
+        pool = " ".join(sources[n - 1] for n in sorted(cited))
         for number, claim in _claims(line):
             if _found(number, pool):
                 continue

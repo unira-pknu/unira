@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import List, Literal
+from typing import Any, List, Literal
 
 from pydantic import BaseModel, Field
 
@@ -22,6 +22,8 @@ class AskRequest(BaseModel):
     # written (the chat screen). false (default): one JSON AskResponse, which
     # eval and comparison scripts rely on.
     stream: bool = False
+    # JSON-only evaluation capture; ordinary clients keep using source excerpts.
+    include_evidence: bool = False
 
 
 
@@ -50,3 +52,4 @@ class AskResponse(BaseModel):
     # refusal (system prompt rule 5). Defaults to True so older clients and
     # tests that ignore the field keep working.
     answerable: bool = True
+    evaluation_evidence: dict[str, Any] | None = None
