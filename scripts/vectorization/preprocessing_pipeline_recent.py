@@ -7,8 +7,10 @@ import json
 import logging
 import subprocess
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
+from typing import Iterable
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
@@ -111,7 +113,37 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Limit attachment preprocessing to extensions such as pdf hwp xlsx.",
     )
+    parser.add_argument(
+        "--department-shard",
+        metavar="N/M",
+        help="Crawl the N-th of M equal slices of the department datasets (ce excluded: "
+        "the daily run covers it) instead of --dataset. All department sites share one "
+        "school server, so the daily department run takes one slice per day.",
+    )
+    parser.add_argument(
+        "--between-datasets-delay",
+        type=float,
+        default=5.0,
+        help="Seconds to wait between department crawls (school server load).",
+    )
+    parser.add_argument(
+        "--max-consecutive-crawl-failures",
+        type=int,
+        default=3,
+        help="Stop crawling after this many departments fail in a row: the server is "
+        "probably refusing us, so stop instead of hammering it; tomorrow resumes.",
+    )
     return parser
+
+
+def department_shard(spec: str, departments: Iterable[str]) -> list[str]:
+    """The N-th of M slices of the departments, by a stable sorted order."""
+    index_text, _, count_text = spec.partition("/")
+    index, count = int(index_text), int(count_text)
+    if count <= 0 or not 0 <= index < count:
+        raise ValueError(f"--department-shard must be N/M with 0 <= N < M, got {spec!r}")
+    ordered = sorted(name for name in departments if name != "ce")
+    return ordered[index::count]
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -140,6 +172,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         parser.error("--load-batch-size must be positive")
     if args.skip_crawl and not args.since:
         parser.error("--skip-crawl requires --since")
+    if args.department_shard:
+        try:
+            department_shard(args.department_shard, DEPARTMENT_DATASETS)
+        except ValueError as error:
+            parser.error(str(error))
+    if args.between_datasets_delay < 0:
+        parser.error("--between-datasets-delay must not be negative")
+    if args.max_consecutive_crawl_failures <= 0:
+        parser.error("--max-consecutive-crawl-failures must be positive")
     return args
 
 
@@ -425,14 +466,61 @@ def main(argv: list[str] | None = None) -> None:
     args = parse_args(argv)
     configure_logging()
 
-    dataset_names = selected_datasets(args.dataset)
+    if args.department_shard:
+        dataset_names = department_shard(args.department_shard, DEPARTMENT_DATASETS)
+        log.info("Department shard %s: %s", args.department_shard, ", ".join(dataset_names))
+    else:
+        dataset_names = selected_datasets(args.dataset)
+    crawl_failed: list[str] = []
     if args.skip_crawl:
         run_started_at = datetime.fromisoformat(args.since)
     else:
         run_started_at = datetime.now()
-        for dataset in dataset_names:
-            crawl_dataset(dataset, args)
+        crawl_failed = crawl_datasets(dataset_names, args)
+    try:
+        process_recent(dataset_names, run_started_at, args)
+    finally:
+        if crawl_failed:
+            log.error("Crawl failed for: %s", ", ".join(crawl_failed))
+    if crawl_failed:
+        raise RuntimeError(f"crawl failed for {len(crawl_failed)} dataset(s): {', '.join(crawl_failed)}")
 
+
+def crawl_datasets(dataset_names: list[str], args: argparse.Namespace) -> list[str]:
+    """Crawl each dataset; return the ones that failed.
+
+    The fixed daily set (ce, notices, rules) still fails fast. A department
+    shard keeps going past one broken site, pauses between sites, and stops
+    after a run of failures, which usually means the shared school server has
+    started refusing requests.
+    """
+    failed: list[str] = []
+    consecutive = 0
+    for position, dataset in enumerate(dataset_names):
+        if args.department_shard and position and args.between_datasets_delay:
+            time.sleep(args.between_datasets_delay)
+        try:
+            crawl_dataset(dataset, args)
+        except subprocess.CalledProcessError:
+            if not args.department_shard:
+                raise
+            log.exception("[%s] crawl failed", dataset)
+            failed.append(dataset)
+            consecutive += 1
+            if consecutive >= args.max_consecutive_crawl_failures:
+                skipped = dataset_names[position + 1:]
+                log.error(
+                    "%d departments failed in a row; stopping so the school server is not hammered. "
+                    "Skipped today: %s", consecutive, ", ".join(skipped) or "-",
+                )
+                break
+        else:
+            consecutive = 0
+    return failed
+
+
+def process_recent(dataset_names: list[str], run_started_at: datetime, args: argparse.Namespace) -> None:
+    """Preprocess, vectorize and load whatever the crawl wrote since it started."""
     since_ts = run_started_at.timestamp() - 1.0
     targets = collect_targets(dataset_names, since_ts)
     manifest_path = args.manifest or (
@@ -451,18 +539,19 @@ def main(argv: list[str] | None = None) -> None:
         return
 
     log.info("Preprocessing %d recently updated files", total)
-    run_pipeline(
-        dataset=args.dataset,
-        changed_only=False,
-        dry_run=args.dry_run,
-        chunk_size=args.chunk_size,
-        chunk_overlap=args.chunk_overlap,
-        pdf_ocr_mode=args.pdf_ocr,
-        ocr_language=args.ocr_language,
-        ocr_dpi=args.ocr_dpi,
-        file_exts=args.file_exts,
-        targets=targets,
-    )
+    for pipeline_dataset in (dataset_names if args.department_shard else [args.dataset]):
+        run_pipeline(
+            dataset=pipeline_dataset,
+            changed_only=False,
+            dry_run=args.dry_run,
+            chunk_size=args.chunk_size,
+            chunk_overlap=args.chunk_overlap,
+            pdf_ocr_mode=args.pdf_ocr,
+            ocr_language=args.ocr_language,
+            ocr_dpi=args.ocr_dpi,
+            file_exts=args.file_exts,
+            targets=targets,
+        )
 
     if args.skip_vectorization:
         return
