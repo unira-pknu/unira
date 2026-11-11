@@ -124,6 +124,95 @@ Write-Host "이전 운영 파일 백업: $backendBackup"
 워밍업 결과 수만으로 모든 검색 RPC의 성공을 판정하지 않는다. 복구 검증은 내부
 검색 실패 경고도 실패로 처리하며, 시간 초과가 있으면 원인을 확인하고 재검증한다.
 
+## 학습 후보 다운로드에서 Not Found가 뜰 때
+
+Vercel 화면이 갱신되어도 학교 서버의 백엔드는 자동 갱신되지 않습니다.
+다운로드 버튼은 `/api/admin/feedback/training-candidates`를 거쳐 학교 서버의
+`/admin/feedback/training-candidates`를 호출합니다. 서버의 `app/routers/admin.py`에
+해당 라우트가 없으면 404가 발생합니다. `app/feedback_training.py`도 함께 필요합니다.
+프록시는 이 404를 서버 업데이트 안내와 HTTP 503으로 변환하며 기존 관리자 인증은 유지합니다.
+
+2026-11-11 최초 점검에서는 관리자 라우트 미반영, `feedback_training.py` 부재를 확인했습니다.
+이후 사용자의 명시적 실행 요청으로 아래 두 파일 반영과 재시작을 완료했습니다. 실행 결과는 이 절 마지막에 있습니다.
+
+프로젝트 루트(`D:\Github\campus-rag\campus-rag`)에서 먼저 테스트합니다.
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest backend/tests/test_admin.py eval/tests/test_feedback_training.py
+if ($LASTEXITCODE -ne 0) { throw "테스트 실패: 운영 반영을 중단합니다." }
+```
+
+학습 후보 기능에 필요한 두 파일만 백업 후 반영합니다. 앞선 검색 품질 변경 파일이나
+`.env`·가상환경·DB는 이 복사에 포함하지 않습니다. 새 파일은 기존 운영 파일이 없어도 복사합니다.
+
+```powershell
+$feedbackProject = 'D:\Github\campus-rag\campus-rag'
+$feedbackInstalledApp = 'D:\unira-backend\backend\app'
+$feedbackFiles = @('routers\admin.py', 'feedback_training.py')
+$feedbackBackup = Join-Path $feedbackProject ('var\recovery\feedback_backend_' + (Get-Date -Format 'yyyyMMdd_HHmmss_fff'))
+
+if (!(Test-Path -LiteralPath (Join-Path $feedbackInstalledApp 'main.py') -PathType Leaf)) {
+    throw '운영 백엔드 app 폴더를 찾지 못했습니다.'
+}
+foreach ($relative in $feedbackFiles) {
+    $source = Join-Path $feedbackProject ('backend\app\' + $relative)
+    if (!(Test-Path -LiteralPath $source -PathType Leaf)) { throw "작업 파일 없음: $relative" }
+}
+foreach ($relative in $feedbackFiles) {
+    $target = Join-Path $feedbackInstalledApp $relative
+    if (Test-Path -LiteralPath $target -PathType Leaf) {
+        $backup = Join-Path $feedbackBackup $relative
+        New-Item -ItemType Directory -Path (Split-Path -Parent $backup) -Force | Out-Null
+        Copy-Item -LiteralPath $target -Destination $backup -ErrorAction Stop
+    }
+}
+# 새 라우트를 읽기 전에 그 라우트가 import하는 모듈을 먼저 반영합니다.
+foreach ($relative in @('feedback_training.py', 'routers\admin.py')) {
+    $source = Join-Path $feedbackProject ('backend\app\' + $relative)
+    $target = Join-Path $feedbackInstalledApp $relative
+    Copy-Item -LiteralPath $source -Destination $target -ErrorAction Stop
+    if ((Get-FileHash -LiteralPath $source).Hash -ne (Get-FileHash -LiteralPath $target).Hash) {
+        throw "운영 복사 해시 불일치: $relative"
+    }
+}
+Write-Host "운영 파일 반영 완료. 이전 파일 백업: $feedbackBackup"
+```
+
+이후 위의 **백엔드 다시 켜기** 절차를 관리자 PowerShell에서 실행하고, 새 시작 로그를 확인합니다.
+Vercel의 `BACKEND_URL`이 이 학교 서버를 가리키는지도 확인합니다. Hugging Face 예비 서버를
+가리킨다면 학교 서버 파일 복사는 그 예비 서버를 갱신하지 않으므로 해당 배포를 따로 반영해야 합니다.
+
+브라우저에서 학습 후보 다운로드를 다시 시도합니다. 정상 로그인한 관리자에게 200과 후보 목록이
+반환되는지 확인합니다. 토큰 없이 URL만 열었을 때 401이 나오면 라우트는 존재하는 것이며,
+404이면 연결한 서버 또는 실행 중인 코드가 아직 다릅니다. 피드백이 없으면 빈 목록이 정상입니다.
+
+프록시 메시지 변경을 Vercel에 반영하기 전에는 아래 검증을 사용자가 실행합니다.
+
+```powershell
+npm --prefix frontend run lint -- app/api/admin/feedback/training-candidates/route.ts
+npm --prefix frontend run build
+```
+
+이 기능 반영에는 추가 DB 마이그레이션이 필요하지 않습니다.
+
+2026-11-11 사용자 실행 승인 후 다음 작업을 완료했습니다.
+
+- 관리자·학습 데이터 테스트: **37개 통과** (`backend/tests/test_admin.py`, `eval/tests/test_feedback_training.py`).
+- 운영 `feedback_training.py`, `routers/admin.py` 복사와 두 파일의 작업/운영 SHA-256 일치 확인.
+  기존 관리자 파일 백업: `var/recovery/feedback_backend_20261111_151423_403/routers/admin.py`.
+- 경로를 확인한 작업 스케줄러 `unira-backend` 중지·시작, 새 `Backend startup complete.` 확인.
+- 로컬 운영 `/health` **200**, 인증 없는 `/admin/feedback/training-candidates?limit=1` **401** 확인.
+  이는 새 경로 등록과 인증 요구 확인이며, 관리자 권한으로 DB 데이터를 다운로드한 검증은 아닙니다.
+- 프론트엔드 관련 3개 파일 ESLint: 오류 0, 기존 불필요한 eslint-disable 경고 1.
+- 프론트엔드 프로덕션 빌드 성공. 빌드 라우트에 `/api/admin/feedback/training-candidates` 포함 확인.
+
+시스템에 Node.js가 없어 공식 Node.js 22 LTS(v22.23.4)를 SHA-256 검증 후
+`var/tools/node-v22.23.4-win-x64`에 준비했습니다. `npm ci`로 잠금 파일 그대로 설치했으며
+`package.json`, `package-lock.json`, 시스템 PATH는 변경하지 않았습니다. 이 Node.js를 다시 사용할 때는
+현재 PowerShell 세션의 PATH 앞에 해당 폴더를 추가합니다.
+
+검색 품질 변경 파일의 운영 복사, DB 변경, Vercel 배포, 로그인한 관리자의 실제 다운로드는 수행하지 않았습니다.
+
 ## 되돌리기 (학교 서버가 멈췄을 때)
 
 Vercel 프로젝트 → Settings → Environment Variables → `BACKEND_URL`을 Hugging Face Space 주소로

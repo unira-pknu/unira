@@ -27,6 +27,7 @@ METADATA_NAMES = (
     "published_at", "posted_at", "date", "year", "term", "applicability_note",
     "source_link_kind", "structured_table",
     "request_query",
+    "request_coverage", "comparison_targets",
     "retrieval_incomplete", "unresolved_request",
     "catalog_table",
 )

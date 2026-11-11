@@ -33,7 +33,8 @@ def body(response, stream):
 
 
 @pytest.mark.parametrize("stream", [False, True])
-@pytest.mark.parametrize("question", ["거기 전화번호는?", "신청 언제까지야?", "기숙사 입실 신청 자격과 절차를 알려주세요."])
+@pytest.mark.parametrize("question", ["거기 전화번호는?", "신청 언제까지야?", "기숙사 입실 신청 자격과 절차를 알려주세요.",
+                                      "학부 사무실 연락처와 지금 담당자가 자리에 있는지 알려줘"])
 def test_ambiguity_skips_search_and_generation_for_both_protocols(stream, question):
     with patch("app.routers.ask._retrieve") as search, patch("app.routers.ask.generate_small_talk") as talk:
         result = body(client().post("/ask", json={"question": question, "stream": stream}), stream)
@@ -72,3 +73,25 @@ def test_scope_is_applied_before_reranking_even_to_added_candidates():
                         query_text="query", scope_check=lambda row: row["id"] != "bad")
     assert result == [good]
     assert rerank.call_args.kwargs["candidates"] == [good]
+
+
+@pytest.mark.parametrize("top_k,expected", [(10, "no_candidates"), (1, "not_selected")])
+def test_missing_or_dropped_subquery_is_visible_to_generation(top_k, expected):
+    from app.routers.ask import _retrieve
+    from app.generation import build_user_message
+
+    q = "셔틀버스 노선과 실시간 도착 시간"
+    plan = finish_plan(rule_plan(q), q, ["셔틀버스 노선", "셔틀버스 실시간 도착 시간"])
+    first = {"id": "route", "content": "셔틀버스는 대연과 용당을 연결합니다.", "title": "노선", "similarity": 0.9}
+    second = {"id": "arrival", "content": "도착 시간 안내", "title": "도착", "similarity": 0.8}
+    groups = [[first], [] if expected == "no_candidates" else [second]]
+    state = SimpleNamespace(supabase=None, settings=SimpleNamespace(rag_top_k=top_k))
+    with patch("app.routers.ask._search_all", return_value=groups):
+        rows, sources = _retrieve(state=state, user_id="test", question=q, chat_history=[],
+                                  sub_questions=plan.queries, plan=plan)
+    coverage = rows[0]["metadata"]["request_coverage"]
+    assert [entry["status"] for entry in coverage] == ["candidates_selected", expected]
+    prompt = build_user_message(q, rows, 500)
+    assert plan.queries[1] in prompt and expected in prompt
+    assert "후보 선택은 정답 근거가 충분하다는 뜻이 아닙니다" in prompt
+    assert len(sources) == len(rows)

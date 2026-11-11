@@ -62,6 +62,17 @@ def test_direct_answer_marker_does_not_shift_citation_numbers():
     assert evidence["sources"][0]["shown_content"] is None
 
 
+def test_comparison_coverage_is_kept_in_evaluation_capture():
+    coverage = [{"question": "두 번째 전공의 필수과목", "status": "no_candidates", "candidate_count": 0}]
+    rows = [{"content": "첫 번째 전공 자료", "metadata": {
+        "request_coverage": coverage, "comparison_targets": ["첫 번째 전공", "두 번째 전공"],
+    }}]
+    sources = [Source(title="교육과정", uri="", content=rows[0]["content"], similarity=1)]
+    captured = evidence_snapshot(state(), QuestionPlan(), rows, sources)
+    assert captured["sources"][0]["metadata"]["request_coverage"] == coverage
+    assert captured["sources"][0]["metadata"]["comparison_targets"] == ["첫 번째 전공", "두 번째 전공"]
+
+
 def test_evidence_capture_rejects_streaming_explicitly():
     app = FastAPI()
     app.include_router(router)

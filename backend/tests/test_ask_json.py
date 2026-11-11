@@ -73,8 +73,12 @@ class AskJsonTests(unittest.TestCase):
             ("졸업학점은 130학점입니다 [1].", True),
             ("관련 정보를 찾을 수 없습니다.", False),
             (" \"관련 정보를 찾을 수 없습니다\" ", False),
+            ("졸업논문 제출 기간에 대한 정보는 확인되지 않습니다. 관련 정보를 찾을 수 없습니다.", False),
+            ("두 전공의 과목에 대한 정보는 확인되지 않습니다. 따라서 비교에 대한 답변을 드릴 수 없습니다.\n관련 정보를 찾을 수 없습니다.", False),
             ("", False),
             ("신청 기간은 9월입니다 [1]. 제출 서류는 관련 정보를 찾을 수 없습니다.", True),
+            ("신청은 학생포털에서 합니다. 제출 서류 정보는 확인되지 않습니다. 관련 정보를 찾을 수 없습니다.", True),
+            ("노선은 대연이며 실시간 정보는 확인되지 않습니다. 관련 정보를 찾을 수 없습니다.", True),
         ]
         for answer, expected in cases:
             with self.subTest(answer=answer), patch(
@@ -217,6 +221,15 @@ class AskStreamTests(unittest.TestCase):
     def test_no_sources_is_a_no_info_done(self):
         events = self.post(_retrieve=([], []))
         self.assertEqual({"type": "done", "answer": "관련 정보를 찾을 수 없습니다.", "sources": [], "answerable": False}, events[-1])
+
+    def test_explained_refusal_and_partial_answer_have_distinct_flags(self):
+        for answer, expected in (
+            ("졸업논문 제출 기간에 대한 정보는 확인되지 않습니다. 관련 정보를 찾을 수 없습니다.", False),
+            ("노선은 대연과 용당을 연결합니다[1]. 실시간 정보는 관련 정보를 찾을 수 없습니다.", True),
+        ):
+            with self.subTest(answer=answer):
+                events = self.post(stream_answer=iter([("token", answer), ("final", answer)]))
+                self.assertEqual(expected, events[-1]["answerable"])
 
     def test_generation_failure_mid_stream_is_an_error_event(self):
         def broken():

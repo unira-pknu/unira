@@ -124,6 +124,16 @@ def select_evidence(content: str, *, question: str, target_chars: int, metadata:
         return "(표 행이 근거 길이 한도를 초과하여 생략되었습니다. 원문 확인이 필요합니다.)"
     if len(content) <= target_chars:
         return content
+    # Ingestion prepends document title/category/file identity. Those copied
+    # query words are not an answer passage and can otherwise win every score,
+    # consuming the budget before a late application condition or table row.
+    marker = re.search(r"(?m)^본문:[ \t]*", content)
+    if marker:
+        content = content[marker.end():]
+        # Neighbor supplementation may contribute another ingestion wrapper.
+        content = re.sub(r"(?m)^문서제목:[^\n]*(?:\n(?:분류|세부분류|파일명|첨부명):[^\n]*)*\n본문:[ \t]*", "", content)
+        if len(content) <= target_chars:
+            return content
     units = _units(content, target_chars)
     if not units:
         return ""

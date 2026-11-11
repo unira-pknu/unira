@@ -220,3 +220,5 @@ def test_failed_subquery_preserves_other_subquery_and_marks_unknown_request():
     assert rows[0]["metadata"]["retrieval_incomplete"] is True
     assert "휴학" in rows[0]["metadata"]["unresolved_request"]
     assert "검색 장애" in rows[0]["metadata"]["unresolved_request"]
+    coverage = rows[0]["metadata"]["request_coverage"]
+    assert [entry["status"] for entry in coverage] == ["search_unavailable", "candidates_selected"]

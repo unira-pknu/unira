@@ -28,6 +28,24 @@ class GenerationPromptTests(unittest.TestCase):
         self.assertIn("관련된 내용이 하나라도 있으면", prompt)
         self.assertIn("핵심에 답할 근거가 참고 자료에 전혀 없을 때만", prompt)
 
+    def test_comparison_and_missing_subquery_are_explicit_in_generation_context(self) -> None:
+        message = build_user_message(
+            question="두 전공의 전공필수가 같은가요?",
+            rows=[{"content": "인공지능전공 교육과정 일부", "metadata": {
+                "comparison_targets": ["인공지능전공", "컴퓨터공학전공"],
+                "request_coverage": [
+                    {"question": "인공지능전공 전공필수", "status": "candidates_selected"},
+                    {"question": "컴퓨터공학전공 전공필수", "status": "no_candidates"},
+                ],
+            }}],
+            max_chars_per_chunk=500,
+        )
+        self.assertIn("인공지능전공", message)
+        self.assertIn("컴퓨터공학전공", message)
+        self.assertIn("한쪽 근거만 있으면", message)
+        self.assertIn('"status": "no_candidates"', message)
+        self.assertIn("자료 자체가 존재하지 않는다고 단정하지 마세요", message)
+
 
 if __name__ == "__main__":
     unittest.main()

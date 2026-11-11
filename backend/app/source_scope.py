@@ -63,6 +63,10 @@ def scope_reason(row: dict, task: SearchTask) -> str | None:
             if context not in target.contexts and re.search(pattern, title):
                 return "different_program_context"
         syllabus = row.get("_syllabus") or m.get("source_dataset") == "pknu_syllabus" or m.get("rpc_name") == "match_pknu_syllabus_documents"
+        if (syllabus and not row.get("_syllabus")
+                and re.search(r"전공\s*(?:필수|공통)|교육과정|교과과정|이수표", task.text)
+                and not re.search(r"강의계획서|담당\s*교수|학수번호|분반|평가", task.text)):
+            return "different_document_purpose"
         if syllabus and not row.get("_syllabus") and not re.search(r"강의|수업|과목|교수|학수번호|분반", task.text):
             return "different_document_purpose"
         infection_exception = re.search(r"백신|감염\s*증상|코로나", content)
@@ -82,6 +86,16 @@ def scope_reason(row: dict, task: SearchTask) -> str | None:
     identity = source_department(row)
     if target.department_id and identity and identity != target.department_id:
         return "different_department"
+    # Several majors share one dataset (e.g. ce). A dataset match alone must
+    # not make a sibling major's explicit curriculum heading applicable.
+    if target.department:
+        wanted_major = departments.normalize(target.department)
+        heading = departments.normalize(title + " " + str(m.get("subcategory") or ""))
+        for entry in department_catalog():
+            majors = [departments.normalize(name.strip()) for value in entry.get("majors") or []
+                      for name in str(value).split(",") if name.strip()]
+            if wanted_major in majors and any(name in heading for name in majors) and wanted_major not in heading:
+                return "different_major"
     if task.conditions.kind == "latest" and target.department_id and identity != target.department_id:
         return "department_unverified"
     applicable = m.get("applicable_department")
