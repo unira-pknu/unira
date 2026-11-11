@@ -41,6 +41,34 @@ class LexicalFallbackTests(unittest.TestCase):
         self.assertEqual(_lexical_fallback_query("졸업 기준"), "졸업 기준")
 
 
+class DepartmentScopeTests(unittest.TestCase):
+    # 2026-11-11: "컴퓨터·인공지능공학부" alone matched 21,077 chunks and timed out;
+    # AND-ed with the topic it is 313 chunks.
+    NAMES = ("컴공", "컴퓨터·인공지능공학부", "컴퓨터인공지능공학부")
+
+    def test_department_is_and_ed_with_the_topic(self):
+        expected = " OR ".join(f"{name} 사무실" for name in self.NAMES)
+        self.assertEqual(lexical("컴퓨터공학과 사무실이 어디야?"), expected)
+        self.assertEqual(lexical("컴퓨터·인공지능공학부 사무실 위치"), expected)
+
+    def test_honorific_and_list_words_go_next_to_the_department(self):
+        self.assertEqual(lexical("컴퓨터공학과 교수님 목록"), " OR ".join(f"{name} 교수" for name in self.NAMES))
+
+    def test_department_is_and_ed_with_each_topic_variant(self):
+        query = lexical("컴공 졸업요건")
+        self.assertIn("컴공 졸업요건", query)
+        self.assertIn("컴퓨터·인공지능공학부 학위수여", query)
+        self.assertNotRegex(query, r"(^| OR )(컴공|컴퓨터·인공지능공학부|컴퓨터인공지능공학부)( OR |$)")
+
+    def test_department_alone_skips_the_keyword_search(self):
+        self.assertEqual(lexical("컴공"), "")
+        self.assertEqual(lexical("컴공 위치"), "")
+
+    def test_list_words_stay_without_a_department(self):
+        # Bare "교수" matches 112k chunks; keep the narrower AND.
+        self.assertEqual(lexical("교수님 목록"), "교수님 목록")
+
+
 class CreditExchangeTermTests(unittest.TestCase):
     def test_credit_exchange_is_not_a_credits_question(self):
         # 2026-11-10: "학점교류" searched "학점 OR 소요학점 OR 이수학점" and timed out.

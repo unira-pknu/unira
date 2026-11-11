@@ -301,7 +301,8 @@ _LEXICAL_STOPWORDS = {
     "관련", "관련해서", "관련된", "관하여", "대해", "대해서", "대한",
     "알려줘", "알려주세요", "알려줄래요", "알려주실래요",
     "궁금해요", "궁금합니다", "궁금한데요", "궁금해",
-    "어디에", "어디서", "어디", "어떻게", "무엇인가요", "뭐예요", "뭔가요",
+    "어디에", "어디서", "어디", "어디야", "어디예요", "어디인가요", "어딘가요",
+    "어떻게", "무엇인가요", "뭐예요", "뭔가요",
     "있나요", "있어요", "있습니까", "됩니까", "되나요", "인가요", "인가",
     "하나요", "합니까", "하는지", "하는가요",
     "부탁드립니다", "부탁해요", "부탁드려요", "싶어요", "싶습니다",
@@ -400,16 +401,52 @@ def _lexical_query_text(
     ]
     if not specific_terms:
         return _lexical_fallback_query(query_text or "") or _normalize_text(query_text or "")
+    scope_terms = [(term, variants) for term, variants in specific_terms if term in _LEXICAL_SCOPE_TERMS]
+    topic_parts = _lexical_variant_parts([item for item in specific_terms if item not in scope_terms])
+    scope_parts = _lexical_variant_parts(scope_terms)
+    if scope_parts:
+        if not topic_parts:
+            rest = _normalize_text(query_text or "")
+            for _, variants in scope_terms:
+                for variant in sorted(variants, key=len, reverse=True):
+                    rest = rest.replace(variant, " ")
+            # AND-ed with the department these may go even when nothing else is
+            # left: "컴공 교수" is 2,094 chunks, bare "교수" 112k (timeout).
+            words = [word[:-1] if word.endswith("님") and len(word) > 2 else word
+                     for word in _lexical_fallback_query(rest).split()]
+            rest = " ".join(word for word in words if word not in _LEXICAL_SCOPED_FILLER)
+            topic_parts = [rest] if rest else []
+        if topic_parts:
+            # websearch_to_tsquery has no parentheses; AND binds tighter than OR.
+            return " OR ".join(dict.fromkeys(f"{scope} {topic}" for scope in scope_parts for topic in topic_parts))
+        # Only the department ("컴공", "컴공 위치"): any of its 21k chunks would
+        # do, so skip the keyword channel and leave it to vector search.
+        return ""
+    parts = topic_parts
+    if not parts:
+        return _lexical_fallback_query(query_text or "") or _normalize_text(query_text or "")
+    return " OR ".join(dict.fromkeys(parts))
+
+
+# A department name says *where* to look, not *what*. Since every department's
+# site was loaded, "컴퓨터·인공지능공학부" alone matches 21,077 rag chunks (was
+# 1,405) and the lexical RPC passed its 8s statement timeout (measured
+# 2026-11-11: 4.2s alone, over 8s next to the other channels); in #65 that
+# turned "컴퓨터공학과 사무실이 어디야?" into a 503. AND-ed with the topic
+# ("사무실") it matches 313 chunks in 85ms.
+_LEXICAL_SCOPE_TERMS = frozenset({"컴공학과"})
+_LEXICAL_SCOPED_FILLER = frozenset({"위치", "목록", "명단"})
+
+
+def _lexical_variant_parts(terms: list[tuple[str, tuple[str, ...]]]) -> list[str]:
     parts: list[str] = []
-    for _, variants in specific_terms:
+    for _, variants in terms:
         for variant in variants:
             variant = variant.strip()
             if not variant or variant in LEXICAL_EXCLUDED_VARIANTS:
                 continue
             parts.append(f'"{variant}"' if " " in variant else variant)
-    if not parts:
-        return _lexical_fallback_query(query_text or "") or _normalize_text(query_text or "")
-    return " OR ".join(dict.fromkeys(parts))
+    return list(dict.fromkeys(parts))
 
 
 class Reranker(Protocol):
@@ -1375,6 +1412,71 @@ def _title_anchor_chunks(
     return extra
 
 
+# A department site's own guide pages answer "교수님 목록", "사무실 어디야",
+# "졸업요건" directly, but neither channel finds them: the 교수진 page is a list
+# of names and e-mails, 7,223rd of ce's chunks by cosine for "컴퓨터·인공지능공학부
+# 교수님 목록", and its body never names the department for keyword search
+# (measured 2026-11-11). With the department known, its page whose title names
+# the topic joins the reranker candidates. Question pattern -> title words.
+_DEPARTMENT_GUIDE_TOPICS = (
+    (re.compile(r"교수"), ("교수",)),
+    (re.compile(r"사무실|위치|오시는|찾아가|건물|연락처|전화|팩스"), ("오시는", "찾아오", "위치", "연락처")),
+    (re.compile(r"졸업\s*(?:요건|조건|학점|기준)"), ("졸업요건",)),
+    (re.compile(r"교육\s*과정|교과\s*과정|커리큘럼|전공\s*(?:필수|공통)|필수\s*과목|공통\s*과목"), ("교육과정", "교과과정")),
+)
+DEPARTMENT_GUIDE_SOURCES = 4
+
+
+def _department_guide_chunks(
+    client: Client,
+    embedding: List[float],
+    candidates: List[Dict[str, Any]],
+    query_text: Optional[str],
+    query_terms: list[tuple[str, tuple[str, ...]]],
+    priority_weight: float,
+    dataset_priority_weight: float,
+    source_kind_weight: float,
+    rag_filter: Dict[str, Any],
+) -> List[Dict[str, Any]]:
+    department = (rag_filter or {}).get("ingestion_dataset")
+    words = [word for pattern, title_words in _DEPARTMENT_GUIDE_TOPICS
+             if pattern.search(query_text or "") for word in title_words]
+    if not department or not words:
+        return []
+    try:
+        sources = (
+            client.table("rag_sources")
+            .select("id, url")
+            .eq("status", "active")
+            .contains("metadata", {"ingestion_dataset": department})
+            # Board posts ("지도교수 배정 안내") carry a query string; guide pages don't.
+            .not_.like("url", "%?%")
+            .or_(",".join(f"title.ilike.*{word}*" for word in dict.fromkeys(words)))
+            .limit(DEPARTMENT_GUIDE_SOURCES)
+            .execute()
+        ).data or []
+    except Exception:
+        logger.warning("retrieval: department guide lookup failed dataset=%s", department, exc_info=True)
+        return []
+    ids = [source["id"] for source in sources]
+    if not ids:
+        return []
+    fetched = _fetch_notice_chunks(client, "rag_sources", "rag_chunks", ids)
+    if fetched is None:
+        return []
+    present = {_dedupe_key(row) for row in candidates}
+    extra = [
+        row for row in _notice_chunk_rows(
+            "match_rag_documents", *fetched, embedding, query_text, query_terms,
+            priority_weight, dataset_priority_weight, source_kind_weight,
+        )
+        if _dedupe_key(row) not in present
+    ]
+    logger.info("retrieval: department guide dataset=%s words=%s sources=%d added=%d",
+                department, words, len(ids), len(extra))
+    return extra
+
+
 # Recurring notices are re-posted every term ("2025-1학기 본수강신청 안내",
 # "2026학년도 2학기 휴·복학 안내"), and neither search channel can tell the
 # terms apart: keyword search ranks hundreds of 수강신청 notices from 2020-2026
@@ -2062,6 +2164,20 @@ def search(
             dataset_priority_weight,
             source_kind_weight,
             metadata_filters={name: (per_rpc_metadata_filters or {}).get(name, metadata_filter or {}) for name in rpc_names},
+        )
+    )
+
+    candidates.extend(
+        _department_guide_chunks(
+            client,
+            embedding,
+            candidates,
+            query_text,
+            query_terms,
+            priority_weight,
+            dataset_priority_weight,
+            source_kind_weight,
+            (per_rpc_metadata_filters or {}).get("match_rag_documents", metadata_filter or {}),
         )
     )
 

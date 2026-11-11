@@ -88,6 +88,11 @@ def _format_source_block(rows: List[Dict[str, Any]], max_chars_per_chunk: int, q
         posted = _posted_date(metadata)
         lines.append(f"[{index}]")
         lines.append(f"제목: {str(title).strip() or '제목 없음'}")
+        department = _source_department(metadata)
+        if department:
+            # 2026-11-11: the 교수진 page never names its department, so
+            # "컴퓨터공학과 교수님들" got "관련 정보를 찾을 수 없습니다" 2 of 3 times.
+            lines.append(f"출처 학과: {department}")
         if posted:
             lines.append(f"게시일: {posted}")
         lines.append(f"URL: {str(uri).strip() or 'URL 없음'}")
@@ -123,6 +128,16 @@ def _format_source_block(rows: List[Dict[str, Any]], max_chars_per_chunk: int, q
         lines.append(content or "(본문 없음)")
         lines.append("")
     return "\n".join(lines).rstrip()
+
+
+def _source_department(metadata: Dict[str, Any]) -> str:
+    """Department-site documents: "컴퓨터·인공지능공학부 (컴퓨터공학전공, 인공지능전공)"."""
+    name = str(metadata.get("department_name") or "").strip()
+    if not name:
+        return ""
+    majors = metadata.get("department_majors") or []
+    majors = ", ".join(str(major).strip() for major in majors if str(major).strip()) if isinstance(majors, list) else str(majors)
+    return f"{name} ({majors})" if majors else name
 
 
 def _posted_date(metadata: Dict[str, Any]) -> str:

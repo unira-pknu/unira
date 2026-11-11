@@ -84,6 +84,14 @@ def department_identity(text: str) -> tuple[str | None, str | None]:
     aliases = [name for alias, names in departments.ALIASES.items() if alias in normalized for name in names]
     names = aliases + [name for name in departments.DEPARTMENT_NAMES if departments.normalize(name) in normalized]
     if not names:
+        # Students say "컴퓨터공학과"/"전자공학과"; the registry has 컴퓨터공학전공/전자공학전공.
+        # 2026-11-11: unresolved, the department search ranked other departments'
+        # 교수진 pages first and "컴퓨터공학과 교수님 목록" found nothing.
+        names = [name for name in departments.DEPARTMENT_NAMES
+                 if departments._stem(name) != name and departments.normalize(departments._stem(name)) + "과" in normalized]
+        if names:
+            names = [max(names, key=lambda name: len(departments._stem(name)))]
+    if not names:
         return None, None
     name = max(names, key=len) if not aliases else aliases[-1]
     for entry in department_catalog():
