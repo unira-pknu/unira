@@ -287,6 +287,10 @@ def _retrieve(
                 continue
             if syllabus_request is not None:
                 result = search_syllabus(state.supabase, syllabus_request, top_k=state.settings.rag_top_k)
+                if syllabus_request.soft and not result.rows and not result.answerable:
+                    # "강의실" without a matching course ("공용 강의실 대여"): not a syllabus question.
+                    normal_indices.append(index)
+                    continue
                 rows_by_query[index] = checked_rows(result.rows, task)
                 if request_trace is not None:
                     task_traces.append({"task_index": index, "route": "syllabus", "capture_scope": "returned_rows_only"})

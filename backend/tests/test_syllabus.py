@@ -226,3 +226,37 @@ class SyllabusTests(unittest.TestCase):
             self.assertIn("irumi.pknu.ac.kr", result["sources"][0]["uri"])
             generic.assert_not_called()
             generation.assert_not_called()
+
+
+class ClassroomQuestionTests(unittest.TestCase):
+    # 2026-11-11: "<교수> 교수님의 <과목> 강의실" named no syllabus word and went to
+    # vector search, which answered "관련 정보를 찾을 수 없습니다".
+    def test_classroom_and_time_questions_are_soft_syllabus_requests(self):
+        request = extract_request("홍길동 교수님의 운영체제 강의실을 알려줘")
+        self.assertEqual((request.course, request.instructor, request.soft), ("운영체제", "홍길동", True))
+        self.assertIn("classroom", request.purposes)
+        self.assertEqual(extract_request("운영체제 수업 시간 알려줘").course, "운영체제")
+        self.assertFalse(extract_request("운영체제 강의계획서 알려줘").soft)
+
+    def test_sections_of_one_term_are_listed_together(self):
+        result = search_syllabus(DB(sections=("101", "102")), extract_request("운영체제 강의실 어디야"))
+        self.assertIsNone(result.answer)
+        self.assertEqual(len(result.rows), 1)
+        self.assertIn("[101분반 · 홍길동]", result.rows[0]["content"])
+        self.assertIn("[102분반 · 홍길동]", result.rows[0]["content"])
+        self.assertIn("교과목 개요", result.rows[0]["content"])
+
+    def test_without_a_term_the_latest_term_is_listed(self):
+        result = search_syllabus(DB(sections=("101", "102"), terms=("1", "summer", "2")), CourseRequest("운영체제", purposes=("classroom",)))
+        self.assertEqual(len(result.rows), 1)
+        self.assertIn("2026년 2학기", result.rows[0]["title"])
+
+    def test_other_questions_across_sections_still_ask_which_one(self):
+        result = search_syllabus(DB(sections=("101", "102")), CourseRequest("운영체제", purposes=("textbook",)))
+        self.assertFalse(result.rows)
+        self.assertIn("102분반", result.answer)
+
+    def test_unknown_course_falls_back_to_normal_search(self):
+        result = search_syllabus(DB(), extract_request("공용 강의실 대여 방법"))
+        self.assertFalse(result.rows)
+        self.assertFalse(result.answerable)
