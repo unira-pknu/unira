@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0",
+  "dataset": "ere",
+  "updated_at": "2026-11-11T13:06:22+09:00",
+  "items": {
+    "https://ere.pknu.ac.kr/ere/1455": {
+      "source_id": "https://ere.pknu.ac.kr/ere/1455",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T12:59:33+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 339,
+      "name": "공지사항",
+      "updated_at": "2026-11-11T12:59:33+09:00"
+    },
+    "https://ere.pknu.ac.kr/ere/1458": {
+      "source_id": "https://ere.pknu.ac.kr/ere/1458",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T13:06:18+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 91,
+      "name": "정보나눔",
+      "updated_at": "2026-11-11T13:06:18+09:00"
+    },
+    "https://ere.pknu.ac.kr/ere/1459": {
+      "source_id": "https://ere.pknu.ac.kr/ere/1459",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T13:06:22+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 1,
+      "name": "이슈이슈!",
+      "updated_at": "2026-11-11T13:06:22+09:00"
+    }
+  }
+}

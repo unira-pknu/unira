@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "dataset": "cns",
+  "updated_at": "2026-11-11T09:57:41+09:00",
+  "items": {
+    "http://cns.pknu.ac.kr/cns/242": {
+      "source_id": "http://cns.pknu.ac.kr/cns/242",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T09:57:41+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 78,
+      "name": "공지사항",
+      "updated_at": "2026-11-11T09:57:41+09:00"
+    }
+  }
+}

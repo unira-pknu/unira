@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0",
+  "dataset": "cbaliberal",
+  "updated_at": "2026-11-11T09:18:32+09:00",
+  "items": {
+    "https://cbaliberal.pknu.ac.kr/cbaliberal/7104": {
+      "source_id": "https://cbaliberal.pknu.ac.kr/cbaliberal/7104",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T09:14:57+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 459,
+      "name": "공지사항",
+      "updated_at": "2026-11-11T09:14:57+09:00"
+    },
+    "https://cbaliberal.pknu.ac.kr/cbaliberal/7106": {
+      "source_id": "https://cbaliberal.pknu.ac.kr/cbaliberal/7106",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T09:16:54+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 5,
+      "name": "자주 묻는 질문",
+      "updated_at": "2026-11-11T09:16:54+09:00"
+    },
+    "https://cbaliberal.pknu.ac.kr/cbaliberal/7097": {
+      "source_id": "https://cbaliberal.pknu.ac.kr/cbaliberal/7097",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T09:18:32+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 14,
+      "name": "자료실",
+      "updated_at": "2026-11-11T09:18:32+09:00"
+    }
+  }
+}

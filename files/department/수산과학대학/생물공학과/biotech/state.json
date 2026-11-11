@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "dataset": "biotech",
+  "updated_at": "2026-11-11T09:01:08+09:00",
+  "items": {
+    "http://biotech.pknu.ac.kr/biotech/4159": {
+      "source_id": "http://biotech.pknu.ac.kr/biotech/4159",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T08:54:26+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 339,
+      "name": "학과",
+      "updated_at": "2026-11-11T08:54:26+09:00"
+    },
+    "http://biotech.pknu.ac.kr/biotech/4160": {
+      "source_id": "http://biotech.pknu.ac.kr/biotech/4160",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T08:56:13+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 23,
+      "name": "대학원",
+      "updated_at": "2026-11-11T08:56:13+09:00"
+    },
+    "http://biotech.pknu.ac.kr/biotech/4163": {
+      "source_id": "http://biotech.pknu.ac.kr/biotech/4163",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T08:59:30+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 37,
+      "name": "취업정보",
+      "updated_at": "2026-11-11T08:59:30+09:00"
+    },
+    "http://biotech.pknu.ac.kr/biotech/4164": {
+      "source_id": "http://biotech.pknu.ac.kr/biotech/4164",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T09:00:08+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 7,
+      "name": "자료실",
+      "updated_at": "2026-11-11T09:00:08+09:00"
+    }
+  }
+}

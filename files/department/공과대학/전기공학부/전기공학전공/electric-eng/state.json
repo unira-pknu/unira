@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "dataset": "electric-eng",
+  "updated_at": "2026-11-11T12:39:49+09:00",
+  "items": {
+    "http://electric-eng.pknu.ac.kr/electric-eng/8038": {
+      "source_id": "http://electric-eng.pknu.ac.kr/electric-eng/8038",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T12:31:20+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 26,
+      "name": "신입생게시판",
+      "updated_at": "2026-11-11T12:31:20+09:00"
+    },
+    "http://electric-eng.pknu.ac.kr/electric-eng/4066": {
+      "source_id": "http://electric-eng.pknu.ac.kr/electric-eng/4066",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T12:35:01+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 519,
+      "name": "커뮤니티",
+      "updated_at": "2026-11-11T12:35:01+09:00"
+    },
+    "http://electric-eng.pknu.ac.kr/electric-eng/4080": {
+      "source_id": "http://electric-eng.pknu.ac.kr/electric-eng/4080",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T12:39:00+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 115,
+      "name": "취업정보게시판",
+      "updated_at": "2026-11-11T12:39:00+09:00"
+    },
+    "http://electric-eng.pknu.ac.kr/electric-eng/4082": {
+      "source_id": "http://electric-eng.pknu.ac.kr/electric-eng/4082",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T12:39:49+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 14,
+      "name": "각종양식",
+      "updated_at": "2026-11-11T12:39:49+09:00"
+    }
+  }
+}

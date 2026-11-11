@@ -1,0 +1,73 @@
+{
+  "schema_version": "1.0",
+  "dataset": "chinese",
+  "updated_at": "2026-11-11T09:42:14+09:00",
+  "items": {
+    "http://chinese.pknu.ac.kr/chinese/4282": {
+      "source_id": "http://chinese.pknu.ac.kr/chinese/4282",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T09:27:59+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 61,
+      "name": "교수·학과 소식",
+      "updated_at": "2026-11-11T09:27:59+09:00"
+    },
+    "http://chinese.pknu.ac.kr/chinese/4289": {
+      "source_id": "http://chinese.pknu.ac.kr/chinese/4289",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T09:29:37+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 19,
+      "name": "학과 자료실",
+      "updated_at": "2026-11-11T09:29:37+09:00"
+    },
+    "http://chinese.pknu.ac.kr/chinese/4286": {
+      "source_id": "http://chinese.pknu.ac.kr/chinese/4286",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T09:34:34+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 8,
+      "name": "중국학과 학생회",
+      "updated_at": "2026-11-11T09:34:34+09:00"
+    },
+    "http://chinese.pknu.ac.kr/chinese/4288": {
+      "source_id": "http://chinese.pknu.ac.kr/chinese/4288",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T09:37:51+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 271,
+      "name": "공지사항",
+      "updated_at": "2026-11-11T09:37:51+09:00"
+    },
+    "http://chinese.pknu.ac.kr/chinese/4295": {
+      "source_id": "http://chinese.pknu.ac.kr/chinese/4295",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T09:40:14+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 108,
+      "name": "공지사항",
+      "updated_at": "2026-11-11T09:40:14+09:00"
+    },
+    "http://chinese.pknu.ac.kr/chinese/4300": {
+      "source_id": "http://chinese.pknu.ac.kr/chinese/4300",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T09:42:14+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 28,
+      "name": "공지사항",
+      "updated_at": "2026-11-11T09:42:14+09:00"
+    }
+  }
+}

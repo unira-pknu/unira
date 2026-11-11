@@ -1,0 +1,62 @@
+{
+  "schema_version": "1.0",
+  "dataset": "control",
+  "updated_at": "2026-11-11T10:27:35+09:00",
+  "items": {
+    "http://control.pknu.ac.kr/control/3883": {
+      "source_id": "http://control.pknu.ac.kr/control/3883",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T10:04:07+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 562,
+      "name": "전공게시판",
+      "updated_at": "2026-11-11T10:04:07+09:00"
+    },
+    "http://control.pknu.ac.kr/control/6227": {
+      "source_id": "http://control.pknu.ac.kr/control/6227",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T10:11:27+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 28,
+      "name": "신입생게시판",
+      "updated_at": "2026-11-11T10:11:27+09:00"
+    },
+    "http://control.pknu.ac.kr/control/6229": {
+      "source_id": "http://control.pknu.ac.kr/control/6229",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T10:17:26+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 315,
+      "name": "대학원게시판",
+      "updated_at": "2026-11-11T10:17:26+09:00"
+    },
+    "http://control.pknu.ac.kr/control/3884": {
+      "source_id": "http://control.pknu.ac.kr/control/3884",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T10:22:35+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 175,
+      "name": "취업게시판",
+      "updated_at": "2026-11-11T10:22:35+09:00"
+    },
+    "http://control.pknu.ac.kr/control/3886": {
+      "source_id": "http://control.pknu.ac.kr/control/3886",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T10:24:53+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 20,
+      "name": "양식자료실",
+      "updated_at": "2026-11-11T10:24:53+09:00"
+    }
+  }
+}

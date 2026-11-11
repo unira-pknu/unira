@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "dataset": "axic",
+  "updated_at": "2026-11-11T08:46:39+09:00",
+  "items": {
+    "https://axic.pknu.ac.kr/axic/8909": {
+      "source_id": "https://axic.pknu.ac.kr/axic/8909",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T08:46:30+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 3,
+      "name": "공지사항",
+      "updated_at": "2026-11-11T08:46:30+09:00"
+    }
+  }
+}

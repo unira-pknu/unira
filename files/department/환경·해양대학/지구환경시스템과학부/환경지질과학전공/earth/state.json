@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "dataset": "earth",
+  "updated_at": "2026-11-11T11:17:36+09:00",
+  "items": {
+    "https://earth.pknu.ac.kr/earth/1645": {
+      "source_id": "https://earth.pknu.ac.kr/earth/1645",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T11:04:29+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 114,
+      "name": "취업공고게시판",
+      "updated_at": "2026-11-11T11:04:29+09:00"
+    },
+    "https://earth.pknu.ac.kr/earth/1646": {
+      "source_id": "https://earth.pknu.ac.kr/earth/1646",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T11:07:36+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 186,
+      "name": "공지사항",
+      "updated_at": "2026-11-11T11:07:36+09:00"
+    },
+    "https://earth.pknu.ac.kr/earth/1647": {
+      "source_id": "https://earth.pknu.ac.kr/earth/1647",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T11:08:47+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 19,
+      "name": "자료실",
+      "updated_at": "2026-11-11T11:08:47+09:00"
+    },
+    "https://earth.pknu.ac.kr/earth/1651": {
+      "source_id": "https://earth.pknu.ac.kr/earth/1651",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-11T11:17:36+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 42,
+      "name": "비교과 공지사항",
+      "updated_at": "2026-11-11T11:17:36+09:00"
+    }
+  }
+}
