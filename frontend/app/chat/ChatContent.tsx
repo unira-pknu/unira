@@ -24,6 +24,7 @@ import {
   type MessageFeedback,
   listChats,
   parseStoredSources,
+  searchChatMessages,
   updateChatTitle,
 } from "@/app/lib/chatHistory";
 
@@ -61,6 +62,30 @@ interface Message {
 interface HistoryItem {
   id: string;
   title: string;
+}
+
+// 채팅 검색: 찾은 글자 앞뒤로 보여 줄 길이와, 답변 마크다운 기호를 걷어 낸 한 줄.
+const SEARCH_SNIPPET_RADIUS = 28;
+function searchSnippet(content: string, query: string): string {
+  const plain = content.replace(/[*_#>`|]+/g, "").replace(/\s+/g, " ").trim();
+  const at = plain.toLowerCase().indexOf(query.toLowerCase());
+  if (at < 0) return plain.slice(0, SEARCH_SNIPPET_RADIUS * 2);
+  const start = Math.max(0, at - SEARCH_SNIPPET_RADIUS);
+  const end = Math.min(plain.length, at + query.length + SEARCH_SNIPPET_RADIUS);
+  return (start > 0 ? "…" : "") + plain.slice(start, end) + (end < plain.length ? "…" : "");
+}
+
+/** 찾은 글자를 굵게. 대소문자는 무시한다. */
+function Highlighted({ text, query }: { text: string; query: string }) {
+  const at = text.toLowerCase().indexOf(query.toLowerCase());
+  if (!query || at < 0) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, at)}
+      <strong style={{ color: "var(--clr-navy)" }}>{text.slice(at, at + query.length)}</strong>
+      {text.slice(at + query.length)}
+    </>
+  );
 }
 
 const CHAT_TITLE_MAX_LEN = 80;
@@ -701,6 +726,12 @@ export default function ChatContent() {
   }, [authLoading, user, router]);
 
   const [history, setHistory] = useState<HistoryItem[]>(sidebarHistory);
+  // 채팅 검색. searchHits: 대화 내용에서 찾은 채팅 id → 보여 줄 한 줄(최신 메시지 기준).
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchHits, setSearchHits] = useState<Map<string, string>>(new Map());
+  const [searchLoading, setSearchLoading] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [activeId, setActiveId] = useState<string>(() => sidebarHistory[0]?.id ?? "");
   const persistChatIdRef = useRef<string | null>(null);
   /** 두 번째 메시지가 첫 createChat 완료 전에 시작될 때 동일 채팅 행을 재사용 */
@@ -899,6 +930,50 @@ export default function ChatContent() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, chatState]);
+
+  // ── 채팅 검색: 치고 0.3초 뒤 대화 내용에서 찾는다(제목은 화면 목록에서 바로 거른다) ──
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (!searchOpen || !q || !user) {
+      setSearchHits(new Map());
+      setSearchLoading(false);
+      return;
+    }
+    let active = true;
+    setSearchLoading(true);
+    const timer = setTimeout(() => {
+      searchChatMessages(q)
+        .then((rows) => {
+          if (!active) return;
+          const hits = new Map<string, string>();
+          for (const row of rows) {
+            if (!hits.has(row.chat_id)) hits.set(row.chat_id, searchSnippet(row.content, q));
+          }
+          setSearchHits(hits);
+        })
+        .catch((err) => {
+          console.error("[chat] searchChatMessages failed:", err);
+          if (active) setSearchHits(new Map());
+        })
+        .finally(() => {
+          if (active) setSearchLoading(false);
+        });
+    }, 300);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [searchQuery, searchOpen, user]);
+
+  const closeSearch = () => {
+    setSearchOpen(false);
+    setSearchQuery("");
+  };
+
+  const searchText = searchOpen ? searchQuery.trim() : "";
+  const visibleHistory = searchText
+    ? history.filter((item) => item.title.toLowerCase().includes(searchText.toLowerCase()) || searchHits.has(item.id))
+    : history;
 
   // ── 입력칸 높이: 내용에 맞춰 늘리되 약 6줄까지 ─────────────────
   useEffect(() => {
@@ -1313,21 +1388,52 @@ export default function ChatContent() {
               새 채팅
             </button>
 
-            {/* 검색 */}
-            <button
-              className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-colors hover:bg-white/50"
-              style={{ color: "var(--clr-text-muted)" }}
-            >
-              <IconSearch />
-              검색
-            </button>
+            {/* 검색 — 채팅 제목과 대화 내용에서 찾는다 */}
+            {searchOpen ? (
+              <div
+                className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm"
+                style={{ background: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.9)" }}
+              >
+                <span style={{ color: "var(--clr-text-muted)" }}>
+                  <IconSearch />
+                </span>
+                <input
+                  ref={searchInputRef}
+                  autoFocus
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === "Escape" && closeSearch()}
+                  placeholder="채팅 검색"
+                  aria-label="채팅 검색"
+                  className="flex-1 min-w-0 bg-transparent outline-none text-sm placeholder:text-gray-400"
+                  style={{ color: "var(--clr-text)" }}
+                />
+                <button
+                  onClick={closeSearch}
+                  aria-label="검색 닫기"
+                  className="flex-shrink-0 text-xs px-1 leading-none"
+                  style={{ color: "var(--clr-text-muted)" }}
+                >
+                  ✕
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setSearchOpen(true)}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-colors hover:bg-white/50"
+                style={{ color: "var(--clr-text-muted)" }}
+              >
+                <IconSearch />
+                검색
+              </button>
+            )}
 
             {/* 최근 항목 */}
             <p
               className="px-3 pt-3 pb-1 text-xs font-semibold uppercase tracking-wide"
               style={{ color: "var(--clr-text-muted)" }}
             >
-              {sidebar.recentLabel}
+              {searchText ? (searchLoading ? "찾는 중…" : `검색 결과 ${visibleHistory.length}개`) : sidebar.recentLabel}
             </p>
 
             {/* 히스토리 목록 */}
@@ -1339,8 +1445,12 @@ export default function ChatContent() {
                 >
                   로그인하면 채팅 기록을 저장할 수 있어요
                 </p>
+              ) : searchText && !searchLoading && visibleHistory.length === 0 ? (
+                <p className="px-3 py-2 text-xs" style={{ color: "var(--clr-text-muted)" }}>
+                  &lsquo;{searchText}&rsquo;이(가) 들어간 채팅이 없어요
+                </p>
               ) : (
-                history.map((item) => (
+                visibleHistory.map((item) => (
                 <div key={item.id} className="relative group">
                   {renameId === item.id ? (
                     <input
@@ -1369,7 +1479,20 @@ export default function ChatContent() {
                         fontWeight: activeId === item.id ? 600 : 400,
                       }}
                     >
-                      <span className="truncate flex-1">{item.title}</span>
+                      {searchText ? (
+                        <span className="flex-1 min-w-0 flex flex-col">
+                          <span className="truncate">
+                            <Highlighted text={item.title} query={searchText} />
+                          </span>
+                          {searchHits.get(item.id) && (
+                            <span className="truncate text-[11px] font-normal" style={{ color: "var(--clr-text-muted)" }}>
+                              <Highlighted text={searchHits.get(item.id)!} query={searchText} />
+                            </span>
+                          )}
+                        </span>
+                      ) : (
+                        <span className="truncate flex-1">{item.title}</span>
+                      )}
                       {pendingChats.has(item.id) && (
                         <span
                           className="ml-1 w-1.5 h-1.5 rounded-full animate-pulse flex-shrink-0"
@@ -1664,6 +1787,7 @@ export default function ChatContent() {
           {/* 사이드바 토글 — 항상 표시 (모바일: 열기 버튼) */}
           <button
             onClick={() => setSidebarOpen((v) => !v)}
+            aria-label="채팅 목록 열고 닫기"
             className="p-1.5 rounded-lg hover:bg-white/40 transition-colors flex-shrink-0"
             style={{ color: "var(--clr-text-muted)" }}
           >
