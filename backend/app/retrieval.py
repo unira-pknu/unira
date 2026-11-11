@@ -121,6 +121,10 @@ QUERY_TERM_GROUPS = {
     # how the source page actually phrases it ("무인발급기(기)"), which don't
     # share a literal substring so plain full-text search can't bridge them.
     "증명서발급": ("무인발급기", "무인발급기기", "자동발급기", "제증명", "증명서 발급"),
+    # The guide's IT-service table says "포털시스템 ... https://portal.pknu.ac.kr";
+    # "부경대 포털 주소" matched neither token and got www.pknu.ac.kr (2026-11-11).
+    # Bare "포털" only triggers (LEXICAL_EXCLUDED_VARIANTS).
+    "포털": ("포털", "포털시스템", "학생포털", "portal.pknu.ac.kr"),
     # 실제 사용자 질문 사례("컴공학과사무실", 띄어쓰기 없는 구어체 줄임말)가
     # 이 그룹 없이는 검색 후보에 전혀 안 걸리는 것을 확인함 -- 임베딩도
     # "컴공"과 "컴퓨터·인공지능공학부"를 가깝게 못 보고, lexical fallback도
@@ -291,7 +295,7 @@ def _lexical_synthetic_similarity(rank_index: int, min_similarity: float) -> flo
 # form to detect that a question is "about" that concept at all. Only the
 # lexical OR-query builder below excludes them, since it's the one place a
 # single overly-common token turns into a near-full-table scan.
-LEXICAL_EXCLUDED_VARIANTS = {"졸업", "전공", "컴퓨터공학과", "컴퓨터공학부", "인공지능공학부"}
+LEXICAL_EXCLUDED_VARIANTS = {"졸업", "전공", "컴퓨터공학과", "컴퓨터공학부", "인공지능공학부", "포털"}
 
 # Filler words that carry no retrieval signal but frequently show up in
 # natural Korean questions. websearch_to_tsquery ANDs every remaining word

@@ -69,6 +69,15 @@ class DepartmentScopeTests(unittest.TestCase):
         self.assertEqual(lexical("교수님 목록"), "교수님 목록")
 
 
+class PortalTermTests(unittest.TestCase):
+    def test_portal_searches_the_system_name_and_address(self):
+        # 2026-11-11: "부경대 포털 주소" matched neither "포털시스템" nor the URL token.
+        query = lexical("부경대학교 포털 주소")
+        self.assertIn("포털시스템", query)
+        self.assertIn("portal.pknu.ac.kr", query)
+        self.assertNotRegex(query, r"(^| OR )포털( OR |$)")
+
+
 class CreditExchangeTermTests(unittest.TestCase):
     def test_credit_exchange_is_not_a_credits_question(self):
         # 2026-11-10: "학점교류" searched "학점 OR 소요학점 OR 이수학점" and timed out.

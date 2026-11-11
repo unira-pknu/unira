@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 # A target is allowed to grow for a complete sentence, exception or table row.
 # Still bound every source even when a document contains a very large table.
 PROTECTED_BLOCK_MAX_CHARS = 4000
+_ADDRESS_QUESTION = re.compile(r"주소|홈페이지|사이트|URL|링크|접속", re.I)
 CHUNK_TABLES = {
     "match_rag_documents": "rag_chunks",
     "match_rule_documents": "rule_chunks",
@@ -140,6 +141,10 @@ def select_evidence(content: str, *, question: str, target_chars: int, metadata:
     terms = _search_terms(question)
     terms.update(term for term in ("신청", "제출", "서류", "예외", "기간", "조건", "자격", "등록", "학점", "장학")
                  if term in question)
+    if _ADDRESS_QUESTION.search(question):
+        # 2026-11-11: "중앙도서관 홈페이지 주소" kept the staff list ("서버·홈페이지
+        # 유지보수") and cut the sentence naming http://libweb.pknu.ac.kr.
+        terms.update(("http", "://", ".ac.kr"))
     scores = [_score(unit.text, terms) for unit in units]
     ranked = sorted(range(len(units)), key=lambda i: (-scores[i], i))
     best = ranked[0]
