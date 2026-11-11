@@ -1,0 +1,65 @@
+name: Crawl student life (weekly)
+
+# 본교 "대학생활" 전체(가이드 PDF, 형제 안내 페이지, 등록금, E-하나로)를 일주일에 한 번
+# 증분 수집하고 전처리 -> 벡터화 -> Supabase 적재까지 실행한다.
+# 매일 도는 "Crawl update"는 가이드 PDF만 최대 5건 본다. 안내 페이지는 자주 바뀌지 않아서
+# 학교 서버 부담을 줄이려고 주 1회, 학과 수집이 없는 일요일 낮(14:00 KST)에 돈다.
+# 수집 기록(files/pknu_main/_state/pknu_student_life.json)이 저장소에 있어 바뀐 것만 다시 받는다.
+#
+# 필요한 저장소 시크릿: DATABASE_URL (Supabase Postgres 연결 문자열)
+on:
+  schedule:
+    - cron: "0 5 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Same group as the other crawls so only one of them loads the database at a time.
+concurrency:
+  group: crawl-update
+  cancel-in-progress: false
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install system dependencies (Korean OCR)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tesseract-ocr tesseract-ocr-kor
+
+      - name: Install Python dependencies
+        run: pip install -r backend/requirements.txt
+
+      - name: Crawl + preprocess + vectorize + load (student life, all sections)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: >-
+          python scripts/vectorization/preprocessing_pipeline_recent.py
+          --dataset pknu_student_life
+          --student-life-mode all
+
+      - name: Refresh main-site priorities
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python scripts/priority/rag/update_main_priorities.py --dataset all
+
+      - name: Commit updated crawl state
+        # Only after a full success, so posts that were crawled but not loaded are read again next week.
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -f -- files/pknu_main/_state/pknu_student_life.json
+          git diff --cached --quiet && exit 0
+          git commit -m "chore(crawler): update student life crawl state [skip ci]"
+          # A PR or the daily crawl may have pushed during the run.
+          git pull --rebase
+          git push
