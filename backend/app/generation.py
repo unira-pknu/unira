@@ -95,7 +95,9 @@ def _format_source_block(rows: List[Dict[str, Any]], max_chars_per_chunk: int, q
             lines.append(f"출처 학과: {department}")
         if posted:
             lines.append(f"게시일: {posted}")
-        lines.append(f"URL: {str(uri).strip() or 'URL 없음'}")
+        # Named so the model doesn't answer "홈페이지 주소" with the page that
+        # merely mentions the site (2026-11-11: libweb vs main/290).
+        lines.append(f"자료 페이지 URL: {str(uri).strip() or 'URL 없음'}")
         if metadata.get("source_link_kind") == "syllabus_search_page":
             lines.append("링크 종류: 공식 강의계획서 조회 화면 (개별 PDF 직링크 아님)")
             lines.append("적용 범위: 제목에 적힌 학기·학수번호·분반의 강좌에만 적용. 빈 표 셀은 0이나 선수과목 없음으로 추정하지 않음.")
@@ -182,6 +184,11 @@ def build_user_message(
         "- 특정 학과·학생 유형·예외 상황의 조건을 전체 학생의 일반 규정으로 확대하지 마세요. 신청 자격과 이수 조건을 구분하세요.\n"
         "- 생략 표시가 있는 구간은 문서 전체가 아닙니다. 표는 제목·열 제목·동일 행의 값을 함께 읽고, 생략된 행·빈 셀·잘린 조건을 추정하지 마세요.\n"
         "- 미확인 요청이 있으면 다른 자료로 대신 답하지 말고 필요한 조건을 짧게 확인하세요.\n"
+        # 2026-11-11: "중앙도서관 홈페이지 주소" got the school's 도서관 소개 page
+        # (main/290) although its body names http://libweb.pknu.ac.kr.
+        "- 사이트·홈페이지·시스템 주소를 물으면 참고 자료 본문에 적힌 그 사이트의 주소(예: http://...)를 답하세요. "
+        "'자료 페이지 URL'은 그 자료가 실린 페이지일 뿐 그 사이트의 주소가 아닙니다. "
+        "어느 자료 본문에도 주소가 없을 때만 '안내 페이지'라고 밝혀 쓰세요.\n"
         "- 일정·기간·금액은 오늘 날짜 기준 가장 최신 학기 자료를 우선하세요. 인용한 자료가 지난 학기·연도의 것이면 "
         "그 학기·연도를 밝히고, 이번 학기 일정은 최신 공지를 확인해야 한다고 덧붙이세요."
         + format_note
