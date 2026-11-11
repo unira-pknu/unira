@@ -10,7 +10,19 @@ import { supabase } from "@/app/lib/supabase/client";
 
 export type Attachment = { name: string; url: string };
 
-export type ChatSource = {
+type SourceIdentity = {
+  source_id?: string | null;
+  source_ids?: string[] | null;
+  chunk_id?: string | number | null;
+  chunk_row_id?: string | null;
+  chunk_index?: number | null;
+  source_dataset?: string | null;
+  ingestion_dataset?: string | null;
+  department_id?: string | null;
+  rpc_name?: string | null;
+};
+
+export type ChatSource = SourceIdentity & {
   id: number;
   title: string;
   category: string;
@@ -25,9 +37,10 @@ export type AskResult = {
   answer: string;
   sources: ChatSource[];
   answerable: boolean;
+  retrievalStatus?: "complete" | "partial";
 };
 
-type BackendSource = {
+type BackendSource = SourceIdentity & {
   title?: string;
   uri?: string;
   content?: string;
@@ -38,6 +51,7 @@ type BackendAskResponse = {
   answer?: string;
   sources?: BackendSource[];
   answerable?: boolean;
+  retrieval_status?: "complete" | "partial";
 };
 
 const DEFAULT_CATEGORY = "자료";
@@ -51,6 +65,15 @@ function adaptSource(src: BackendSource, index: number): ChatSource {
     category: DEFAULT_CATEGORY,
     quote: (src.content ?? "").trim(),
     url: (src.uri ?? "").trim() || "#",
+    source_id: src.source_id,
+    source_ids: src.source_ids,
+    chunk_id: src.chunk_id,
+    chunk_row_id: src.chunk_row_id,
+    chunk_index: src.chunk_index,
+    source_dataset: src.source_dataset,
+    ingestion_dataset: src.ingestion_dataset,
+    department_id: src.department_id,
+    rpc_name: src.rpc_name,
     attachments: (src.attachments ?? []).flatMap((attachment) => {
       const name = typeof attachment.name === "string" ? attachment.name.trim() : "";
       const url = typeof attachment.url === "string" ? attachment.url.trim() : "";
@@ -70,8 +93,8 @@ async function readErrorMessage(res: Response): Promise<string> {
   return `요청 실패 (HTTP ${res.status})`;
 }
 
-/** /api/ask failure; `status` lets the chat show the backend's own text for
- * limits (429) instead of the generic failure line. */
+/** /api/ask failure; preserve limits (429) and search availability (503)
+ * so the chat can show their user-facing guidance. */
 export class AskError extends Error {
   constructor(message: string, readonly status: number) {
     super(message);
@@ -143,6 +166,7 @@ export async function askBackend(
     // A "no info" refusal cites nothing, so don't show source chips under it.
     sources: answerable ? (data.sources ?? []).map(adaptSource) : [],
     answerable,
+    retrievalStatus: data.retrieval_status,
   };
 }
 
@@ -151,7 +175,7 @@ type AskStreamEvent =
   | { type: "token"; text: string }
   | { type: "replace"; text: string }
   | ({ type: "done" } & BackendAskResponse)
-  | { type: "error"; detail?: string };
+  | { type: "error"; detail?: string; status_code?: number };
 
 /** "data: {...}\n\n" 이벤트를 받는 대로 처리하고, done 이벤트의 내용을 돌려준다. */
 async function readAskStream(res: Response, progress: AskProgress): Promise<BackendAskResponse> {
@@ -171,7 +195,7 @@ async function readAskStream(res: Response, progress: AskProgress): Promise<Back
       if (event.type === "status") progress.onStage?.(event.stage, event.count);
       else if (event.type === "token") progress.onText?.((text += event.text));
       else if (event.type === "replace") progress.onText?.((text = event.text));
-      else if (event.type === "error") throw new AskError(event.detail ?? "답변 생성에 실패했어요.", 502);
+      else if (event.type === "error") throw new AskError(event.detail ?? "답변 생성에 실패했어요.", event.status_code ?? 502);
       else if (event.type === "done") {
         await reader.cancel();
         return event;
@@ -258,6 +282,43 @@ export async function fetchAdminDashboard(signal?: AbortSignal): Promise<AdminDa
   });
   if (!res.ok) throw new AdminApiError(await readErrorMessage(res), res.status);
   return (await res.json()) as AdminDashboard;
+}
+
+/** 현재 싫어요를 모두 순회한다. 도중 실패하면 부분 파일을 내려받지 않는다. */
+export async function fetchFeedbackTrainingDrafts(
+  onProgress?: (count: number) => void,
+): Promise<{ jsonl: string; count: number }> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new AdminApiError("로그인이 필요합니다.", 401);
+  const lines: string[] = [];
+  const seen = new Set<string>();
+  let cursor: string | null = null;
+  do {
+    const params = new URLSearchParams({ limit: "20" });
+    if (cursor) params.set("after_id", cursor);
+    const res = await fetch(`/api/admin/feedback/training-candidates?${params}`, {
+      headers: { Accept: "application/json", Authorization: `Bearer ${session.access_token}` },
+      cache: "no-store",
+    });
+    if (!res.ok) throw new AdminApiError(await readErrorMessage(res), res.status);
+    const page = (await res.json()) as { items: { id: string }[]; nextCursor: string | null };
+    if (!Array.isArray(page.items) || (page.nextCursor !== null && typeof page.nextCursor !== "string")) {
+      throw new Error("학습 후보 응답 형식이 올바르지 않습니다.");
+    }
+    for (const item of page.items) {
+      if (!item || typeof item.id !== "string" || seen.has(item.id)) {
+        throw new Error("학습 후보에 중복 또는 잘못된 항목이 있습니다. 다시 내려받아 주세요.");
+      }
+      seen.add(item.id);
+      lines.push(JSON.stringify(item));
+    }
+    if (page.nextCursor && (page.nextCursor === cursor || !seen.has(page.nextCursor))) {
+      throw new Error("학습 후보 페이지를 이어서 불러올 수 없습니다.");
+    }
+    cursor = page.nextCursor;
+    onProgress?.(lines.length);
+  } while (cursor);
+  return { jsonl: lines.length ? lines.join("\n") + "\n" : "", count: lines.length };
 }
 
 /** 여러 사용자가 물어본 인기 질문(없으면 빈 배열). 실패해도 던지지 않는다. */

@@ -10,10 +10,12 @@ from typing import Any, Dict, Iterator, List, Tuple
 from urllib.parse import unquote, urlparse
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 
 from ..deps import AppState, get_state
 from ..excerpts import extract_relevant_excerpt
+from ..evaluation import evidence_snapshot
+from ..evidence_context import supplement_neighbors
 from ..generation import generate_answer, generate_small_talk, stream_answer
 from ..query_rewrite import plan_question
 from ..query_plan import QuestionPlan, SearchTask, finish_plan, rule_plan
@@ -23,12 +25,25 @@ from ..query_transform import transform_query
 from ..rate_limit import enforce_ask_rate_limit
 from ..retrieval import _dedupe_key, _rag_self_intro_first_stage_overrides, search
 from ..schemas import AskRequest, AskResponse, Attachment, Source
+from ..search_status import SearchResults, SearchUnavailable
+from ..retrieval_trace import RetrievalTrace, source_identity
 from ..syllabus import extract_request, search_syllabus
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
 NO_INFO_ANSWER = "관련 정보를 찾을 수 없습니다."
+SEARCH_UNAVAILABLE_MESSAGE = "검색 서비스를 일시적으로 확인할 수 없습니다. 잠시 후 다시 시도해 주세요."
+
+
+class _SearchUnavailableHTTP(HTTPException):
+    def __init__(self, diagnostics: dict):
+        super().__init__(status_code=503, detail=SEARCH_UNAVAILABLE_MESSAGE)
+        self.diagnostics = diagnostics
+
+
+def _retrieval_fields(rows: list | None) -> dict:
+    return {"retrieval_status": "partial" if rows.degraded else "complete"} if isinstance(rows, SearchResults) else {}
 
 
 def _is_no_info_answer(answer: str) -> bool:
@@ -120,10 +135,11 @@ def _row_to_source(row: Dict[str, Any]) -> Source:
         rerank_score=_score(row, "rerank_score"),
         rerank_final_score=_score(row, "rerank_final_score"),
         attachments=_row_attachments(row),
+        **source_identity(row),
     )
 
 
-def _search_one(state: AppState, search_query: str, task: SearchTask | None = None) -> List[Dict[str, Any]]:
+def _search_one(state: AppState, search_query: str, task: SearchTask | None = None, *, capture_trace: bool = False) -> List[Dict[str, Any]]:
     """One embed+search() call for a single (already standalone) query
     string -- the same call _retrieve() always made, just factored out so
     it can run once per decomposed sub-query."""
@@ -149,10 +165,11 @@ def _search_one(state: AppState, search_query: str, task: SearchTask | None = No
         if task and task.target.department_id else None,
         title_anchor=state.settings.rag_title_anchor_enabled,
         scope_check=(lambda row: scope_reason(row, task) is None) if task else None,
+        capture_trace=capture_trace,
     )
 
 
-def _search_all(state: AppState, search_queries: List[str], tasks: list[SearchTask] | None = None) -> List[List[Dict[str, Any]]]:
+def _search_all(state: AppState, search_queries: List[str], tasks: list[SearchTask] | None = None, *, capture_trace: bool = False) -> List[List[Dict[str, Any]]]:
     """Search each sub-query at the same time instead of one after another.
 
     Each search is mostly waiting on Supabase round trips, so a two-part
@@ -160,7 +177,12 @@ def _search_all(state: AppState, search_queries: List[str], tasks: list[SearchTa
     query order and are identical to running them in sequence (measured
     2026-11-02: 2-part questions 11-21s -> 9-13s on CPU)."""
     def run(index: int):
-        return _search_one(state, search_queries[index], tasks[index]) if tasks else _search_one(state, search_queries[index])
+        try:
+            options = {"capture_trace": True} if capture_trace else {}
+            return _search_one(state, search_queries[index], tasks[index], **options) if tasks else _search_one(state, search_queries[index], **options)
+        except SearchUnavailable as exc:
+            # A failed sub-query must not discard other sub-queries' evidence.
+            return SearchResults(channels=exc.channels, failed_queries=[search_queries[index]], trace=exc.trace)
     if len(search_queries) <= 1:
         return [run(i) for i in range(len(search_queries))]
     with ThreadPoolExecutor(max_workers=len(search_queries)) as pool:
@@ -203,6 +225,7 @@ def _retrieve(
     chat_history: List[Dict[str, str]],
     sub_questions: List[str],
     plan: QuestionPlan | None = None,
+    capture_trace: bool = False,
 ) -> Tuple[List[Dict[str, Any]], List[Source]]:
     """Retrieval for the JSON answer response, one search per planned sub-query.
 
@@ -234,6 +257,15 @@ def _retrieve(
         len(chat_history),
     )
 
+    health = SearchResults()
+    request_trace = RetrievalTrace() if capture_trace else None
+    task_traces = []
+
+    def finish_rows(rows):
+        if request_trace is not None:
+            health.trace = {"schema_version": 1, "tasks": task_traces, "request": request_trace.export()}
+        return SearchResults(rows, channels=health.channels, failed_queries=health.failed_queries, trace=health.trace)
+
     try:
         rows_by_query = [[] for _ in tasks]
         normal_indices = []
@@ -242,6 +274,9 @@ def _retrieve(
             if task.conditions.kind in {"latest", "open"}:
                 result = list_notices(state.supabase, task)
                 rows_by_query[index] = result.rows
+                if request_trace is not None:
+                    task_traces.append({"task_index": index, "route": "notice_listing", "capture_scope": "returned_rows_only"})
+                    request_trace.snapshot("direct_returned", result.rows, task_index=index)
                 direct_answers.append((index, result.answer))
                 continue
             syllabus_request = extract_request(task.text, chat_history)
@@ -253,29 +288,78 @@ def _retrieve(
             if syllabus_request is not None:
                 result = search_syllabus(state.supabase, syllabus_request, top_k=state.settings.rag_top_k)
                 rows_by_query[index] = checked_rows(result.rows, task)
+                if request_trace is not None:
+                    task_traces.append({"task_index": index, "route": "syllabus", "capture_scope": "returned_rows_only"})
+                    request_trace.snapshot("direct_returned", rows_by_query[index], task_index=index)
                 if result.answer is not None:
                     direct_answers.append((index, result.answer))
             else:
                 normal_indices.append(index)
-        results = _search_all(state, [search_queries[i] for i in normal_indices], [tasks[i] for i in normal_indices])
+        results = _search_all(state, [search_queries[i] for i in normal_indices], [tasks[i] for i in normal_indices],
+                              **({"capture_trace": True} if capture_trace else {}))
         for index, found in zip(normal_indices, results):
+            health.channels.extend({**c, "task_index": index} for c in getattr(found, "channels", []))
+            health.failed_queries.extend(getattr(found, "failed_queries", []))
             rows_by_query[index] = checked_rows(found, tasks[index])
+            if request_trace is not None:
+                task_traces.append({"task_index": index, "route": "hybrid", "query": search_queries[index],
+                                    "trace": getattr(found, "trace", None)})
+                request_trace.snapshot("task_scope_checked", rows_by_query[index], task_index=index)
+        if health.degraded and not any(rows_by_query):
+            finish_rows([])
+            raise SearchUnavailable(health.channels, trace=health.trace)
         if len(tasks) == 1 and direct_answers:
             rows = rows_by_query[0]
-            return [{"_direct_answer": direct_answers[0][1], "_answerable": bool(rows)}, *rows], [_row_to_source(row) for row in rows]
+            if request_trace is not None:
+                request_trace.snapshot("direct_selected", rows)
+            return finish_rows([{"_direct_answer": direct_answers[0][1], "_answerable": bool(rows)}, *rows]), [_row_to_source(row) for row in rows]
         if direct_answers and not any(rows_by_query):
-            return [{"_direct_answer": "\n\n".join(answer for _, answer in direct_answers), "_answerable": False}], []
+            return finish_rows([{"_direct_answer": "\n\n".join(answer for _, answer in direct_answers), "_answerable": False}]), []
         # Preserve unresolved parts of compound questions in the evidence.
         for index, answer in direct_answers:
             if not rows_by_query[index]:
                 for group in rows_by_query:
                     for row in group:
                         row.setdefault("metadata", {})["unresolved_request"] = answer
+        for group in rows_by_query:
+            for row in group:
+                metadata = row.setdefault("metadata", {})
+                if health.degraded:
+                    metadata["retrieval_incomplete"] = True
+                if health.failed_queries:
+                    note = "다음 요청은 검색 장애로 확인하지 못했습니다: " + "; ".join(health.failed_queries)
+                    metadata["unresolved_request"] = "\n".join(filter(None, (metadata.get("unresolved_request"), note)))
+    except SearchUnavailable as exc:
+        logger.warning("retrieval: cannot establish absence while search channels failed")
+        raise _SearchUnavailableHTTP(health.diagnostics()) from exc
     except Exception:
         logger.exception("retrieval failed")
         raise HTTPException(status_code=502, detail="retrieval failed")
 
+    if request_trace is not None:
+        request_trace.snapshot("request_merge_input", [row for group in rows_by_query for row in group])
     rows = _merge_rows(rows_by_query, state.settings.rag_top_k)
+    if request_trace is not None:
+        request_trace.snapshot("request_selected", rows, top_k=state.settings.rag_top_k)
+
+    def neighbor_in_scope(parent: dict, candidate: dict) -> bool:
+        metadata = parent.get("metadata") or {}
+        return any(
+            task.target.model_dump() == metadata.get("validated_target")
+            and task.conditions.model_dump(mode="json") == metadata.get("query_conditions")
+            and task.text == metadata.get("request_query")
+            and scope_reason(candidate, task) is None
+            for task in tasks
+        )
+
+    rows = supplement_neighbors(
+        state.supabase, rows,
+        max_sources=getattr(state.settings, "rag_context_neighbor_sources", 4),
+        scope_check=neighbor_in_scope,
+    )
+    if request_trace is not None:
+        request_trace.snapshot("context_components", [c for r in rows for c in r.get("_context_chunks", [])])
+        request_trace.snapshot("generation_sources", rows)
     for row in rows:
         row.setdefault("metadata", {})["request_response_format"] = plan.response_format
 
@@ -298,10 +382,10 @@ def _retrieve(
             for index, (row, source) in enumerate(zip(rows, sources), start=1)
         ]
         logger.debug("ask: final_source_summaries=%s", source_summaries)
-    return rows, sources
+    return finish_rows(rows), sources
 
 
-@router.post("/ask", response_model=AskResponse)
+@router.post("/ask", response_model=AskResponse, response_model_exclude_none=True)
 def ask(
     payload: AskRequest,
     state: AppState = Depends(get_state),
@@ -311,6 +395,8 @@ def ask(
     if not question:
         raise HTTPException(status_code=400, detail="question must not be empty")
     chat_history = [turn.model_dump() for turn in payload.chat_history]
+    if payload.include_evidence and payload.stream:
+        raise HTTPException(status_code=400, detail="include_evidence requires stream=false")
     if payload.stream:
         return StreamingResponse(
             _ask_events(state=state, user_id=user_id, question=question, chat_history=chat_history),
@@ -325,8 +411,26 @@ def ask(
         question=question,
         chat_history=chat_history,
     )
+
+    def unavailable(rows: SearchResults, sources: List[Source], answer: str | None = None):
+        if payload.include_evidence:
+            return JSONResponse(status_code=503, content={
+                "detail": SEARCH_UNAVAILABLE_MESSAGE,
+                "evaluation_evidence": evidence_snapshot(state, plan, rows, sources, question=question, answer=answer),
+            })
+        raise _SearchUnavailableHTTP(rows.diagnostics())
+
+    def respond(answer: str, sources: List[Source], answerable: bool, rows: list | None = None) -> AskResponse | JSONResponse:
+        if isinstance(rows, SearchResults) and rows.degraded and not answerable:
+            return unavailable(rows, sources, answer)
+        return AskResponse(
+            answer=answer, sources=sources, answerable=answerable,
+            evaluation_evidence=evidence_snapshot(state, plan, rows if rows is not None else [], sources, question=question, answer=answer) if payload.include_evidence else None,
+            **_retrieval_fields(rows),
+        )
+
     if plan.route in {"clarification", "refused"}:
-        return AskResponse(answer=plan.clarification, sources=[], answerable=False)
+        return respond(plan.clarification, [], False)
     sub_questions = plan.queries
     if not sub_questions:
         # 인사·잡담: 찾아볼 게 없으니 검색 없이 짧게 답한다(전에는 "관련 정보를 찾을 수 없습니다").
@@ -342,21 +446,27 @@ def ask(
         except Exception:
             logger.exception("small talk generation failed")
             raise HTTPException(status_code=502, detail="generation failed")
-        return AskResponse(answer=reply or NO_INFO_ANSWER, sources=[], answerable=bool(reply))
+        return respond(reply or NO_INFO_ANSWER, [], bool(reply))
 
-    rows, sources = _retrieve(
-        state=state,
-        user_id=user_id,
-        question=question,
-        chat_history=chat_history,
-        sub_questions=sub_questions,
-        plan=plan,
-    )
+    try:
+        rows, sources = _retrieve(
+            state=state,
+            user_id=user_id,
+            question=question,
+            chat_history=chat_history,
+            sub_questions=sub_questions,
+            plan=plan,
+            **({"capture_trace": True} if payload.include_evidence else {}),
+        )
+    except _SearchUnavailableHTTP as exc:
+        diagnostics = exc.diagnostics
+        return unavailable(SearchResults(channels=diagnostics["channels"],
+                                          failed_queries=diagnostics["failed_queries"], trace=diagnostics.get("trace")), [])
 
     if rows and "_direct_answer" in rows[0]:
-        return AskResponse(answer=rows[0]["_direct_answer"], sources=sources, answerable=rows[0]["_answerable"])
+        return respond(rows[0]["_direct_answer"], sources, rows[0]["_answerable"], rows)
     if not sources:
-        return AskResponse(answer=NO_INFO_ANSWER, sources=[], answerable=False)
+        return respond(NO_INFO_ANSWER, [], False, rows)
 
     try:
         answer = generate_answer(
@@ -377,7 +487,7 @@ def ask(
 
     sources = _with_excerpts(sources, question=question, answer=answer, state=state)
     answer = answer or NO_INFO_ANSWER
-    return AskResponse(answer=answer, sources=sources, answerable=not _is_no_info_answer(answer))
+    return respond(answer, sources, not _is_no_info_answer(answer), rows)
 
 
 def _with_excerpts(sources: List[Source], *, question: str, answer: str, state: AppState) -> List[Source]:
@@ -459,14 +569,18 @@ def _ask_events(
             plan=plan,
         )
     except HTTPException as exc:
-        yield _sse({"type": "error", "detail": exc.detail})
+        yield _sse({"type": "error", "detail": exc.detail, "status_code": exc.status_code})
         return
     if rows and "_direct_answer" in rows[0]:
         yield _sse({"type": "done", "answer": rows[0]["_direct_answer"],
                     "sources": [source.model_dump() for source in sources], "answerable": rows[0]["_answerable"]})
         return
     if not sources:
-        yield _sse({"type": "done", "answer": NO_INFO_ANSWER, "sources": [], "answerable": False})
+        if isinstance(rows, SearchResults) and rows.degraded:
+            yield _sse({"type": "error", "detail": SEARCH_UNAVAILABLE_MESSAGE, "status_code": 503})
+            return
+        yield _sse({"type": "done", "answer": NO_INFO_ANSWER, "sources": [], "answerable": False,
+                    **_retrieval_fields(rows)})
         return
 
     yield _sse({"type": "status", "stage": "writing"})
@@ -499,9 +613,13 @@ def _ask_events(
 
     sources = _with_excerpts(sources, question=question, answer=answer, state=state)
     answer = answer or NO_INFO_ANSWER
+    if isinstance(rows, SearchResults) and rows.degraded and _is_no_info_answer(answer):
+        yield _sse({"type": "error", "detail": SEARCH_UNAVAILABLE_MESSAGE, "status_code": 503})
+        return
     yield _sse({
         "type": "done",
         "answer": answer,
         "sources": [source.model_dump() for source in sources],
         "answerable": not _is_no_info_answer(answer),
+        **_retrieval_fields(rows),
     })

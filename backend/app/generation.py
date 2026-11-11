@@ -9,12 +9,14 @@ from typing import Any, Dict, Iterator, List, Optional, Tuple
 
 from openai import OpenAI
 
+from .evidence_context import select_evidence
 from .freshness import current_term_label, today_kst
 from .grounding import miscited_numbers, unsupported_numbers
 
 logger = logging.getLogger(__name__)
 
 PROMPTS_DIR = Path(__file__).resolve().parent.parent / "prompts"
+_NUMBER_CHECK_FALLBACK = "관련 정보를 찾을 수 없습니다."
 
 
 def load_system_prompt() -> str:
@@ -45,7 +47,18 @@ def _format_score(value: Any) -> str:
         return "0.0000"
 
 
-def _format_source_block(rows: List[Dict[str, Any]], max_chars_per_chunk: int) -> str:
+def _source_content(row: Dict[str, Any], max_chars_per_chunk: int, question: str = "") -> str:
+    # Syllabus retrieval already selected an evidence window inside an exact
+    # offering. A generic 500-character cutoff can remove the table values.
+    content = str(row.get("content") or "")
+    if row.get("_syllabus"):
+        return _truncate(content, 4000)
+    metadata = row.get("metadata") or {}
+    anchor = " ".join(part for part in (question, metadata.get("request_query")) if part)
+    return select_evidence(content, question=anchor, target_chars=max_chars_per_chunk, metadata=metadata)
+
+
+def _format_source_block(rows: List[Dict[str, Any]], max_chars_per_chunk: int, question: str = "") -> str:
     lines: List[str] = []
     for index, row in enumerate(rows, start=1):
         metadata = row.get("metadata") or {}
@@ -71,9 +84,7 @@ def _format_source_block(rows: List[Dict[str, Any]], max_chars_per_chunk: int) -
         dataset_priority_text = _format_score(row.get("dataset_priority"))
         final_score_text = _format_score(row.get("final_score"))
         rerank_score_text = _format_score(row.get("rerank_score"))
-        # Syllabus retrieval already selected an evidence window inside an exact
-        # offering. A generic 500-character cutoff can remove the table values.
-        content = _truncate(str(row.get("content") or ""), 4000 if row.get("_syllabus") else max_chars_per_chunk)
+        content = _source_content(row, max_chars_per_chunk, question)
         posted = _posted_date(metadata)
         lines.append(f"[{index}]")
         lines.append(f"제목: {str(title).strip() or '제목 없음'}")
@@ -87,6 +98,10 @@ def _format_source_block(rows: List[Dict[str, Any]], max_chars_per_chunk: int) -
             lines.append("적용 조건: " + metadata["applicability_note"])
         if metadata.get("request_purpose"):
             lines.append("질문 목적: " + metadata["request_purpose"])
+        if metadata.get("retrieval_incomplete"):
+            lines.append("검색 범위: 일부 검색이 일시적으로 실패했습니다. 확인한 자료 범위만 답하고 다른 자료가 없다고 단정하지 마세요.")
+        if row.get("_context_chunks"):
+            lines.append("근거 범위: 동일 원문에서 확인한 인접 청크 포함. 서로 다른 적용 조건을 합치지 마세요.")
         table = metadata.get("structured_table") or {}
         if table.get("kind") == "spreadsheet" and len(table.get("rows", [])) == 1:
             row = table["rows"][0]
@@ -124,7 +139,7 @@ def build_user_message(
     max_chars_per_chunk: int,
 ) -> str:
     sources_block = (
-        _format_source_block(rows, max_chars_per_chunk) if rows else "(자료 없음)"
+        _format_source_block(rows, max_chars_per_chunk, question) if rows else "(자료 없음)"
     )
     # The model doesn't know today's date; without it a 2025 notice reads as
     # "the" schedule (observed 2026-10-13: "수강신청 기간" was answered with
@@ -150,6 +165,7 @@ def build_user_message(
         "- 일부 세부 정보가 없다는 이유로 답변 전체를 포기하지 말고, 확인되지 않는 부분만 명확히 구분하세요.\n"
         "- 질문의 핵심에 답할 근거가 참고 자료에 전혀 없을 때만 \"관련 정보를 찾을 수 없습니다.\"라고만 답하세요.\n"
         "- 특정 학과·학생 유형·예외 상황의 조건을 전체 학생의 일반 규정으로 확대하지 마세요. 신청 자격과 이수 조건을 구분하세요.\n"
+        "- 생략 표시가 있는 구간은 문서 전체가 아닙니다. 표는 제목·열 제목·동일 행의 값을 함께 읽고, 생략된 행·빈 셀·잘린 조건을 추정하지 마세요.\n"
         "- 미확인 요청이 있으면 다른 자료로 대신 답하지 말고 필요한 조건을 짧게 확인하세요.\n"
         "- 일정·기간·금액은 오늘 날짜 기준 가장 최신 학기 자료를 우선하세요. 인용한 자료가 지난 학기·연도의 것이면 "
         "그 학기·연도를 밝히고, 이번 학기 일정은 최신 공지를 확인해야 한다고 덧붙이세요."
@@ -204,10 +220,11 @@ def generate_answer(
         len(chat_history or []),
     )
     answer = _complete(openai_client, model, messages, temperature, max_tokens, timeout)
-    problems = _number_problems(answer, question, rows, max_chars_per_chunk)
+    problems = _number_problems(answer, rows, max_chars_per_chunk, question=question)
     if not problems:
         return answer
-    return _complete(openai_client, model, _retry_messages(messages, answer, problems), temperature, max_tokens, timeout)
+    revised = _complete(openai_client, model, _retry_messages(messages, answer, problems), temperature, max_tokens, timeout)
+    return _validated_revision(revised, rows, max_chars_per_chunk, question=question)
 
 
 def stream_answer(
@@ -226,8 +243,8 @@ def stream_answer(
     """generate_answer, but yields ("token", text) while the model writes.
 
     The number check still runs on the finished text; when it fails, yields
-    ("revising", "") and then ("replace", rewritten answer) so the screen can
-    swap out what it already showed. Always ends with ("final", answer).
+    ("revising", "") and then ("replace", checked revision or fallback) so the
+    screen can swap out what it already showed. Always ends with ("final", answer).
     """
     messages = build_messages(system_prompt, question, rows, max_chars_per_chunk, chat_history)
     logger.info(
@@ -241,23 +258,33 @@ def stream_answer(
         parts.append(delta)
         yield "token", delta
     answer = "".join(parts).strip()
-    problems = _number_problems(answer, question, rows, max_chars_per_chunk)
+    problems = _number_problems(answer, rows, max_chars_per_chunk, question=question)
     if problems:
         yield "revising", ""
         answer = _complete(openai_client, model, _retry_messages(messages, answer, problems), temperature, max_tokens, timeout)
+        answer = _validated_revision(answer, rows, max_chars_per_chunk, question=question)
         yield "replace", answer
     yield "final", answer
 
 
-def _number_problems(answer: str, question: str, rows: List[Dict[str, Any]], max_chars_per_chunk: int) -> List[str]:
+def _validated_revision(answer: str, rows: List[Dict[str, Any]], max_chars_per_chunk: int, *, question: str = "") -> str:
+    """Allow one rewrite, but never return a revision that still fails the check."""
+    if _number_problems(answer, rows, max_chars_per_chunk, question=question):
+        logger.warning("generation: revised answer failed number check; returning fallback")
+        return _NUMBER_CHECK_FALLBACK
+    return answer
+
+
+def _number_problems(answer: str, rows: List[Dict[str, Any]], max_chars_per_chunk: int, *, question: str = "") -> List[str]:
     """Figures in the answer its sources don't back up, as retry instructions."""
-    # What the model was shown: each chunk as truncated in the prompt.
-    shown = [_truncate(str(row.get("content") or ""), max_chars_per_chunk) for row in rows]
-    missing = unsupported_numbers(answer, [question] + shown)
-    miscited = miscited_numbers(answer, question, shown)
+    # Select with the same question and limits as the actual prompt.
+    # Questions and chat history are context, never evidence for numeric claims.
+    shown = [_source_content(row, max_chars_per_chunk, question) for row in rows]
+    missing = unsupported_numbers(answer, shown)
+    miscited = miscited_numbers(answer, shown)
     if not missing and not miscited:
         return []
-    logger.info("generation: retry unsupported_numbers=%s miscited_numbers=%s", missing, miscited)
+    logger.info("generation: number_check unsupported_numbers=%s miscited_numbers=%s", missing, miscited)
     problems = []
     if missing:
         problems.append(f"수치 {', '.join(missing)}는 참고 자료 본문에 없습니다")
@@ -273,6 +300,7 @@ def _retry_messages(messages: List[Dict[str, str]], answer: str, problems: List[
             "role": "user",
             "content": (
                 f"방금 답변에서 {'; '.join(problems)}. "
+                "질문이나 이전 대화의 수치는 근거로 삼지 말고 참고 자료 본문만으로 검증하세요. "
                 "자료에 없는 수치는 빼고 없다고 밝히며, 다른 자료의 수치는 그 자료가 질문과 같은 대상·조건일 때만 "
                 "그 자료 번호를 달아 쓰세요. 이 점만 고쳐서 다시 답하세요."
             ),

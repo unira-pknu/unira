@@ -10,8 +10,10 @@ import time
 from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError, URLError
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlsplit, urlunsplit
 from urllib.request import Request, urlopen
+
+from .provenance import code_state, file_sha256, timestamp
 
 
 DEFAULT_BASE_URL = "http://localhost:8000"
@@ -154,10 +156,11 @@ def _read_jsonl(path: Path) -> list[dict[str, Any]]:
 
 
 def _post_ask(
-    base_url: str, question: str, timeout: float, *, token: str | None = None
+    base_url: str, question: str, timeout: float, *, token: str | None = None,
+    include_evidence: bool = True,
 ) -> tuple[int | None, dict[str, Any]]:
     url = urljoin(base_url.rstrip("/") + "/", "ask")
-    body = json.dumps({"question": question}, ensure_ascii=False).encode("utf-8")
+    body = json.dumps({"question": question, "stream": False, "include_evidence": include_evidence}, ensure_ascii=False).encode("utf-8")
     headers = {"Content-Type": "application/json; charset=utf-8"}
     if token:
         headers["Authorization"] = f"Bearer {token}"
@@ -215,8 +218,13 @@ def _result_row(
         "tags": question_row.get("tags", []),
         "difficulty": question_row.get("difficulty", ""),
         "expected_behavior": question_row.get("expected_behavior", ""),
+        "label_status": question_row.get("label_status"),
+        "scenario_tags": question_row.get("scenario_tags", []),
         "answer": response.get("answer", "") if not error else "",
         "sources": sources,
+        "response_answerable": response.get("answerable"),
+        "retrieval_status": response.get("retrieval_status"),
+        "evaluation_evidence": response.get("evaluation_evidence"),
         "source_count": len(sources),
         "top_similarity": _top_similarity(sources),
         "status_code": status_code,
@@ -234,14 +242,34 @@ def run_eval(
     limit: int | None,
     sleep_seconds: float,
     token: str | None = None,
+    data_snapshot: str | None = None,
+    backend_revision: str | None = None,
 ) -> None:
+    if output_path.resolve() == questions_path.resolve():
+        raise ValueError("results output must differ from the input question set")
+    if limit is not None and limit <= 0:
+        raise ValueError("limit must be positive")
     questions = _read_jsonl(questions_path)
+    available_case_count = len(questions)
     if limit is not None:
         questions = questions[:limit]
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     ok_count = 0
     error_count = 0
+    endpoint = urlsplit(base_url)
+    manifest = {
+        "schema_version": 1, "started_at": timestamp(), "finished_at": None,
+        "questions_path": str(questions_path), "questions_sha256": file_sha256(questions_path),
+        "expected_case_ids": [row.get("id") for row in questions],
+        "available_case_count": available_case_count,
+        "base_url": urlunsplit((endpoint.scheme, endpoint.netloc.rsplit("@", 1)[-1], endpoint.path, "", "")),
+        "selected_case_count": len(questions), "limit": limit,
+        "data_snapshot": data_snapshot, "backend_revision": backend_revision,
+        "timeout": timeout, "include_evidence": True, "local_code": code_state(),
+    }
+    manifest_path = output_path.with_suffix(".manifest.json")
+    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
 
     with output_path.open("w", encoding="utf-8", newline="\n") as out:
         for index, row in enumerate(questions, start=1):
@@ -257,6 +285,9 @@ def run_eval(
             )
             out.write(json.dumps(result, ensure_ascii=False) + "\n")
             out.flush()
+            evidence = result.get("evaluation_evidence")
+            if not result["error"] and (not isinstance(evidence, dict) or evidence.get("schema_version") != 1):
+                raise RuntimeError("backend did not capture evaluation evidence; run the updated backend before evaluating")
 
             if result["error"]:
                 error_count += 1
@@ -269,6 +300,9 @@ def run_eval(
             if sleep_seconds > 0 and index < len(questions):
                 time.sleep(sleep_seconds)
 
+    manifest.update(finished_at=timestamp(), results_sha256=file_sha256(output_path),
+                    ok_count=ok_count, error_count=error_count)
+    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
     print(
         f"saved={output_path} total={len(questions)} ok={ok_count} errors={error_count}"
     )
@@ -321,6 +355,8 @@ def parse_args() -> argparse.Namespace:
             "/ask requires login; defaults to the ASK_API_TOKEN env var."
         ),
     )
+    parser.add_argument("--data-snapshot", help="Operator-assigned DB/ingestion snapshot identifier; no database access is performed.")
+    parser.add_argument("--backend-revision", help="Revision of the evaluated backend (not necessarily the local checkout).")
     return parser.parse_args()
 
 
@@ -334,6 +370,8 @@ def main() -> int:
         token=args.token,
         limit=args.limit,
         sleep_seconds=args.sleep,
+        data_snapshot=args.data_snapshot,
+        backend_revision=args.backend_revision,
     )
     return 0
 

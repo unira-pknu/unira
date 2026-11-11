@@ -16,6 +16,7 @@ from scripts.vectorization.recovery_control import (
 from scripts.vectorization import reconcile_ce
 from scripts.vectorization import reconcile_active_sources
 from scripts.preprocessing import review_text_quality
+from scripts.preprocessing import quality_audit
 from scripts.vectorization import resume_excel
 from scripts.vectorization import verify_recovery_search
 from scripts.vectorization import publish_recovery
@@ -29,6 +30,116 @@ class TransientFailure(RuntimeError):
 
 
 class RecoveryControlTests(unittest.TestCase):
+    def test_quality_audit_separates_condition_indicators_from_universal_missing_fields(self):
+        summary = quality_audit.ScopeSummary()
+        summary.add("rag", "a", "ce", 0, "2021학년도 이전 입학생의 학과별 졸업 기준", {"department_id": "ce"})
+        summary.add("rag", "b", "ce", 0, "입학연도별 안내", {"applicable_admission_years": [2021]})
+        summary.add("rag", "c", "ce", 0, "도서관 연락처 안내", {})
+        summary.add("rule", "d", "rule", 0, "공포한 날부터 시행", {"published_at": "2026-11-01"})
+        report = summary.export()
+        cohort = report["conditions"]["admission_year"]
+        self.assertEqual(cohort["condition_indicated"], 2)
+        self.assertEqual(cohort["structured_condition_missing"], 1)
+        self.assertEqual(cohort["indicated_missing_rate"], 0.5)
+        self.assertEqual(cohort["not_indicated"], 2)
+        self.assertEqual(report["publisher_department_metadata_present"], 1)
+        self.assertEqual(report["conditions"]["department"]["structured_condition_missing"], 1)
+        self.assertEqual(report["conditions"]["effective_date"]["structured_condition_missing"], 1)
+
+    def test_quality_audit_does_not_accept_unconfirmed_dates_or_login_numbers_as_cohorts(self):
+        value = quality_audit.usable_scope({"effective_at": "2026-11-01", "rule_effective_status": "unconfirmed",
+                                           "applicable_admission_years": [True]})
+        self.assertFalse(value["effective_date"])
+        self.assertFalse(value["admission_year"])
+        self.assertIsNone(quality_audit.COHORT_CUE.search("포털 로그인 학번을 입력합니다"))
+        self.assertIsNotNone(quality_audit.COHORT_CUE.search("2021학년도 이전 입학생"))
+        empty = quality_audit.ScopeSummary().export()
+        self.assertIsNone(empty["conditions"]["admission_year"]["indicated_missing_rate"])
+
+    def test_quality_audit_does_not_hide_conflicting_duplicate_current_chunks(self):
+        expected = {("rag", "source", 0): {"current_record": "not_scanned", "historical_text_sha256": "old"}}
+        quality_audit._observe(expected, "rag", "source", 0, "본문 �", active=False)
+        self.assertTrue(expected[("rag", "source", 0)]["current_replacement"])
+        self.assertIs(expected[("rag", "source", 0)]["active"], False)
+        quality_audit._observe(expected, "rag", "source", 0, "다른 본문", active=False)
+        self.assertEqual(expected[("rag", "source", 0)]["current_record"], "ambiguous_duplicate")
+        self.assertIsNone(expected[("rag", "source", 0)]["current_replacement"])
+
+    def test_quality_audit_database_sets_read_only_snapshot_before_selecting_rows(self):
+        commands = []
+
+        class Cursor:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                pass
+
+            def execute(self, statement, params=None):
+                commands.append(str(statement))
+
+            def __iter__(self):
+                return iter([])
+
+        class Connection:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                pass
+
+            def execute(self, statement):
+                commands.append(statement)
+                return SimpleNamespace(fetchone=lambda: {"observed_at": "test", "transaction_snapshot": "1:2:"})
+
+            def cursor(self, **kwargs):
+                return Cursor()
+
+        with patch("scripts.db.connect_postgres", return_value=Connection()), redirect_stderr(io.StringIO()):
+            result = quality_audit.audit_database({})
+        self.assertEqual(commands[0], "set transaction isolation level repeatable read read only")
+        self.assertEqual(result["snapshot"]["transaction_snapshot"], "1:2:")
+        self.assertEqual(result["summary"]["documents"], 0)
+        self.assertIsNone(result["summary"]["conditions"]["department"]["indicated_missing_rate"])
+
+    def test_quality_audit_cli_bypasses_writer_locks_and_preserves_frozen_receipts(self):
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            run = root / "var/recovery/quality"
+            recovery_common.atomic(run / "plan.json", {"policy": "original-text-quality-review-v1"})
+            recovery_common.receipt(run, status="review_required")
+            before = {p.name: p.read_bytes() for p in run.iterdir()}
+            handler = SimpleNamespace(audit=lambda selected, **kwargs: {"read_only": True})
+            with patch.object(recovery_cli, "ROOT", root), patch.object(
+                recovery_cli.importlib, "import_module", return_value=handler
+            ), patch.object(recovery_cli, "execute") as execute, patch.object(
+                recovery_cli, "recovery_lock"
+            ) as lock, redirect_stdout(io.StringIO()):
+                self.assertEqual(recovery_cli.main(["--task", "quality", "--run", str(run), "--phase", "audit"]), 0)
+                execute.assert_not_called()
+                lock.assert_not_called()
+            self.assertEqual({p.name: p.read_bytes() for p in run.iterdir()}, before)
+
+    def test_quality_audit_rechecks_changed_preprocessing_instead_of_using_stage_guards(self):
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            run = root / "var/recovery/quality"
+            target = root / "preprocessed/ce/doc.json"
+            recovery_common.atomic(target, {"chunks": [{"text": "이전 �"}]})
+            old_hash = recovery_common.digest(target)
+            recovery_common.atomic(run / "plan.json", {"policy": "original-text-quality-review-v1", "garbled_chunks": 1,
+                "items": [{"dataset": "ce", "id": "source", "target": "files/preprocessed/ce/doc.json",
+                           "target_sha256": old_hash, "affected": [{"chunk_index": 0}], "index_hashes": {"0": "old"}}]})
+            recovery_common.receipt(run, status="review_required", plan_sha256=recovery_common.digest(run / "plan.json"))
+            recovery_common.atomic(target, {"chunks": [{"text": "변경된 본문"}]})
+            receipt_before = (run / "receipt.json").read_bytes()
+            with patch("scripts.vectorization.datasets.table_family", return_value="rag"):
+                historical, selected = quality_audit.historical_selection(root, run)
+            self.assertEqual(historical["current_preprocessed"]["changed"], 1)
+            self.assertEqual(historical["missing_decisions"], 1)
+            self.assertFalse(selected[("rag", "source", 0)]["preprocessed_body_replacement"])
+            self.assertEqual((run / "receipt.json").read_bytes(), receipt_before)
+
     def test_moved_artifacts_keep_signed_evidence_and_historical_run_identity(self):
         with TemporaryDirectory() as directory:
             root = Path(directory)

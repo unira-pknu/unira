@@ -88,10 +88,12 @@ class Settings(BaseSettings):
         "match_rag_documents",
         "match_pknu_syllabus_documents",
     ]
-    # Chunks average ~870 chars; at 500 the answer model missed facts past
-    # the cut (2026-10-19: 멘토 장학금 at char 590). 1000 + title anchor:
-    # google_compare 8 -> 14/31, regression 0.401 -> 0.419 (within run noise).
+    # Target for question-focused evidence, not a prefix cutoff. Complete
+    # sentences/conditions/table rows can grow to 4000 chars per source.
     max_chars_per_chunk: int = 1000
+    # Each lookup reads only +/-1 chunk_index of the same source after ranking.
+    # Zero disables supplementary DB reads without disabling passage selection.
+    rag_context_neighbor_sources: int = Field(default=4, ge=0, le=10)
     source_excerpt_max_chars: int = Field(default=320, ge=80, le=2000)
 
     # Server

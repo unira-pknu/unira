@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import List, Literal
+from typing import Any, List, Literal
 
 from pydantic import BaseModel, Field
 
@@ -22,6 +22,8 @@ class AskRequest(BaseModel):
     # written (the chat screen). false (default): one JSON AskResponse, which
     # eval and comparison scripts rely on.
     stream: bool = False
+    # JSON-only evaluation capture; ordinary clients keep using source excerpts.
+    include_evidence: bool = False
 
 
 
@@ -41,6 +43,15 @@ class Source(BaseModel):
     rerank_score: float = 0.0
     rerank_final_score: float = 0.0
     attachments: List[Attachment] = Field(default_factory=list)
+    source_id: str | None = None
+    source_ids: List[str] | None = None  # Aggregate catalogue: actual component documents.
+    chunk_id: str | int | None = None
+    chunk_row_id: str | None = None
+    chunk_index: int | None = None
+    source_dataset: str | None = None
+    ingestion_dataset: str | None = None
+    department_id: str | None = None
+    rpc_name: str | None = None
 
 
 class AskResponse(BaseModel):
@@ -50,3 +61,6 @@ class AskResponse(BaseModel):
     # refusal (system prompt rule 5). Defaults to True so older clients and
     # tests that ignore the field keep working.
     answerable: bool = True
+    evaluation_evidence: dict[str, Any] | None = None
+    # Partial means usable evidence survived primary search-channel failures.
+    retrieval_status: Literal["complete", "partial"] | None = None

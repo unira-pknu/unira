@@ -19,10 +19,12 @@ var/
   storage_paths.json # 이동한 기존 자료의 경로 호환 정보
 ```
 
-All crawler datasets now use the same generated storage contract:
+Department datasets use the following contract inside the registry-selected
+`files/department/<storage_path>/` directory. Main-site documents use category
+folders under `files/pknu_main/`; their states live in `_state/<logical-dataset>.json`.
 
 ```text
-files/<dataset>/
+files/department/<storage_path>/
   state.json
   state.json.bak
   output/
@@ -46,9 +48,9 @@ are invalid the crawler fails instead of silently resetting state.
 Legacy root state files are detected automatically and copied into the new
 location without deleting the source or overwriting an existing target:
 
-- `state.json` → `files/ce/state.json`
-- `state_pknu_notice.json` → `files/pknu_notice/state.json`
-- `state_pknu_student_life.json` → `files/pknu_student_life/state.json`
+- `state.json` → `files/department/정보융합대학/컴퓨터·인공지능공학부/ce/state.json`
+- `state_pknu_notice.json` → `files/pknu_main/_state/pknu_notice.json`
+- `state_pknu_student_life.json` → `files/pknu_main/_state/pknu_student_life.json`
 
 Review the migration without changing files (the default), or apply it:
 
@@ -172,16 +174,16 @@ Source crawler:
 Raw output:
 
 ```text
-files/ce/output/json/<category>/<slug>.json
-files/ce/output/html/<category>/<slug>.html
-files/ce/output/files/<category>/<slug>/<attachment>
+files/department/정보융합대학/컴퓨터·인공지능공학부/ce/output/json/<category>/<slug>.json
+files/department/정보융합대학/컴퓨터·인공지능공학부/ce/output/html/<category>/<slug>.html
+files/department/정보융합대학/컴퓨터·인공지능공학부/ce/output/files/<category>/<slug>/<attachment>
 ```
 
-Preprocessing can be run separately for page JSON and attachments.
+The dataset preprocessing command resolves the current raw directories from the registry.
+For separate page JSON and attachment commands, see [전처리 명령](../commands/PREPROCESSING.md).
 
 ```powershell
-.\.venv\Scripts\python.exe scripts\preprocessing\preprocess_files.py --input-root files\ce\output\json --output-root preprocessed\ce\json --output-json-root files\ce\output\json --layout flat
-.\.venv\Scripts\python.exe scripts\preprocessing\preprocess_files.py --input-root files\ce\output\files --output-root preprocessed\ce\files --output-json-root files\ce\output\json
+.\.venv\Scripts\python.exe -m scripts.preprocessing.preprocessing_pipeline --dataset ce
 ```
 
 Typical preprocessed layout:

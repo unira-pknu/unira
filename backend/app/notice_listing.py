@@ -163,7 +163,8 @@ def list_notices(client, task: SearchTask) -> ListingResult:
             m.update(application_start=start.isoformat(), application_end=end.isoformat())
             content += f"\n신청기간: {start.isoformat()} ~ {end.isoformat()}"
         m["doc_title"], m["doc_url"] = source["title"], source.get("url") or source.get("parent_url") or ""
-        rows.extend(checked_rows([{**source, "source_id": source["id"], "content": content, "metadata": m, "similarity": 1.0}], task))
+        rows.extend(checked_rows([{**source, "source_id": source["id"], "content": content, "metadata": m,
+                                   "similarity": 1.0, "_source_row": True}], task))
         if len(rows) >= conditions.limit:
             break
     if not rows:

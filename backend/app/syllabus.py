@@ -225,7 +225,7 @@ def search_instructor_courses(client: Any, request: CourseRequest) -> SyllabusRe
                 "staff_name": request.instructor, "level": request.level or (scopes[0][2] if len(scopes) == 1 else ""),
                 "catalogue_offerings": evidence, "source_ids": source_ids, "rpc_name": "match_pknu_syllabus_documents"}
     row = {"id": "syllabus-catalogue:" + request.instructor, "title": title, "url": SEARCH_URL, "content": content,
-           "metadata": metadata, "similarity": 1.0, "_syllabus": True}
+           "metadata": metadata, "similarity": 1.0, "_syllabus": True, "_synthetic_source": True}
     return SyllabusResult([row], f"수집된 강의계획서에서 확인한 {request.instructor} 교수님의 강의 목록입니다.\n" + "\n".join(lines))
 
 

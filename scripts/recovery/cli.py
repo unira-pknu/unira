@@ -5,6 +5,7 @@ import argparse
 from contextlib import ExitStack
 from dataclasses import dataclass
 import importlib
+import json
 from pathlib import Path
 import sys
 
@@ -45,8 +46,8 @@ TASKS = {
     "publish": Task("scripts.vectorization.publish_recovery",
                     ("prepare", "vectorize", "apply", "publish", "verify"), "prepare",
                     ("source_run", "kind", "backend_root", "after_receipt"), policy="scoped-recovery-publication-v1"),
-    "quality": Task("scripts.preprocessing.review_text_quality", ("scan", "probe", "stage"), "scan",
-                    ("expected_chunks", "expected_pdfs", "pdf_source_id", "ocr", "retry_errors", "max_ocr_pages"),
+    "quality": Task("scripts.preprocessing.review_text_quality", ("scan", "probe", "stage", "audit"), "scan",
+                    ("expected_chunks", "expected_pdfs", "pdf_source_id", "ocr", "retry_errors", "max_ocr_pages", "database", "audit_dataset"),
                     policy="original-text-quality-review-v1"),
     "sources": Task("scripts.vectorization.reconcile_active_sources", ("scan", "baseline", "apply", "verify"),
                     "scan", ("expected_db_only", "expected_groups", "after_receipt", "backend_root"),
@@ -72,6 +73,8 @@ def parser():
         p.add_argument("--" + option, action="store_true")
     p.add_argument("--file-ext", action="append")
     p.add_argument("--pdf-source-id", action="append")
+    p.add_argument("--database", action="store_true", help="Quality audit only: inspect live DB in a read-only snapshot")
+    p.add_argument("--audit-dataset", action="append", help="Quality audit only: restrict current scope to a dataset")
     for name in (*LoadOptions.__dataclass_fields__, "expected_count", "expected_chunks", "expected_pdfs",
                  "expected_db_only", "expected_groups", "max_ocr_pages", "cases_per_family"):
         p.add_argument("--" + name.replace("_", "-"), type=int)
@@ -88,7 +91,7 @@ def options_for(task, explicit):
                   expected_count=4, expected_chunks=101, expected_pdfs=3, pdf_source_id=[], ocr=False,
                   retry_errors=False, max_ocr_pages=32, expected_db_only=34, expected_groups=16,
                   cases_per_family=6, source_run=None, kind=None, probe_question=PROBE_QUESTION,
-                  probe_preprocessed=None, **vars(LoadOptions()))
+                  probe_preprocessed=None, database=False, audit_dataset=[], **vars(LoadOptions()))
     if task == "excel":
         values.update(workers=2, chunk_batch_size=256)
     values.update(explicit)
@@ -149,7 +152,7 @@ def validate_run(task, run, phases):
     lock_names = {".lock", ".phase.lock", ".pipeline.lock", ".excel_resume.lock"}
     if not found and not marker.exists() and run.exists() and any(p.name not in lock_names for p in run.iterdir()):
         raise ValueError("Nonempty run has no recognized identity; choose a new directory")
-    if phases == ["status"]:
+    if phases in (["status"], ["audit"]):
         return
     if state.get("superseded_by"):
         raise ValueError(f"This run was superseded; use {state['superseded_by']}")
@@ -307,13 +310,15 @@ def main(argv=None):
     try:
         if any(phase not in (*TASKS[task].phases, "status") for phase in phases):
             raise ValueError(f"Invalid phase for {task}; use --list")
-        if len(set(phases)) != len(phases) or (len(phases) > 1 and {"status", "resume"}.intersection(phases)):
-            raise ValueError("Do not repeat phases or combine status/resume with other phases")
+        if len(set(phases)) != len(phases) or (len(phases) > 1 and {"status", "resume", "audit"}.intersection(phases)):
+            raise ValueError("Do not repeat phases or combine status/resume/audit with other phases")
         if len(phases) > 1:
             ordered = [TASKS[task].phases.index(phase) for phase in phases]
             if ordered != sorted(ordered):
                 raise ValueError("Phases must follow the task order shown by --list")
         options = options_for(task, explicit)
+        if any(name in explicit for name in ("database", "audit_dataset")) and phases != ["audit"]:
+            raise ValueError("--database and --audit-dataset apply only to --phase audit")
         if task == "publish" and "prepare" in phases and (not options.source_run or not options.kind):
             raise ValueError("publish prepare requires --source-run and --kind")
         run = run_path(explicit["run"])
@@ -340,6 +345,15 @@ def main(argv=None):
                           "concurrently_present_sources": len(progress.get("concurrently_present", [])),
                           "chunks_loaded": progress.get("chunks_loaded")}
         event("status", task=task, run=str(run), receipt={k: state[k] for k in keys if k in state}, checkpoint=checkpoint)
+        return 0
+    if phases == ["audit"]:
+        # Read-only inspection bypasses execute(): no locks, job markers,
+        # receipts, staging, vectorization or automatic database writes.
+        if not (run / "plan.json").is_file():
+            p.error("quality audit requires an existing historical plan")
+        module = importlib.import_module(TASKS[task].module)
+        print(json.dumps(module.audit(run, database=options.database, datasets=options.audit_dataset or None),
+                         ensure_ascii=False, indent=2))
         return 0
     return execute(task, run, phases, options)
 

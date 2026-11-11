@@ -6,6 +6,7 @@ import Link from "next/link";
 import {
   AdminApiError,
   fetchAdminDashboard,
+  fetchFeedbackTrainingDrafts,
   type AdminCommentEntry,
   type AdminDashboard,
   type AdminThumbsEntry,
@@ -487,6 +488,33 @@ export default function AdminPage() {
   const [dashboard, setDashboard] = useState<AdminDashboard | null>(null);
   const [loadState, setLoadState] = useState<"loading" | "ready" | "error">("loading");
   const [loadError, setLoadError] = useState<{ status: number; message: string } | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [exportMessage, setExportMessage] = useState("");
+
+  const downloadTrainingDrafts = async () => {
+    setExporting(true);
+    setExportMessage("싫어요 질문을 모으고 있습니다…");
+    try {
+      const result = await fetchFeedbackTrainingDrafts((count) => setExportMessage(`${count}건을 모았습니다…`));
+      if (!result.count) {
+        setExportMessage("내려받을 싫어요 피드백이 없습니다.");
+        return;
+      }
+      const url = URL.createObjectURL(new Blob([result.jsonl], { type: "application/x-ndjson;charset=utf-8" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `feedback-review-${new Date().toISOString().replace(/[:.]/g, "-")}.jsonl`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setExportMessage(`${result.count}건을 내려받았습니다. 개인정보와 정답을 검토해 주세요.`);
+    } catch (err) {
+      setExportMessage(err instanceof Error ? err.message : "학습 후보를 내려받지 못했습니다.");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const loadDashboard = useCallback(async (signal?: AbortSignal) => {
     setLoadState("loading");
@@ -675,6 +703,18 @@ export default function AdminPage() {
             />
           }
         >
+          <div className="mb-4 flex flex-col items-start gap-2 text-xs sm:text-sm" style={{ color: NAVY }}>
+            <p>싫어요가 달린 질문을 모아 정답을 검토한 뒤 학습에 활용할 수 있습니다.</p>
+            <button
+              type="button"
+              disabled={exporting}
+              onClick={() => void downloadTrainingDrafts()}
+              className="rounded-lg border px-3 py-2 font-medium disabled:opacity-50"
+            >
+              {exporting ? "학습 후보 수집 중…" : "학습 후보 내려받기 (JSONL)"}
+            </button>
+            {exportMessage && <p role="status">{exportMessage}</p>}
+          </div>
           {filteredThumbs.length === 0 ? (
             <div
               className="rounded-xl py-6 text-center text-xs sm:text-sm"

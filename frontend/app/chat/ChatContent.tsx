@@ -942,7 +942,7 @@ export default function ChatContent() {
 
     try {
       if (sameView()) setLive({ stage: "planning", text: "" });
-      const { answer, sources } = await askBackend(question, history, undefined, {
+      const { answer, sources, retrievalStatus } = await askBackend(question, history, undefined, {
         onStage: (stage, count) => {
           if (sameView()) setLive((prev) => ({ text: prev?.text ?? "", stage, count }));
         },
@@ -951,6 +951,9 @@ export default function ChatContent() {
         },
       });
       if (sameView()) setLive(null);
+      if (sameView() && retrievalStatus === "partial") {
+        showToast("일부 자료의 검색이 원활하지 않아 확인된 자료로 답변했어요.");
+      }
       const finalContent = answer || "관련 정보를 찾을 수 없습니다.";
       const assistantLocalId = uid();
       // 돌아온 채팅은 기록을 불러오는 중일 수 있어 화면에 직접 붙이지 않고,
@@ -996,8 +999,8 @@ export default function ChatContent() {
       console.error("[chat] askBackend failed:", err);
       if (sameView()) setLive(null);
       if (sameView() || returnedTo(persistedChatId)) {
-        // 횟수 제한(429)만 서버 안내 문구를 보여 준다. 나머지는 내부 오류 문구라 일반 안내로.
-        setChatError(err instanceof AskError && err.status === 429 ? err.message : null);
+        // 횟수 제한과 일시적인 검색 장애는 서버의 사용자용 안내를 표시한다.
+        setChatError(err instanceof AskError && [429, 503].includes(err.status) ? err.message : null);
         setChatState("error");
       }
     } finally {
