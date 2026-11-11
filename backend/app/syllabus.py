@@ -18,8 +18,17 @@ PURPOSES = {
     "weekly": ("주차", "주별", "주간", "weekly"),
     "project": ("프로젝트", "project"),
     "language": ("강의언어", "강의 언어", "영어", "English"),
+    "classroom": ("강의실", "강의시간", "강의 시간", "수업시간", "수업 시간"),
 }
 TRIGGER = re.compile(r"강의\s*계획서|선수\s*과목|주차별|주별\s*강의|교재|평가\s*(?:비율|방법)|담당\s*교수|(?:수업|강의).{0,15}(?:교수님|팀프로젝트|영어)", re.I)
+# "김태국 교수님의 논리회로실습 강의실" named no TRIGGER word and went to vector
+# search, which never surfaced that section (2026-11-11). Classroom/time is a
+# syllabus header fact, but "공용 강의실 대여" is not about a course, so such a
+# request is soft: when no course matches, the question goes to normal search.
+CLASS_FACT = re.compile(r"강의실|(?:강의|수업)\s*(?:시간|요일)")
+# A classroom/time question across a few sections of one term lists them all
+# instead of asking which section (102·103분반 of the same professor).
+CLASS_FACT_SECTIONS = 4
 LEGACY_TITLE = re.compile(r"^(?P<course_no>[A-Za-z0-9]+)_(?P<section>\d+)_(?P<course_name>.+)_(?P<variant>kor|eng|tech)_[a-f0-9]+\.pdf$")
 
 
@@ -39,6 +48,7 @@ class CourseRequest:
     all_terms: bool = False
     all_levels: bool = False
     limit: int | None = None
+    soft: bool = False
 
 
 @dataclass
@@ -58,7 +68,8 @@ def extract_request(question: str, history: list[dict] | None = None) -> CourseR
     listing = is_course_list(question)
     previous = next((extract_request(turn["content"]) for turn in reversed(history)
                      if turn.get("role") == "user" and TRIGGER.search(turn.get("content", ""))), None)
-    if not listing and not TRIGGER.search(question) and not (previous and re.search(r"학기|분반|그\s*(?:수업|과목)|교수|교재|평가", question)):
+    soft = not listing and not TRIGGER.search(question) and bool(CLASS_FACT.search(question))
+    if not listing and not TRIGGER.search(question) and not soft and not (previous and re.search(r"학기|분반|그\s*(?:수업|과목)|교수|교재|평가", question)):
         return None
     purposes = tuple(key for key, words in PURPOSES.items() if any(word in question for word in words))
     year_match = re.search(r"(?<!\d)(20\d{2})(?:\s*(?:년|학년도))?", question)
@@ -113,14 +124,15 @@ def extract_request(question: str, history: list[dict] | None = None) -> CourseR
     cleaned = re.split(r"에서\s*(?:사용|쓰|활용)", cleaned, maxsplit=1)[0]
     # The noun phrase before the request purpose is the course identity;
     # purpose words never enter the document lookup's AND conditions.
-    cleaned = re.split(r"강의\s*계획서|수업|강의는|강의의|평가|교재|선수\s*과목|담당\s*교수|주차|주별|팀프로젝트", cleaned, maxsplit=1)[0]
+    cleaned = re.split(r"강의\s*계획서|강의실|강의\s*(?:시간|요일)|수업|강의는|강의의|평가|교재|선수\s*과목|담당\s*교수|주차|주별|팀프로젝트", cleaned, maxsplit=1)[0]
     cleaned = re.sub(r"(?:에서|에\s*대해|의|은|는|을|를)\s*$", "", cleaned.strip()).strip(" \t.,?!'\"“”")
     cleaned = re.sub(r"\s+(?:과목|어떤|무슨)\s*$", "", cleaned).strip()
     if cleaned in {"", "그", "그 과목", "그 수업", "같은 과목이라도", "알려줘", "알려주세요", "이요", "요", "입니다"}:
         cleaned = ""
     request = CourseRequest(cleaned, year, term,
                             (section[1] or section[2]) if section else (pair[2] if pair else None),
-                            code[1] if code else (pair[1] if pair else None), department[1] if department else None, staff, purposes, level)
+                            code[1] if code else (pair[1] if pair else None), department[1] if department else None, staff, purposes, level,
+                            soft=soft)
     if previous and not request.course and not request.course_no:
         return replace(request, course=previous.course, course_no=previous.course_no,
                        year=request.year if request.year is not None else previous.year,
@@ -237,6 +249,22 @@ def label(source: dict) -> str:
             f"{m.get('department') or '학과 미확인'} · {m.get('staff_name') or '교수 미확인'}")
 
 
+def header_rows(client: Any, variants: list[dict]) -> list[dict]:
+    """Opening chunk (course, time, classroom) of one offering's preferred variant."""
+    selected = min(variants, key=lambda s: {"kor": 0, "tech": 1, "eng": 2}.get(s["metadata"].get("variant"), 3))
+    chunks = client.table("pknu_syllabus_chunks").select("id,source_id,chunk_id,chunk_index,content,metadata").eq("source_id", selected["id"]).eq("chunk_index", 0).limit(1).execute().data or []
+    return [syllabus_row(chunk, selected, ("classroom",)) for chunk in chunks]
+
+
+def syllabus_row(chunk: dict, selected: dict, purposes: tuple[str, ...]) -> dict:
+    m = {**(chunk.get("metadata") or {}), **selected["metadata"]}
+    m.update(doc_title=label(selected), doc_url=selected.get("url") or selected.get("parent_url") or SEARCH_URL,
+             source_link_kind="syllabus_search_page", rpc_name="match_pknu_syllabus_documents")
+    return {**chunk, "title": label(selected), "url": m["doc_url"], "metadata": m,
+            "similarity": 1.0, "_syllabus": True,
+            "content": evidence_window(chunk["content"], purposes)}
+
+
 def evidence_window(content: str, purposes: tuple[str, ...], limit: int = 3500) -> str:
     words = [word for purpose in purposes for word in PURPOSES[purpose]]
     positions = [content.find(word) for word in words if word in content]
@@ -283,6 +311,26 @@ def search_syllabus(client: Any, request: CourseRequest, *, top_k: int = 8) -> S
         m = source["metadata"]
         key = tuple(str(m.get(k, "")) for k in ("year", "term", "course_no", "section"))
         groups.setdefault(key, []).append(source)
+    if len(groups) > 1 and "classroom" in request.purposes and request.year is None and request.term is None:
+        # Calendar order of terms within a year; "summer" > "2" as text.
+        order = {"1": 0, "summer": 1, "2": 2, "winter": 3}
+        latest = max(groups, key=lambda k: (str(k[0]), order.get(str(k[1]), -1)))[:2]
+        same_term = {k: v for k, v in groups.items() if k[:2] == latest}
+        if len(same_term) <= CLASS_FACT_SECTIONS:
+            rows = [row for items in same_term.values() for row in header_rows(client, items)]
+            if not rows:
+                return SyllabusResult([])
+            # One source listing every section: given one row per section the
+            # model answered with the first section only (measured 2026-11-11).
+            first = rows[0]
+            content = "\n\n".join(
+                f"[{row['metadata'].get('section', '?')}분반 · {row['metadata'].get('staff_name') or '교수 미확인'}]\n{row['content']}"
+                for row in sorted(rows, key=lambda row: str(row["metadata"].get("section", ""))))
+            m = first["metadata"]
+            title = (f"{m.get('year', '?')}년 {m.get('term', '?')}학기 · {m.get('course_name', '?')} · "
+                     f"학수번호 {m.get('course_no', '?')} · 분반 {len(rows)}개 (분반마다 강의시간·강의실이 다를 수 있음)")
+            return SyllabusResult([{**first, "id": f"syllabus-sections:{m.get('course_no')}:{m.get('year')}-{m.get('term')}",
+                                    "title": title, "content": content, "metadata": {**m, "doc_title": title}}])
     if len(groups) != 1:
         choices = sorted((min(items, key=lambda s: {"kor": 0, "tech": 1, "eng": 2}.get(s["metadata"].get("variant"), 3))
                           for items in groups.values()), key=label)
@@ -306,10 +354,5 @@ def search_syllabus(client: Any, request: CourseRequest, *, top_k: int = 8) -> S
     rows = []
     count = 32 if "weekly" in request.purposes else max(1, min(top_k, 8))
     for chunk in chunks[:count]:
-        m = {**(chunk.get("metadata") or {}), **selected["metadata"]}
-        m.update(doc_title=label(selected), doc_url=selected.get("url") or selected.get("parent_url") or SEARCH_URL,
-                 source_link_kind="syllabus_search_page", rpc_name="match_pknu_syllabus_documents")
-        rows.append({**chunk, "title": label(selected), "url": m["doc_url"], "metadata": m,
-                     "similarity": 1.0, "_syllabus": True,
-                     "content": evidence_window(chunk["content"], request.purposes)})
+        rows.append(syllabus_row(chunk, selected, request.purposes))
     return SyllabusResult(rows)
