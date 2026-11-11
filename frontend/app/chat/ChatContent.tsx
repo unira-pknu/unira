@@ -122,6 +122,11 @@ const IconSend = () => (
     <polyline points="3,8 8,3 13,8" />
   </svg>
 );
+const IconStop = () => (
+  <svg width="11" height="11" viewBox="0 0 12 12" fill="currentColor">
+    <rect x="1" y="1" width="10" height="10" rx="2" />
+  </svg>
+);
 const IconStar = () => (
   <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6">
     <polygon points="7,1 8.8,5.2 13.5,5.6 10.1,8.7 11.1,13.3 7,10.9 2.9,13.3 3.9,8.7 0.5,5.6 5.2,5.2" />
@@ -764,7 +769,9 @@ export default function ChatContent() {
   };
 
   const bottomRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  // 지금 화면에서 기다리는 답변 요청. 중단 버튼이 이 요청을 끊는다.
+  const askAbortRef = useRef<AbortController | null>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   // 지금 보고 있는 화면의 번호. 새 채팅·기록 불러오기마다 1씩 올라간다.
@@ -893,6 +900,14 @@ export default function ChatContent() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, chatState]);
 
+  // ── 입력칸 높이: 내용에 맞춰 늘리되 약 6줄까지 ─────────────────
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 132)}px`;
+  }, [inputValue]);
+
   // ── AI 응답 요청 (공통) ───────────────────────────────────────
   // history: 이 질문 앞까지의 같은 채팅 대화(오래된 것부터). 이어지는 질문 이해용.
   // resend: 답을 못 받은 질문을 다시 보낼 때. 질문은 이미 저장돼 있어 다시 저장하지 않는다.
@@ -940,13 +955,18 @@ export default function ChatContent() {
       }
     }
 
+    const controller = new AbortController();
+    askAbortRef.current = controller;
+    // 중단했을 때 화면에 남길, 지금까지 쓰인 답.
+    let writtenSoFar = "";
     try {
       if (sameView()) setLive({ stage: "planning", text: "" });
-      const { answer, sources, retrievalStatus } = await askBackend(question, history, undefined, {
+      const { answer, sources, retrievalStatus } = await askBackend(question, history, controller.signal, {
         onStage: (stage, count) => {
           if (sameView()) setLive((prev) => ({ text: prev?.text ?? "", stage, count }));
         },
         onText: (text) => {
+          writtenSoFar = text;
           if (sameView()) setLive((prev) => ({ stage: prev?.stage ?? "writing", count: prev?.count, text }));
         },
       });
@@ -996,6 +1016,28 @@ export default function ChatContent() {
         }
       }
     } catch (err) {
+      if (controller.signal.aborted) {
+        // 사용자가 중단: 오류가 아니다. 쓰인 데까지는 보여 주되 저장하지 않는다(완성된 답이 아님).
+        if (sameView()) {
+          setLive(null);
+          const partial = writtenSoFar.trim();
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: uid(),
+              role: "assistant",
+              content: partial ? `${partial}\n\n_(답변을 중단했어요)_` : "_답변을 중단했어요._",
+              attachments: [],
+            },
+          ]);
+          setChatState("idle");
+        } else if (returnedTo(persistedChatId)) {
+          // 다른 채팅에 갔다가 돌아와서 중단한 경우: 화면은 저장된 기록이라 상태만 푼다.
+          setLive(null);
+          setChatState("idle");
+        }
+        return;
+      }
       console.error("[chat] askBackend failed:", err);
       if (sameView()) setLive(null);
       if (sameView() || returnedTo(persistedChatId)) {
@@ -1004,8 +1046,14 @@ export default function ChatContent() {
         setChatState("error");
       }
     } finally {
+      if (askAbortRef.current === controller) askAbortRef.current = null;
       if (persistedChatId) setChatPending(persistedChatId, false);
     }
+  };
+
+  // ── 답변 중단 ─────────────────────────────────────────────────
+  const handleStop = () => {
+    askAbortRef.current?.abort();
   };
 
   // ── 답을 못 받은 마지막 질문 다시 보내기 ─────────────────────────
@@ -1658,7 +1706,7 @@ export default function ChatContent() {
               /* ── 사용자 말풍선 ── */
               <div key={msg.id} className="flex flex-col items-end gap-1.5">
                 <span
-                  className="max-w-[80%] sm:max-w-xs md:max-w-md px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl text-xs sm:text-sm leading-relaxed"
+                  className="max-w-[80%] sm:max-w-xs md:max-w-md px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl text-xs sm:text-sm leading-relaxed whitespace-pre-wrap break-words"
                   style={{
                     background: "rgba(255,255,255,0.55)",
                     color: "var(--clr-text)",
@@ -1772,29 +1820,47 @@ export default function ChatContent() {
 
         {/* ── 입력창 + 면책 문구 ──────────────────────────────── */}
         <div className="flex-shrink-0 px-3 pb-3 sm:px-5 sm:pb-4 flex flex-col gap-1.5 sm:gap-2">
-          <div className="glass-input flex items-center rounded-xl sm:rounded-2xl px-3 sm:px-4 py-1.5 sm:py-2 shadow-sm gap-1.5 sm:gap-2">
-            {/* 텍스트 입력 */}
-            <input
+          <div className="glass-input flex items-end rounded-xl sm:rounded-2xl px-3 sm:px-4 py-1.5 sm:py-2 shadow-sm gap-1.5 sm:gap-2">
+            {/* 텍스트 입력: 답변 중에도 다음 질문을 미리 쓸 수 있다(보내기만 막힘).
+                컴퓨터는 Enter 보내기·Shift+Enter 줄바꿈, 휴대폰은 Shift가 없어 Enter 줄바꿈·버튼으로 보내기. */}
+            <textarea
               ref={inputRef}
-              type="text"
+              rows={1}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
+              onKeyDown={(e) => {
+                // 한글 조합 중 Enter는 글자 확정용이라 보내지 않는다(마지막 글자 중복 방지).
+                if (e.key !== "Enter" || e.shiftKey || e.nativeEvent.isComposing || isMobile) return;
+                e.preventDefault();
+                handleSend();
+              }}
               placeholder=""
-              disabled={chatState === "loading"}
-              className="flex-1 min-w-0 bg-transparent outline-none text-xs sm:text-sm py-1.5 sm:py-2 font-semibold placeholder:text-gray-400 disabled:opacity-60"
+              className="flex-1 min-w-0 resize-none bg-transparent outline-none text-xs sm:text-sm py-1.5 sm:py-2 font-semibold leading-relaxed placeholder:text-gray-400"
               style={{ color: "var(--clr-text)" }}
             />
 
-            {/* 전송 버튼 */}
-            <button
-              onClick={handleSend}
-              disabled={!inputValue.trim() || chatState === "loading"}
-              className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-white transition-opacity disabled:opacity-35"
-              style={{ background: "var(--clr-navy)" }}
-            >
-              <IconSend />
-            </button>
+            {/* 전송 버튼 — 답변 중에는 중단 버튼 */}
+            {chatState === "loading" ? (
+              <button
+                onClick={handleStop}
+                aria-label="답변 중단"
+                title="답변 중단"
+                className="flex-shrink-0 mb-0.5 sm:mb-0.5 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-white"
+                style={{ background: "var(--clr-navy)" }}
+              >
+                <IconStop />
+              </button>
+            ) : (
+              <button
+                onClick={handleSend}
+                disabled={!inputValue.trim()}
+                aria-label="보내기"
+                className="flex-shrink-0 mb-0.5 sm:mb-0.5 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-white transition-opacity disabled:opacity-35"
+                style={{ background: "var(--clr-navy)" }}
+              >
+                <IconSend />
+              </button>
+            )}
           </div>
 
           {/* 면책 문구 */}
