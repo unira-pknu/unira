@@ -69,13 +69,6 @@ const IconChartBar = () => (
     <rect x="10.5" y="3" width="2.5" height="10" />
   </svg>
 );
-const IconUpload = ({ size = 14 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="8" y1="11" x2="8" y2="2" />
-    <polyline points="4.5,5.5 8,2 11.5,5.5" />
-    <path d="M2 11v2a1 1 0 001 1h10a1 1 0 001-1v-2" />
-  </svg>
-);
 const IconCheckCircle = () => (
   <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="8" cy="8" r="6" />
@@ -792,23 +785,6 @@ export default function AdminPage() {
             ))}
           </div>
         </SectionCard>
-
-        {/* ── 5. 파일 업로드 ── */}
-        <SectionCard icon={<IconUpload />} title="파일 업로드">
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-xs sm:text-sm" style={{ color: NAVY_MUTED }}>
-              파일 업로드 기능을 준비 중입니다.
-            </p>
-            <button
-              type="button"
-              disabled
-              className="px-4 py-1.5 rounded-lg text-xs font-semibold text-white opacity-40 cursor-not-allowed"
-              style={{ background: NAVY }}
-            >
-              업로드 준비 중
-            </button>
-          </div>
-        </SectionCard>
         </>
         )}
       </main>
@@ -818,7 +794,7 @@ export default function AdminPage() {
         className="py-4 text-center text-[10px] sm:text-xs flex-shrink-0"
         style={{ color: NAVY_MUTED }}
       >
-        관리자 전용 화면 · 피드백·질문 통계는 실시간 데이터 (파일 업로드는 준비 중)
+        관리자 전용 화면 · 피드백·질문 통계는 실시간 데이터
       </footer>
     </div>
   );
