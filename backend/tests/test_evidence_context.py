@@ -26,6 +26,19 @@ def test_late_application_passage_keeps_exception_and_required_documents():
     assert len(shown) <= 4000
 
 
+def test_copied_document_title_cannot_displace_the_late_answer():
+    content = ("문서제목: 전공필수 과목 확인 방법\n분류: 학사안내\n파일명: notice.json\n본문: "
+               + "시설 이용 안내입니다.\n" * 100
+               + "전공필수 과목은 학점관리시스템에서 확인합니다.\n"
+               + "다만 적용 교육과정은 입학연도와 전공에 따라 다릅니다.\n"
+               + "시설 이용 안내입니다.\n" * 100)
+    shown = select_evidence(content, question="전공필수 과목 확인 방법", target_chars=120)
+    assert "학점관리시스템에서 확인" in shown
+    assert "입학연도와 전공" in shown
+    assert "파일명: notice.json" not in shown
+    assert len(shown) <= 4000
+
+
 def test_table_selection_repeats_title_columns_and_complete_target_row():
     content = ("일반 안내입니다.\n" * 100 + "## 휴학 유형별 제출 서류\n\n"
                + "| 유형 | 제출 서류 | 인정 기간 |\n| --- | --- | --- |\n"

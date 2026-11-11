@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from concurrent.futures import ThreadPoolExecutor
 from itertools import zip_longest
 from typing import Any, Dict, Iterator, List, Tuple
@@ -47,11 +48,29 @@ def _retrieval_fields(rows: list | None) -> dict:
 
 
 def _is_no_info_answer(answer: str) -> bool:
-    """True only for the bare refusal sentence (prompt rule 5 says to reply
-    with exactly that sentence). A partial answer that merely mentions some
-    detail is missing still counts as answerable."""
+    """Recognize a bare refusal and conservative all-refusal explanations.
+
+    Citations, questions and positive sentences keep a partial answer usable.
+    This is a fallback classifier, not a semantic correctness judgment.
+    """
     core = answer.strip().strip("\"'“”").rstrip(".").strip()
-    return core == NO_INFO_ANSWER.rstrip(".")
+    if core == NO_INFO_ANSWER.rstrip("."):
+        return True
+    if NO_INFO_ANSWER.rstrip(".") not in core or re.search(r"\[\d+\]|[?？]", core):
+        return False
+    sentences = [s.strip() for s in re.split(r"[.!。\n]+", core) if s.strip()]
+    for sentence in sentences:
+        if sentence == NO_INFO_ANSWER.rstrip("."):
+            continue
+        # Do not swallow a mixed clause ("노선은 A이며 시간은 확인되지 않음").
+        if re.search(r"\d|이며|이고|지만|반면|[,;]", sentence):
+            return False
+        if not re.fullmatch(
+            r"(?:따라서\s+)?[^.!?\n]+(?:확인되지 않습니다|확인할 수 없습니다|"
+            r"답변을 드릴 수 없습니다|답변할 수 없습니다)", sentence
+        ):
+            return False
+    return bool(sentences)
 
 
 def _similarity(row: Dict[str, Any]) -> float:
@@ -268,6 +287,7 @@ def _retrieve(
 
     try:
         rows_by_query = [[] for _ in tasks]
+        degraded_tasks: set[int] = set()
         normal_indices = []
         direct_answers = []
         for index, task in enumerate(tasks):
@@ -302,6 +322,8 @@ def _retrieve(
         results = _search_all(state, [search_queries[i] for i in normal_indices], [tasks[i] for i in normal_indices],
                               **({"capture_trace": True} if capture_trace else {}))
         for index, found in zip(normal_indices, results):
+            if isinstance(found, SearchResults) and found.degraded:
+                degraded_tasks.add(index)
             health.channels.extend({**c, "task_index": index} for c in getattr(found, "channels", []))
             health.failed_queries.extend(getattr(found, "failed_queries", []))
             rows_by_query[index] = checked_rows(found, tasks[index])
@@ -343,6 +365,18 @@ def _retrieve(
     if request_trace is not None:
         request_trace.snapshot("request_merge_input", [row for group in rows_by_query for row in group])
     rows = _merge_rows(rows_by_query, state.settings.rag_top_k)
+    selected_keys = {_dedupe_key(row) for row in rows}
+    coverage = []
+    for index, task in enumerate(tasks):
+        found = rows_by_query[index]
+        status = ("candidates_selected" if any(_dedupe_key(row) in selected_keys for row in found)
+                  else "not_selected" if found
+                  else "search_unavailable" if index in degraded_tasks
+                  else "no_candidates")
+        coverage.append({"question": task.text, "status": status, "candidate_count": len(found)})
+    for row in rows:
+        row.setdefault("metadata", {})["request_coverage"] = coverage
+        row["metadata"]["comparison_targets"] = plan.comparison_targets
     if request_trace is not None:
         request_trace.snapshot("request_selected", rows, top_k=state.settings.rag_top_k)
 

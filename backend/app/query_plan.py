@@ -14,8 +14,9 @@ from .freshness import current_term, query_term
 from .course_identity import instructor_name, instructor_names, course_level, is_course_list, resolve_course_question
 
 KST = timezone(timedelta(hours=9))
-TOPICS = re.compile(r"휴학|복학|전과|복수전공|부전공|졸업|수강|공결|출석|성적|장학|등록금|교환학생|교환수학|기숙사|생활관|도서관|증명서|상담센터|보건진료소|와이파이|취업|강의계획|교재|공지|캡스톤|학생증")
+TOPICS = re.compile(r"휴학|복학|전과|복수전공|부전공|졸업|수강|공결|출석|성적|장학|등록금|교환학생|교환수학|기숙사|생활관|도서관|증명서|상담센터|보건진료소|와이파이|취업|강의계획|교재|(?<!인)공지(?!능)|캡스톤|학생증|셔틀버스")
 REFERENT = re.compile(r"거기|그곳|그거|그것|해당\s*(?:신청|프로그램)|그\s*(?:신청|프로그램|장학금|부서)")
+_GENERIC_OFFICE = re.compile(r"(?<![가-힣A-Za-z])(?:학부|학과|전공)\s*사무실")
 SCHOOL_ALIASES = {"부경대": "부경대학교", "제주대": "제주대학교", "부산대": "부산대학교", "창원대": "창원대학교", "충북대": "충북대학교"}
 AUDIENCES = {"외국인": ("외국인", "유학생", "international student"), "내국인": ("내국인",),
              "대학원": ("대학원", "석사", "박사"), "학부": ("학부생", "학부과정"),
@@ -65,6 +66,7 @@ class QuestionPlan(BaseModel):
     clarification: str | None = None
     response_format: str | None = None
     resolved_question: str = ""
+    comparison_targets: list[str] = Field(default_factory=list)
 
     @property
     def queries(self) -> list[str]:
@@ -105,12 +107,71 @@ def _subject_names(text: str) -> set[str]:
     return set(TOPICS.findall(text))
 
 
+def _explicit_departments(text: str) -> list[str]:
+    normalized = departments.normalize(text)
+    names = [name for name in departments.DEPARTMENT_NAMES if departments.normalize(name) in normalized]
+    names.extend(alias for alias in departments.ALIASES if alias in normalized)
+    names = [name for name in names if not any(
+        name != other and departments.normalize(name) in departments.normalize(other) for other in names)]
+    return sorted(set(names), key=lambda name: normalized.index(departments.normalize(name)))
+
+
+def _mentions_entity(query: str, entity: str) -> bool:
+    # Only explicit aliases may expand. A quoted title mentioning a department
+    # must still match the whole title; an AI course is not the AI major.
+    variants = departments.ALIASES.get(entity, (entity,))
+    variants = tuple(departments.normalize(value) for value in variants)
+    return departments.mentions(query, variants)
+
+
+def _ground_queries(original: str, queries: list[str], plan: QuestionPlan) -> list[str]:
+    """Keep explicit names and both sides of a department comparison in search.
+
+    This is a conservative guard for registry names, university names and quoted
+    titles, not a general named-entity recognizer. Unsafe rewrites use the user text.
+    """
+    names = _explicit_departments(original)
+    comparison = len(names) > 1 and re.search(r"비교|차이|같은|같나요|동일|다른|다르", original)
+    if comparison:
+        plan.comparison_targets = names
+        covered = all(any(_mentions_entity(query, name) and not any(
+            _mentions_entity(query, other) for other in names if other != name) for query in queries) for name in names)
+        # Several explicit years can refer to different sides. Do not assign them
+        # to both sides by rewriting the full question mechanically.
+        years = set(re.findall(r"(?<!\d)(?:20\d{2}|\d{2})\s*(?:학번|학년도|년)", original))
+        if not covered and len(names) <= 3 and len(years) <= 1:
+            queries = []
+            for name in names:
+                query = original
+                for other in names:
+                    if other != name:
+                        query = re.sub(re.escape(other) + r"(?:과|와|의|은|는)?", " ", query)
+                query = re.sub(re.escape(name) + r"(?:과|와|의|은|는)?", name + " ", query)
+                query = re.sub(r"(?:이|가)?\s*(?:같은가요|같나요|동일한가요|다른가요|다르나요)[?!.]*$", "", query)
+                queries.append(re.sub(r"\s+", " ", query).strip())
+    institutions = re.findall(r"(?<![가-힣A-Za-z])([가-힣A-Za-z·]{2,}(?:대학교|대학|대))(?=의|에|와|과|\s|[,?!]|$)", original)
+    quoted = re.findall(r'["“‘]([^"”’\n]{2,100})["”’]', original)
+    anchors = [*names, *institutions, *quoted]
+    if any(not any(_mentions_entity(query, anchor) for query in queries) for anchor in anchors):
+        return [original]
+    topics = _subject_names(original)
+    if len(topics) == 1 and not names and not institutions and not quoted:
+        # E.g. "셔틀버스 노선" / "오늘 실시간 도착 시간": each sub-query
+        # needs its subject, not just the generation prompt that sees both.
+        topic = next(iter(topics))
+        queries = [query if topic in query else f"{topic} {query}" for query in queries]
+    return queries
+
+
 def resolve_context(question: str, history: list[dict]) -> tuple[str, bool]:
     """Use only a user's explicit, unique subject; never an assistant's guess."""
     course_question = resolve_course_question(question, history)
     if course_question != question:
         return course_question, False
     previous = next((t.get("content", "") for t in reversed(history) if t.get("role") == "user"), "")
+    if _GENERIC_OFFICE.search(question) and not _explicit_departments(question):
+        if len(_explicit_departments(previous)) == 1:
+            return question + " / " + previous, False
     slot_answer = re.search(r"재학생|신입생|편입생|대학원|외국인|\d+\s*(?:학기|분반|학년)|컴공|[가-힣]+(?:학과|전공)", question)
     if previous and slot_answer and not TOPICS.search(question) and len(_subject_names(previous)) == 1:
         return question + " / " + previous, False
@@ -205,6 +266,9 @@ def rule_plan(question: str, history: list[dict] | None = None) -> QuestionPlan:
     plan.response_format = fmt[0] if fmt else None
     if re.search(r"(?:시스템\s*프롬프트|데이터베이스\s*비밀번호).{0,20}(?:출력|알려|공개)|출처에\s*없어도.{0,40}답", question):
         plan.route, plan.clarification = "refused", "비공개 정보나 근거 없는 내용을 제공할 수 없습니다."
+    elif _GENERIC_OFFICE.search(resolved) and not _explicit_departments(resolved) and not TOPICS.search(resolved):
+        plan.route, plan.missing_fields = "clarification", ["department"]
+        plan.clarification = "어느 학부·학과·전공 사무실의 연락처가 필요하신가요?"
     elif ambiguous:
         plan.route, plan.missing_fields = "clarification", ["subject"]
         plan.clarification = "어느 부서나 시설의 전화번호가 필요하신가요?" if re.search(r"전화번호|연락처", question) else "어떤 신청이나 프로그램에 대해 물으시는 건가요?"
@@ -236,6 +300,8 @@ def finish_plan(plan: QuestionPlan, question: str, queries: list[str], payload: 
             return plan
         if not queries:
             queries = [plan.resolved_question]
+    original = plan.resolved_question or question
+    queries = _ground_queries(original, queries[:3], plan)
     if not queries:
         # A model cannot route a substantive university question to small talk.
         if TOPICS.search(question):
@@ -243,12 +309,21 @@ def finish_plan(plan: QuestionPlan, question: str, queries: list[str], payload: 
         else:
             plan.route = "small_talk"
             return plan
-    original = plan.resolved_question or question
     global_target = target_for(original)
+    if len(_explicit_departments(original)) > 1:
+        global_target.department, global_target.department_id = None, None
+    grades = set(re.findall(r"[1-6]\s*학년", original))
+    cohorts = set(re.findall(r"(?<!\d)(?:20\d{2}|\d{2})\s*학번", original))
+    if len(grades) > 1:
+        global_target.grade = None
+    if len(cohorts) > 1:
+        global_target.admission_year = None
     global_conditions = conditions_for(original)
     # Never adopt a department/student type invented by the planner.
     for query in queries[:3]:
         target = target_for(query)
+        if len(_explicit_departments(query)) > 1:
+            target.department, target.department_id = None, None
         if target.department and target.department not in (global_target.department, None):
             if departments.normalize(target.department) not in departments.normalize(original):
                 target.department, target.department_id = global_target.department, global_target.department_id
@@ -261,7 +336,13 @@ def finish_plan(plan: QuestionPlan, question: str, queries: list[str], payload: 
             target.school = global_target.school
         target.audiences = [a for a in target.audiences if a in global_target.audiences] or global_target.audiences
         target.contexts = [c for c in target.contexts if c in global_target.contexts] or ([] if independent else global_target.contexts)
-        target.grade, target.admission_year = global_target.grade, global_target.admission_year
+        # Do not copy the first side's cohort/grade onto every comparison task.
+        local_grades = set(re.findall(r"[1-6]\s*학년", query))
+        local_cohorts = set(re.findall(r"(?<!\d)(?:20\d{2}|\d{2})\s*학번", query))
+        if not (len(grades) > 1 and len(local_grades) == 1 and local_grades <= grades):
+            target.grade = global_target.grade
+        if not (len(cohorts) > 1 and len(local_cohorts) == 1 and local_cohorts <= cohorts):
+            target.admission_year = global_target.admission_year
         if target.instructor not in instructor_names(original):
             target.instructor = global_target.instructor
         target.level = global_target.level or target.level

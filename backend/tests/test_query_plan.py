@@ -143,3 +143,60 @@ def test_structured_model_clarification_with_no_queries():
     result = plan_question(openai_client=p, model="m", question="그 장소 위치 알려줘", chat_history=[])
     assert result.route == "clarification"
 
+
+@pytest.mark.parametrize("queries", [[], ["일본 해외 프로그램 신청 서류"]])
+def test_dropped_named_university_keeps_the_original_request(queries):
+    q = "2025년 일본 도쿄해양대 프로그램의 신청 대상과 제출 서류를 알려줘."
+    plan = plan_question(openai_client=planner({"queries": queries}), model="m", question=q, chat_history=[])
+    assert plan.route == "search"
+    assert plan.queries == [q]
+
+
+def test_dropped_quoted_title_is_not_replaced_by_a_generic_notice():
+    q = '"2026 교환학생 선발 안내"의 제출 서류를 알려줘'
+    plan = finish_plan(rule_plan(q), q, ["교환학생 제출 서류"])
+    assert plan.queries == [q]
+
+
+def test_collapsed_comparison_gets_one_search_per_explicit_major():
+    q = "인공지능전공과 컴퓨터공학전공의 전공필수 과목이 같은가요?"
+    plan = finish_plan(rule_plan(q), q, ["컴퓨터공학전공 전공필수 과목"])
+    assert plan.comparison_targets == ["인공지능전공", "컴퓨터공학전공"]
+    assert len(plan.tasks) == 2
+    for task, name in zip(plan.tasks, plan.comparison_targets):
+        assert name in task.text and "전공필수" in task.text
+        assert task.target.department == name
+        assert task.target.subject != "공지"  # 인공지능 is not a notice request.
+        assert all(other not in task.text for other in plan.comparison_targets if other != name)
+
+
+def test_comparison_with_different_years_does_not_merge_the_conditions():
+    q = "2020학번 인공지능전공과 2021학번 컴퓨터공학전공의 전공필수를 비교해줘"
+    plan = finish_plan(rule_plan(q), q, ["2020학번 인공지능전공 전공필수"])
+    assert plan.queries == [q]  # Preserve the full request rather than invent per-target years.
+    assert plan.tasks[0].target.department is None
+    assert plan.tasks[0].target.admission_year is None
+
+
+def test_comparison_tasks_keep_their_own_explicit_cohorts():
+    q = "2020학번 인공지능전공과 2021학번 컴퓨터공학전공의 전공필수를 비교해줘"
+    plan = finish_plan(rule_plan(q), q, ["2020학번 인공지능전공 전공필수", "2021학번 컴퓨터공학전공 전공필수"])
+    assert [task.target.admission_year for task in plan.tasks] == [2020, 2021]
+
+
+def test_each_shuttle_subquery_keeps_its_subject():
+    q = "셔틀버스 노선과 오늘 실시간 도착 시간을 알려줘"
+    plan = finish_plan(rule_plan(q), q, ["셔틀버스 노선", "오늘 실시간 도착 시간"])
+    assert plan.queries == ["셔틀버스 노선", "셔틀버스 오늘 실시간 도착 시간"]
+
+
+def test_office_contact_needs_a_department_but_can_use_explicit_user_history():
+    q = "학부 사무실 연락처와 지금 담당자가 자리에 있는지 알려줘"
+    plan = rule_plan(q)
+    assert plan.route == "clarification" and plan.missing_fields == ["department"]
+    resolved = rule_plan(q, [{"role": "user", "content": "컴퓨터공학전공 졸업 요건"}])
+    assert resolved.route == "search" and "컴퓨터공학전공" in resolved.resolved_question
+    guessed = rule_plan(q, [{"role": "assistant", "content": "컴퓨터공학전공입니다"}])
+    assert guessed.route == "clarification"
+    assert rule_plan("신설융합학과 사무실 연락처 알려줘").route == "search"
+

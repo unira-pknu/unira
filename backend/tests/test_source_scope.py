@@ -71,6 +71,18 @@ def test_syllabus_with_generic_reason_word_is_not_absence_policy():
     assert scope_reason(row, task("공결로 인정되는 사유")) == "different_document_purpose"
 
 
+def test_individual_syllabus_is_not_a_major_curriculum_comparison():
+    row = {"title": "2026-1 컴퓨터공학개론", "metadata": {"source_dataset": "pknu_syllabus"}, "content": "강의계획서"}
+    assert scope_reason(row, task("컴퓨터공학전공 전공필수 과목")) == "different_document_purpose"
+    assert scope_reason(row, task("컴퓨터공학개론 강의계획서 평가 방법")) is None
+
+
+def test_sibling_majors_with_the_same_dataset_are_still_distinct():
+    row = {"title": "컴퓨터공학전공 교과과정", "metadata": {"department_id": "ce"}, "content": "전공필수 목록"}
+    assert scope_reason(row, task("인공지능전공 전공필수 과목")) == "different_major"
+    assert scope_reason(row, task("컴퓨터공학전공 전공필수 과목")) is None
+
+
 def test_infection_exception_does_not_replace_general_absence_reasons():
     row = {"title": "출석인정 신청 안내", "content": "감염 증상은 진단서 제출, 백신 접종 차수별 1회만 가능"}
     assert scope_reason(row, task("공결 신청 방법")) == "conditional_exception"

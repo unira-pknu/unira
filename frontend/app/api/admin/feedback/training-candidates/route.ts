@@ -22,6 +22,13 @@ export async function GET(request: NextRequest) {
       cache: "no-store",
       signal: controller.signal,
     });
+    if (upstream.status === 404) {
+      await upstream.body?.cancel();
+      return Response.json(
+        { detail: "운영 서버에 학습 후보 기능이 아직 반영되지 않았습니다. 서버 업데이트 후 다시 시도해 주세요." },
+        { status: 503, headers },
+      );
+    }
     if (!upstream.headers.get("Content-Type")?.includes("application/json")) {
       await upstream.body?.cancel();
       return Response.json({ detail: "백엔드 응답 형식이 올바르지 않습니다." }, { status: 502, headers });
