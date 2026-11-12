@@ -23,8 +23,8 @@ CONTENT = ("교류수학 신청은 학생포털에서 진행합니다. 학생은
            "해당 학기 공지의 대상자 조건에 따라 확인해야 합니다.")
 
 
-def hit(name="evidence", dataset="pknu_main"):
-    return {"id": name, "source_id": name, "title": "교류수학 안내", "content": CONTENT,
+def hit(name="evidence", dataset="pknu_main", title="교류수학 안내"):
+    return {"id": name, "source_id": name, "title": title, "content": CONTENT,
             "url": "https://www.pknu.ac.kr/" + name, "similarity": 0.9,
             "metadata": {"source_dataset": dataset, "source_kind": "page"}}
 
@@ -211,7 +211,9 @@ def test_failed_subquery_preserves_other_subquery_and_marks_unknown_request():
     def find(state, query, task):
         if "휴학" in query:
             raise SearchUnavailable(channels())
-        return SearchResults([hit()], channels=channels(False))
+        # A 장학 document: an exchange-program title would be filtered out of a
+        # general 장학 request by source_scope before the merge is observed.
+        return SearchResults([hit(title="장학 신청 안내")], channels=channels(False))
 
     with patch("app.routers.ask._search_one", side_effect=find):
         rows, sources = _retrieve(state=api_state(), user_id="test", question="휴학과 장학 신청 안내",

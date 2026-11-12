@@ -26,7 +26,8 @@ def case(stage_names=(), request_stages=(), *, mode="applied", complete=True, pa
     }}
 
 
-@pytest.mark.parametrize("stages,request,mode,expected", [
+# "request" is reserved by pytest (the fixture), so the request-level stages are "request_stages".
+@pytest.mark.parametrize("stages,request_stages,mode,expected", [
     ([], [], "no_candidates", "not_observed_in_candidates"),
     (["vector_returned"], [], "no_candidates", "filtered_before_candidate_pool"),
     (["channel_merged"], [], "disabled", "not_admitted_to_candidate_pool"),
@@ -36,8 +37,8 @@ def case(stage_names=(), request_stages=(), *, mode="applied", complete=True, pa
     (["task_selected"], ["task_scope_checked"], "applied", "removed_during_request_merge"),
     (["task_selected"], [], "applied", "excluded_by_task_scope"),
 ])
-def test_classifies_the_observed_loss_stage(stages, request, mode, expected):
-    assert inspect_case(case(stages, request, mode=mode), TARGET)["classification"] == expected
+def test_classifies_the_observed_loss_stage(stages, request_stages, mode, expected):
+    assert inspect_case(case(stages, request_stages, mode=mode), TARGET)["classification"] == expected
 
 
 def test_does_not_call_truncated_or_failed_channels_an_absent_candidate():
