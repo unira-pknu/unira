@@ -10,6 +10,7 @@ from typing import Any, Dict, Iterator, List, Optional, Tuple
 
 from openai import OpenAI
 
+from .openai_params import completion_options
 from .evidence_context import select_evidence
 from .freshness import current_term_label, today_kst
 from .grounding import miscited_numbers, unsupported_numbers
@@ -385,9 +386,8 @@ def _complete(
     response = openai_client.chat.completions.create(
         model=model,
         messages=messages,
-        temperature=temperature,
-        max_tokens=max_tokens,
         timeout=timeout,
+        **completion_options(model, temperature=temperature, max_tokens=max_tokens),
     )
     elapsed_ms = (time.perf_counter() - started) * 1000
     usage = getattr(response, "usage", None)
@@ -417,10 +417,9 @@ def _stream_complete(
     stream = openai_client.chat.completions.create(
         model=model,
         messages=messages,
-        temperature=temperature,
-        max_tokens=max_tokens,
         timeout=timeout,
         stream=True,
+        **completion_options(model, temperature=temperature, max_tokens=max_tokens),
     )
     first_token_ms = None
     for chunk in stream:
