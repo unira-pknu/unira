@@ -12,7 +12,6 @@ import { displayNameOf, useAuth } from "@/app/context/AuthContext";
 import { AskError, askBackend, type AskStage, type ChatTurn } from "@/app/lib/api";
 import { prepareSources } from "./mergeSources";
 import { sourceKindLabel } from "./sourceLabel";
-import PopularQuestions from "@/app/components/PopularQuestions";
 import {
   createChat,
   deleteChat,
@@ -524,6 +523,15 @@ function stageText(stage: AskStage, count?: number): string {
   return "질문을 이해하고 있어요";
 }
 
+// 서버의 "못 찾음" 고정 문장(backend routers/ask.py NO_INFO_ANSWER). 짧은 답에만 범위 안내를 붙인다 —
+// 길게 답하다 일부만 못 찾았다고 한 답에는 붙이지 않는다.
+const NO_INFO_TEXT = "관련 정보를 찾을 수 없습니다";
+const NO_INFO_HINT_MAX_CHARS = 160;
+function isNoInfoAnswer(content: string): boolean {
+  const text = content.trim();
+  return text.includes(NO_INFO_TEXT) && text.length <= NO_INFO_HINT_MAX_CHARS;
+}
+
 function AnswerContent({ content }: { content: string }) {
   return (
     <div
@@ -594,6 +602,13 @@ function AssistantMessage({
         {/* 답변 카드 */}
         <div className="glass-card rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col gap-3 sm:gap-4 w-full">
           <AnswerContent content={shownContent} />
+
+          {/* 못 찾았을 때: 무엇을 물으면 되는지 안내(발표 피드백 "범위를 적어 유도") */}
+          {isNoInfoAnswer(shownContent) && (
+            <p className="text-[11px] sm:text-xs leading-relaxed break-keep" style={{ color: "var(--clr-text-muted)" }}>
+              {chatMeta.noInfoHint}
+            </p>
+          )}
 
           {/* 메시지 레벨 첨부파일 */}
           {msg.attachments && msg.attachments.length > 0 && (
@@ -1817,12 +1832,7 @@ export default function ChatContent() {
 
           {/* 빈 상태 */}
           {messages.length === 0 && chatState === "idle" && (
-            <div className="flex-1 flex flex-col items-center justify-center gap-4 px-4 text-center">
-              <p className="text-xs sm:text-sm" style={{ color: "var(--clr-text-muted)" }}>
-                궁금한 내용을 아래 입력창에 입력해 보세요.
-              </p>
-              <PopularQuestions onSelect={startConversation} />
-            </div>
+            <div className="flex-1" />
           )}
 
           {messages.map((msg, index) =>
