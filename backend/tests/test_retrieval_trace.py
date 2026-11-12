@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.deps import get_state
-from app.query_plan import QuestionPlan, SearchTask
+from app.query_plan import QuestionPlan, SearchTask, Target
 from app.rate_limit import enforce_ask_rate_limit
 from app.retrieval import search
 from app.retrieval_trace import RetrievalTrace, candidate_key, source_identity
@@ -145,8 +145,14 @@ def api_client():
     return TestClient(app)
 
 
+def exchange_task():
+    # The real planner marks "교류수학" questions with the program context; without
+    # it source_scope rightly drops 교류수학 documents from a general request.
+    return SearchTask(text="교류수학 신청 안내", target=Target(contexts=["교류프로그램"]))
+
+
 def test_api_evaluation_connects_trace_identity_prompt_and_answer_citations():
-    plan = QuestionPlan(tasks=[SearchTask(text="교류수학 신청 안내")])
+    plan = QuestionPlan(tasks=[exchange_task()])
     requested = []
 
     def find(state, query, task, *, capture_trace=False):
@@ -170,7 +176,7 @@ def test_api_evaluation_connects_trace_identity_prompt_and_answer_citations():
 
 
 def test_evaluation_retains_trace_on_search_unavailable_without_turning_it_into_success():
-    plan = QuestionPlan(tasks=[SearchTask(text="교류수학 신청 안내")])
+    plan = QuestionPlan(tasks=[exchange_task()])
 
     def unavailable(state, query, task, *, capture_trace=False):
         trace = RetrievalTrace()

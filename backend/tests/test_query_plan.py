@@ -58,6 +58,8 @@ def test_compound_lists_keep_their_own_requested_counts():
     q = "컴공 최신 공지 3개와 기계공학부 최신 공지 5개 알려줘"
     plan = finish_plan(rule_plan(q), q, ["컴공 최신 공지 3개", "기계공학부 최신 공지 5개"])
     assert [task.conditions.limit for task in plan.tasks] == [3, 5]
+    # Each side keeps its own department; "컴공" names ce although the formal name is absent.
+    assert [task.target.department_id for task in plan.tasks] == ["ce", "me"]
 
 
 def test_invented_student_group_is_not_adopted():
