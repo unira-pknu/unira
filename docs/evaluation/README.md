@@ -74,6 +74,25 @@ Evaluation commands are in `eval/tools/` and run from the repository root with
 기본 평가 입력은 빠른 확인용 `smoke.jsonl`입니다. 전체 평가에는 검수를 마친
 `regression.jsonl`을 지정합니다.
 
+## 임베딩·재정렬 모델 비교
+
+`eval/tools/embedding_benchmark.py`는 우리 문서로 임베딩 모델과 재정렬 모델을 비교합니다.
+DB는 읽기만 하고, 결과는 `var/embedding_bench/`(git 제외)에 저장합니다.
+
+- 시험 자료: 학칙·본교 안내 조각 전체, regression의 정답 문서, 학과 안내 페이지, 무작위 공지·학과 조각
+- 질문: 정답 문서 주소가 있는 regression 문항과 실제로 실패했던 질문
+- 점수: 정답 문서가 1·5·10위 안에 드는 비율과 MRR(같은 글의 조각은 하나로 셈)
+
+GPU가 있는 곳(학교 서버)에서 실행합니다. CPU로는 큰 모델 하나에 몇 시간이 걸립니다.
+
+```powershell
+.\backend\.venv\Scripts\python.exe -m eval.tools.embedding_benchmark corpus
+.\backend\.venv\Scripts\python.exe -m eval.tools.embedding_benchmark run
+```
+
+2026-11-12 CPU 측정에서 현재 모델(paraphrase-multilingual-MiniLM-L12-v2)은 질문 64개 중
+정답 문서를 10위 안에 올린 비율이 12%였습니다.
+
 ## 100개 질문 초안
 
 질문 초안은 `draft_question.schema.json` 형식이며, `case_type`,
