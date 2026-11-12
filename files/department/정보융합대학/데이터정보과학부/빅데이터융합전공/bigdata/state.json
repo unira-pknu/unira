@@ -1,0 +1,73 @@
+{
+  "schema_version": "1.0",
+  "dataset": "bigdata",
+  "updated_at": "2026-11-12T10:07:41+09:00",
+  "items": {
+    "https://icms.pknu.ac.kr/bigdata/629": {
+      "source_id": "https://icms.pknu.ac.kr/bigdata/629",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-12T09:40:09+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 7,
+      "name": "프로그램설치",
+      "updated_at": "2026-11-12T09:40:09+09:00"
+    },
+    "https://icms.pknu.ac.kr/bigdata/597": {
+      "source_id": "https://icms.pknu.ac.kr/bigdata/597",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-12T09:42:29+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 249,
+      "name": "취업정보",
+      "updated_at": "2026-11-12T09:42:29+09:00"
+    },
+    "https://icms.pknu.ac.kr/bigdata/923": {
+      "source_id": "https://icms.pknu.ac.kr/bigdata/923",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-12T09:46:22+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 9,
+      "name": "자료실",
+      "updated_at": "2026-11-12T09:46:22+09:00"
+    },
+    "https://icms.pknu.ac.kr/bigdata/599": {
+      "source_id": "https://icms.pknu.ac.kr/bigdata/599",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-12T09:51:44+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 526,
+      "name": "공지사항(학부)",
+      "updated_at": "2026-11-12T09:51:44+09:00"
+    },
+    "https://icms.pknu.ac.kr/bigdata/631": {
+      "source_id": "https://icms.pknu.ac.kr/bigdata/631",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-12T09:55:56+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 99,
+      "name": "공지사항(대학원)",
+      "updated_at": "2026-11-12T09:55:56+09:00"
+    },
+    "https://icms.pknu.ac.kr/bigdata/601": {
+      "source_id": "https://icms.pknu.ac.kr/bigdata/601",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-12T10:07:41+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 39,
+      "name": "전공소식",
+      "updated_at": "2026-11-12T10:07:41+09:00"
+    }
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "dataset": "college",
+  "updated_at": "2026-11-12T11:36:56+09:00",
+  "items": {
+    "https://college.pknu.ac.kr/college/801": {
+      "source_id": "https://college.pknu.ac.kr/college/801",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-12T11:28:01+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 287,
+      "name": "공지사항",
+      "updated_at": "2026-11-12T11:28:01+09:00"
+    },
+    "https://college.pknu.ac.kr/college/7918": {
+      "source_id": "https://college.pknu.ac.kr/college/7918",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-12T11:32:33+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 38,
+      "name": "학사공지",
+      "updated_at": "2026-11-12T11:32:33+09:00"
+    },
+    "https://college.pknu.ac.kr/college/7010": {
+      "source_id": "https://college.pknu.ac.kr/college/7010",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-12T11:33:39+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 30,
+      "name": "자주묻는질문",
+      "updated_at": "2026-11-12T11:33:39+09:00"
+    },
+    "https://college.pknu.ac.kr/college/804": {
+      "source_id": "https://college.pknu.ac.kr/college/804",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-12T11:36:56+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 107,
+      "name": "자료실",
+      "updated_at": "2026-11-12T11:36:56+09:00"
+    }
+  }
+}

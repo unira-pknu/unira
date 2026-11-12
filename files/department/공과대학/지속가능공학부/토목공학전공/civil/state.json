@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "dataset": "civil",
+  "updated_at": "2026-11-12T11:15:25+09:00",
+  "items": {
+    "http://civil.pknu.ac.kr/civil/5329": {
+      "source_id": "http://civil.pknu.ac.kr/civil/5329",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-12T11:10:21+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 15,
+      "name": "졸업요건",
+      "updated_at": "2026-11-12T11:10:21+09:00"
+    },
+    "http://civil.pknu.ac.kr/civil/5344": {
+      "source_id": "http://civil.pknu.ac.kr/civil/5344",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-12T11:15:25+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 213,
+      "name": "취업게시판",
+      "updated_at": "2026-11-12T11:15:25+09:00"
+    }
+  }
+}

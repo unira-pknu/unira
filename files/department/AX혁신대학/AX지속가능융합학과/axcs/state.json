@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "dataset": "axcs",
+  "updated_at": "2026-11-12T09:37:39+09:00",
+  "items": {
+    "https://icms.pknu.ac.kr/axcs/8967": {
+      "source_id": "https://icms.pknu.ac.kr/axcs/8967",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-12T09:37:27+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 2,
+      "name": "공지사항",
+      "updated_at": "2026-11-12T09:37:27+09:00"
+    }
+  }
+}

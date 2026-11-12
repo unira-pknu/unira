@@ -1,0 +1,62 @@
+{
+  "schema_version": "1.0",
+  "dataset": "duem",
+  "updated_at": "2026-11-12T13:40:49+09:00",
+  "items": {
+    "https://duem.pknu.ac.kr/duem/4857": {
+      "source_id": "https://duem.pknu.ac.kr/duem/4857",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-12T13:28:22+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 1,
+      "name": "학부홍보영상",
+      "updated_at": "2026-11-12T13:28:22+09:00"
+    },
+    "https://duem.pknu.ac.kr/duem/4976": {
+      "source_id": "https://duem.pknu.ac.kr/duem/4976",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-12T13:28:27+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 1,
+      "name": "졸업생 사회진출 현황",
+      "updated_at": "2026-11-12T13:28:27+09:00"
+    },
+    "https://duem.pknu.ac.kr/duem/1587": {
+      "source_id": "https://duem.pknu.ac.kr/duem/1587",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-12T13:30:19+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 38,
+      "name": "국제화프로그램",
+      "updated_at": "2026-11-12T13:30:19+09:00"
+    },
+    "https://duem.pknu.ac.kr/duem/1591": {
+      "source_id": "https://duem.pknu.ac.kr/duem/1591",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-12T13:32:54+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 60,
+      "name": "공지사항(대학원)",
+      "updated_at": "2026-11-12T13:32:54+09:00"
+    },
+    "https://duem.pknu.ac.kr/duem/1592": {
+      "source_id": "https://duem.pknu.ac.kr/duem/1592",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-12T13:37:42+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 649,
+      "name": "공지사항",
+      "updated_at": "2026-11-12T13:37:42+09:00"
+    }
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "schema_version": "1.0",
+  "dataset": "aqua-culture",
+  "updated_at": "2026-11-12T09:22:29+09:00",
+  "items": {
+    "http://aqua-culture.pknu.ac.kr/aqua-culture/4174": {
+      "source_id": "http://aqua-culture.pknu.ac.kr/aqua-culture/4174",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-12T09:13:54+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 773,
+      "name": "학과",
+      "updated_at": "2026-11-12T09:13:54+09:00"
+    },
+    "http://aqua-culture.pknu.ac.kr/aqua-culture/4175": {
+      "source_id": "http://aqua-culture.pknu.ac.kr/aqua-culture/4175",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-12T09:16:45+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 155,
+      "name": "대학원",
+      "updated_at": "2026-11-12T09:16:45+09:00"
+    },
+    "http://aqua-culture.pknu.ac.kr/aqua-culture/4197": {
+      "source_id": "http://aqua-culture.pknu.ac.kr/aqua-culture/4197",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-12T09:18:34+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 25,
+      "name": "취업정보",
+      "updated_at": "2026-11-12T09:18:34+09:00"
+    },
+    "http://aqua-culture.pknu.ac.kr/aqua-culture/4198": {
+      "source_id": "http://aqua-culture.pknu.ac.kr/aqua-culture/4198",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-12T09:19:38+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 23,
+      "name": "자료실",
+      "updated_at": "2026-11-12T09:19:38+09:00"
+    },
+    "http://aqua-culture.pknu.ac.kr/aqua-culture/8023": {
+      "source_id": "http://aqua-culture.pknu.ac.kr/aqua-culture/8023",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-12T09:22:20+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 1,
+      "name": "공지",
+      "updated_at": "2026-11-12T09:22:20+09:00"
+    },
+    "http://aqua-culture.pknu.ac.kr/aqua-culture/8744": {
+      "source_id": "http://aqua-culture.pknu.ac.kr/aqua-culture/8744",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-12T09:22:29+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 2,
+      "name": "홍보",
+      "updated_at": "2026-11-12T09:22:29+09:00"
+    }
+  }
+}

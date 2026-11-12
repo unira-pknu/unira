@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "dataset": "chemeng",
+  "updated_at": "2026-11-12T10:32:37+09:00",
+  "items": {
+    "http://chemeng.pknu.ac.kr/chemeng/2463": {
+      "source_id": "http://chemeng.pknu.ac.kr/chemeng/2463",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-12T10:23:56+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 350,
+      "name": "공지사항",
+      "updated_at": "2026-11-12T10:23:56+09:00"
+    },
+    "http://chemeng.pknu.ac.kr/chemeng/2464": {
+      "source_id": "http://chemeng.pknu.ac.kr/chemeng/2464",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-12T10:32:37+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 15,
+      "name": "자료실",
+      "updated_at": "2026-11-12T10:32:37+09:00"
+    }
+  }
+}
