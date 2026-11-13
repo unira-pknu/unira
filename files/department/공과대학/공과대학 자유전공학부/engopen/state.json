@@ -1,0 +1,73 @@
+{
+  "schema_version": "1.0",
+  "dataset": "engopen",
+  "updated_at": "2026-11-13T09:41:38+09:00",
+  "items": {
+    "https://engopen.pknu.ac.kr/engopen/7117": {
+      "source_id": "https://engopen.pknu.ac.kr/engopen/7117",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-13T09:21:20+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 543,
+      "name": "공지사항",
+      "updated_at": "2026-11-13T09:21:20+09:00"
+    },
+    "https://engopen.pknu.ac.kr/engopen/7118": {
+      "source_id": "https://engopen.pknu.ac.kr/engopen/7118",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-13T09:31:20+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 64,
+      "name": "자료실",
+      "updated_at": "2026-11-13T09:31:20+09:00"
+    },
+    "https://engopen.pknu.ac.kr/engopen/7341": {
+      "source_id": "https://engopen.pknu.ac.kr/engopen/7341",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-13T09:31:48+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 13,
+      "name": "자유전공학부란?",
+      "updated_at": "2026-11-13T09:31:48+09:00"
+    },
+    "https://engopen.pknu.ac.kr/engopen/7342": {
+      "source_id": "https://engopen.pknu.ac.kr/engopen/7342",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-13T09:32:05+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 7,
+      "name": "수업/수강신청",
+      "updated_at": "2026-11-13T09:32:05+09:00"
+    },
+    "https://engopen.pknu.ac.kr/engopen/7344": {
+      "source_id": "https://engopen.pknu.ac.kr/engopen/7344",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-13T09:32:41+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 11,
+      "name": "전공선택/배정",
+      "updated_at": "2026-11-13T09:32:41+09:00"
+    },
+    "https://engopen.pknu.ac.kr/engopen/7345": {
+      "source_id": "https://engopen.pknu.ac.kr/engopen/7345",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-13T09:33:49+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 26,
+      "name": "학교생활/기타",
+      "updated_at": "2026-11-13T09:33:49+09:00"
+    }
+  }
+}

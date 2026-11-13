@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "dataset": "eese",
+  "updated_at": "2026-11-13T08:59:34+09:00",
+  "items": {
+    "https://eese.pknu.ac.kr/eese/4055": {
+      "source_id": "https://eese.pknu.ac.kr/eese/4055",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-13T08:59:34+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 39,
+      "name": "공지사항",
+      "updated_at": "2026-11-13T08:59:34+09:00"
+    }
+  }
+}

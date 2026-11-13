@@ -1,0 +1,62 @@
+{
+  "schema_version": "1.0",
+  "dataset": "envatm",
+  "updated_at": "2026-11-13T10:20:31+09:00",
+  "items": {
+    "https://envatm.pknu.ac.kr/envatm/2268": {
+      "source_id": "https://envatm.pknu.ac.kr/envatm/2268",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-13T10:06:02+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 101,
+      "name": "공지사항",
+      "updated_at": "2026-11-13T10:06:02+09:00"
+    },
+    "https://envatm.pknu.ac.kr/envatm/2270": {
+      "source_id": "https://envatm.pknu.ac.kr/envatm/2270",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-13T10:11:39+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 70,
+      "name": "공지사항(대학원)",
+      "updated_at": "2026-11-13T10:11:39+09:00"
+    },
+    "https://envatm.pknu.ac.kr/envatm/6248": {
+      "source_id": "https://envatm.pknu.ac.kr/envatm/6248",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-13T10:15:30+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 105,
+      "name": "홍보게시판",
+      "updated_at": "2026-11-13T10:15:30+09:00"
+    },
+    "https://envatm.pknu.ac.kr/envatm/2269": {
+      "source_id": "https://envatm.pknu.ac.kr/envatm/2269",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-13T10:17:52+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 108,
+      "name": "채용정보",
+      "updated_at": "2026-11-13T10:17:52+09:00"
+    },
+    "https://envatm.pknu.ac.kr/envatm/6307": {
+      "source_id": "https://envatm.pknu.ac.kr/envatm/6307",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-13T10:18:15+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 4,
+      "name": "자료실",
+      "updated_at": "2026-11-13T10:18:15+09:00"
+    }
+  }
+}

@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "dataset": "chemeng",
-  "updated_at": "2026-11-12T10:32:37+09:00",
+  "updated_at": "2026-11-13T08:36:44+09:00",
   "items": {
     "http://chemeng.pknu.ac.kr/chemeng/2463": {
       "source_id": "http://chemeng.pknu.ac.kr/chemeng/2463",
@@ -24,6 +24,17 @@
       "last_no": 15,
       "name": "자료실",
       "updated_at": "2026-11-12T10:32:37+09:00"
+    },
+    "http://chemeng.pknu.ac.kr/chemeng/6442": {
+      "source_id": "http://chemeng.pknu.ac.kr/chemeng/6442",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-13T08:36:39+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 75,
+      "name": "취업게시판",
+      "updated_at": "2026-11-13T08:36:39+09:00"
     }
   }
 }

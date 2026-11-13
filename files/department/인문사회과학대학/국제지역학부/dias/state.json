@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "dataset": "dias",
-  "updated_at": "2026-11-12T12:42:50+09:00",
+  "updated_at": "2026-11-13T08:46:12+09:00",
   "items": {
     "http://dias.pknu.ac.kr/dias/3995": {
       "source_id": "http://dias.pknu.ac.kr/dias/3995",
@@ -46,6 +46,17 @@
       "last_no": 111,
       "name": "공지사항",
       "updated_at": "2026-11-12T12:42:50+09:00"
+    },
+    "http://dias.pknu.ac.kr/dias/9233": {
+      "source_id": "http://dias.pknu.ac.kr/dias/9233",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-13T08:46:03+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 1,
+      "name": "국외현지조사 프로그램",
+      "updated_at": "2026-11-13T08:46:03+09:00"
     }
   }
 }

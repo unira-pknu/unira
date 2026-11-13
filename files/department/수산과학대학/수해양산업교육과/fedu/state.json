@@ -1,0 +1,73 @@
+{
+  "schema_version": "1.0",
+  "dataset": "fedu",
+  "updated_at": "2026-11-13T10:57:07+09:00",
+  "items": {
+    "http://fedu.pknu.ac.kr/fedu/4470": {
+      "source_id": "http://fedu.pknu.ac.kr/fedu/4470",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-13T10:36:12+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 284,
+      "name": "학과",
+      "updated_at": "2026-11-13T10:36:12+09:00"
+    },
+    "http://fedu.pknu.ac.kr/fedu/4471": {
+      "source_id": "http://fedu.pknu.ac.kr/fedu/4471",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-13T10:39:11+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 54,
+      "name": "대학원",
+      "updated_at": "2026-11-13T10:39:11+09:00"
+    },
+    "http://fedu.pknu.ac.kr/fedu/4473": {
+      "source_id": "http://fedu.pknu.ac.kr/fedu/4473",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-13T10:50:27+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 46,
+      "name": "자료실",
+      "updated_at": "2026-11-13T10:50:27+09:00"
+    },
+    "http://fedu.pknu.ac.kr/fedu/6794": {
+      "source_id": "http://fedu.pknu.ac.kr/fedu/6794",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-13T10:52:15+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 337,
+      "name": "대학생활",
+      "updated_at": "2026-11-13T10:52:15+09:00"
+    },
+    "http://fedu.pknu.ac.kr/fedu/8083": {
+      "source_id": "http://fedu.pknu.ac.kr/fedu/8083",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-13T10:55:19+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 43,
+      "name": "추억자료실",
+      "updated_at": "2026-11-13T10:55:19+09:00"
+    },
+    "http://fedu.pknu.ac.kr/fedu/4792": {
+      "source_id": "http://fedu.pknu.ac.kr/fedu/4792",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-13T10:56:41+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 9,
+      "name": "커뮤니티",
+      "updated_at": "2026-11-13T10:56:41+09:00"
+    }
+  }
+}
