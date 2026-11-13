@@ -119,6 +119,18 @@ def build_corpus(out: Path, distractors: int, seed: int) -> None:
     print(f"corpus={len(corpus)} chunks, queries={len(queries)} -> {out}")
 
 
+def _load(factory):
+    """Prefer safetensors weights. torch < 2.6 refuses pickled .bin weights
+    (CVE-2025-32434), which stopped BAAI/bge-m3 on the school server
+    (2026-11-12); the production torch is not upgraded for a benchmark.
+    Models published only as .bin still load the default way."""
+    try:
+        return factory(use_safetensors=True)
+    except (OSError, ValueError, EnvironmentError) as error:
+        print(f"  safetensors unavailable ({type(error).__name__}), loading default weights", flush=True)
+        return factory()
+
+
 def _device(requested: str) -> str:
     if requested != "auto":
         return requested
@@ -134,7 +146,7 @@ def embed(out: Path, key: str, device: str, max_seq: int, batch: int):
     if cache_q.exists() and cache_d.exists():
         return np.load(cache_q), np.load(cache_d), None
     model_id, query_prefix, passage_prefix = EMBEDDING_MODELS[key]
-    model = SentenceTransformer(model_id, device=device)
+    model = _load(lambda **kw: SentenceTransformer(model_id, device=device, model_kwargs=kw))
     if device == "cuda":
         model.half()
     model.max_seq_length = max_seq
@@ -203,7 +215,8 @@ def run(out: Path, models: list[str], rerankers: list[str], device: str, max_seq
     if rerankers and rerankers != ["none"] and orders:
         from sentence_transformers import CrossEncoder
         for rkey in rerankers:
-            model = CrossEncoder(RERANKERS[rkey], device=device, max_length=max_seq)
+            model = _load(lambda **kw: CrossEncoder(RERANKERS[rkey], device=device, max_length=max_seq,
+                                                    automodel_args=kw))
             if device == "cuda":
                 model.model.half()
             for ekey, order in orders.items():
