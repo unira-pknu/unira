@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "dataset": "control",
-  "updated_at": "2026-11-11T10:27:35+09:00",
+  "updated_at": "2026-11-14T08:43:18+09:00",
   "items": {
     "http://control.pknu.ac.kr/control/3883": {
       "source_id": "http://control.pknu.ac.kr/control/3883",

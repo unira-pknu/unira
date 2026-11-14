@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "dataset": "marinebio",
+  "updated_at": "2026-11-14T13:25:15+09:00",
+  "items": {
+    "http://marinebio.pknu.ac.kr/marinebio/4123": {
+      "source_id": "http://marinebio.pknu.ac.kr/marinebio/4123",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-14T13:15:04+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 2657,
+      "name": "학과",
+      "updated_at": "2026-11-14T13:15:04+09:00"
+    },
+    "http://marinebio.pknu.ac.kr/marinebio/4124": {
+      "source_id": "http://marinebio.pknu.ac.kr/marinebio/4124",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-14T13:17:28+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 122,
+      "name": "대학원",
+      "updated_at": "2026-11-14T13:17:28+09:00"
+    },
+    "http://marinebio.pknu.ac.kr/marinebio/4125": {
+      "source_id": "http://marinebio.pknu.ac.kr/marinebio/4125",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-14T13:20:11+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 173,
+      "name": "취업정보",
+      "updated_at": "2026-11-14T13:20:11+09:00"
+    },
+    "http://marinebio.pknu.ac.kr/marinebio/4126": {
+      "source_id": "http://marinebio.pknu.ac.kr/marinebio/4126",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-14T13:23:14+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 54,
+      "name": "자료실",
+      "updated_at": "2026-11-14T13:23:14+09:00"
+    }
+  }
+}

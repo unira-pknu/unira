@@ -1,0 +1,62 @@
+{
+  "schema_version": "1.0",
+  "dataset": "induseng",
+  "updated_at": "2026-11-14T10:29:42+09:00",
+  "items": {
+    "http://induseng.pknu.ac.kr/induseng/1075": {
+      "source_id": "http://induseng.pknu.ac.kr/induseng/1075",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-14T10:16:53+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 15,
+      "name": "교육과정",
+      "updated_at": "2026-11-14T10:16:53+09:00"
+    },
+    "http://induseng.pknu.ac.kr/induseng/7734": {
+      "source_id": "http://induseng.pknu.ac.kr/induseng/7734",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-14T10:19:54+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 804,
+      "name": "공지사항",
+      "updated_at": "2026-11-14T10:19:54+09:00"
+    },
+    "http://induseng.pknu.ac.kr/induseng/7735": {
+      "source_id": "http://induseng.pknu.ac.kr/induseng/7735",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-14T10:23:07+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 130,
+      "name": "대학원 공지사항",
+      "updated_at": "2026-11-14T10:23:07+09:00"
+    },
+    "http://induseng.pknu.ac.kr/induseng/1083": {
+      "source_id": "http://induseng.pknu.ac.kr/induseng/1083",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-14T10:27:24+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 158,
+      "name": "취업지원프로그램",
+      "updated_at": "2026-11-14T10:27:24+09:00"
+    },
+    "http://induseng.pknu.ac.kr/induseng/1082": {
+      "source_id": "http://induseng.pknu.ac.kr/induseng/1082",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-14T10:29:34+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 224,
+      "name": "취업정보",
+      "updated_at": "2026-11-14T10:29:34+09:00"
+    }
+  }
+}

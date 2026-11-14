@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "dataset": "fire",
+  "updated_at": "2026-11-14T09:23:56+09:00",
+  "items": {
+    "http://fire.pknu.ac.kr/fire/867": {
+      "source_id": "http://fire.pknu.ac.kr/fire/867",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-14T09:13:59+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 1260,
+      "name": "공지사항",
+      "updated_at": "2026-11-14T09:13:59+09:00"
+    },
+    "http://fire.pknu.ac.kr/fire/973": {
+      "source_id": "http://fire.pknu.ac.kr/fire/973",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-14T09:16:48+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 280,
+      "name": "공지사항",
+      "updated_at": "2026-11-14T09:16:48+09:00"
+    },
+    "http://fire.pknu.ac.kr/fire/884": {
+      "source_id": "http://fire.pknu.ac.kr/fire/884",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-14T09:19:14+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 54,
+      "name": "학과소식",
+      "updated_at": "2026-11-14T09:19:14+09:00"
+    },
+    "http://fire.pknu.ac.kr/fire/1014": {
+      "source_id": "http://fire.pknu.ac.kr/fire/1014",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-14T09:21:04+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 171,
+      "name": "취업정보",
+      "updated_at": "2026-11-14T09:21:04+09:00"
+    }
+  }
+}

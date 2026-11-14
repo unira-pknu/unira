@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0",
+  "dataset": "liberalitc",
+  "updated_at": "2026-11-14T12:48:49+09:00",
+  "items": {
+    "https://liberalitc.pknu.ac.kr/liberalitc/7160": {
+      "source_id": "https://liberalitc.pknu.ac.kr/liberalitc/7160",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-14T12:46:06+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 204,
+      "name": "공지사항",
+      "updated_at": "2026-11-14T12:46:06+09:00"
+    },
+    "https://liberalitc.pknu.ac.kr/liberalitc/7161": {
+      "source_id": "https://liberalitc.pknu.ac.kr/liberalitc/7161",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-14T12:46:46+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 29,
+      "name": "자주묻는 질문",
+      "updated_at": "2026-11-14T12:46:46+09:00"
+    },
+    "https://liberalitc.pknu.ac.kr/liberalitc/7162": {
+      "source_id": "https://liberalitc.pknu.ac.kr/liberalitc/7162",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-14T12:48:17+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 7,
+      "name": "자료실",
+      "updated_at": "2026-11-14T12:48:17+09:00"
+    }
+  }
+}

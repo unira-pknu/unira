@@ -1,0 +1,161 @@
+{
+  "schema_version": "1.0",
+  "dataset": "japanese",
+  "updated_at": "2026-11-14T11:17:49+09:00",
+  "items": {
+    "http://japanese.pknu.ac.kr/japanese/4336": {
+      "source_id": "http://japanese.pknu.ac.kr/japanese/4336",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-14T10:41:44+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 18,
+      "name": "교육과정",
+      "updated_at": "2026-11-14T10:41:44+09:00"
+    },
+    "http://japanese.pknu.ac.kr/japanese/4337": {
+      "source_id": "http://japanese.pknu.ac.kr/japanese/4337",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-14T10:42:31+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 7,
+      "name": "교과목해설",
+      "updated_at": "2026-11-14T10:42:31+09:00"
+    },
+    "http://japanese.pknu.ac.kr/japanese/4340": {
+      "source_id": "http://japanese.pknu.ac.kr/japanese/4340",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-14T10:44:12+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 19,
+      "name": "교육과정",
+      "updated_at": "2026-11-14T10:44:12+09:00"
+    },
+    "http://japanese.pknu.ac.kr/japanese/4338": {
+      "source_id": "http://japanese.pknu.ac.kr/japanese/4338",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-14T10:44:41+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 6,
+      "name": "교과목해설",
+      "updated_at": "2026-11-14T10:44:41+09:00"
+    },
+    "http://japanese.pknu.ac.kr/japanese/4334": {
+      "source_id": "http://japanese.pknu.ac.kr/japanese/4334",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-14T10:45:16+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 8,
+      "name": "졸업요건",
+      "updated_at": "2026-11-14T10:45:16+09:00"
+    },
+    "http://japanese.pknu.ac.kr/japanese/4342": {
+      "source_id": "http://japanese.pknu.ac.kr/japanese/4342",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-14T10:46:05+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 7,
+      "name": "교육과정",
+      "updated_at": "2026-11-14T10:46:05+09:00"
+    },
+    "http://japanese.pknu.ac.kr/japanese/4347": {
+      "source_id": "http://japanese.pknu.ac.kr/japanese/4347",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-14T10:50:26+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 472,
+      "name": "학사안내",
+      "updated_at": "2026-11-14T10:50:26+09:00"
+    },
+    "http://japanese.pknu.ac.kr/japanese/4348": {
+      "source_id": "http://japanese.pknu.ac.kr/japanese/4348",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-14T10:52:48+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 128,
+      "name": "등록·장학",
+      "updated_at": "2026-11-14T10:52:48+09:00"
+    },
+    "http://japanese.pknu.ac.kr/japanese/4350": {
+      "source_id": "http://japanese.pknu.ac.kr/japanese/4350",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-14T10:58:57+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 301,
+      "name": "행사안내",
+      "updated_at": "2026-11-14T10:58:57+09:00"
+    },
+    "http://japanese.pknu.ac.kr/japanese/4351": {
+      "source_id": "http://japanese.pknu.ac.kr/japanese/4351",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-14T11:00:35+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 17,
+      "name": "자료실",
+      "updated_at": "2026-11-14T11:00:35+09:00"
+    },
+    "http://japanese.pknu.ac.kr/japanese/4328": {
+      "source_id": "http://japanese.pknu.ac.kr/japanese/4328",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-14T11:03:38+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 137,
+      "name": "대학원",
+      "updated_at": "2026-11-14T11:03:38+09:00"
+    },
+    "http://japanese.pknu.ac.kr/japanese/4329": {
+      "source_id": "http://japanese.pknu.ac.kr/japanese/4329",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-14T11:06:46+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 260,
+      "name": "취업안내",
+      "updated_at": "2026-11-14T11:06:46+09:00"
+    },
+    "http://japanese.pknu.ac.kr/japanese/4331": {
+      "source_id": "http://japanese.pknu.ac.kr/japanese/4331",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-14T11:11:12+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 19,
+      "name": "일문동감",
+      "updated_at": "2026-11-14T11:11:12+09:00"
+    },
+    "http://japanese.pknu.ac.kr/japanese/7081": {
+      "source_id": "http://japanese.pknu.ac.kr/japanese/7081",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-14T11:17:17+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 3,
+      "name": "학생회 소식",
+      "updated_at": "2026-11-14T11:17:17+09:00"
+    }
+  }
+}
