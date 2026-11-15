@@ -1,0 +1,95 @@
+{
+  "schema_version": "1.0",
+  "dataset": "fashion",
+  "updated_at": "2026-11-15T08:28:12+09:00",
+  "items": {
+    "http://fashion.pknu.ac.kr/fashion/2129": {
+      "source_id": "http://fashion.pknu.ac.kr/fashion/2129",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-15T08:13:49+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 114,
+      "name": "대학원공지사항",
+      "updated_at": "2026-11-15T08:13:49+09:00"
+    },
+    "http://fashion.pknu.ac.kr/fashion/2119": {
+      "source_id": "http://fashion.pknu.ac.kr/fashion/2119",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-15T08:13:54+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 1,
+      "name": "졸업요건",
+      "updated_at": "2026-11-15T08:13:54+09:00"
+    },
+    "http://fashion.pknu.ac.kr/fashion/2120": {
+      "source_id": "http://fashion.pknu.ac.kr/fashion/2120",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-15T08:14:50+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 10,
+      "name": "학생회소식",
+      "updated_at": "2026-11-15T08:14:50+09:00"
+    },
+    "http://fashion.pknu.ac.kr/fashion/2109": {
+      "source_id": "http://fashion.pknu.ac.kr/fashion/2109",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-15T08:21:50+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 702,
+      "name": "커뮤니티",
+      "updated_at": "2026-11-15T08:21:50+09:00"
+    },
+    "http://fashion.pknu.ac.kr/fashion/2124": {
+      "source_id": "http://fashion.pknu.ac.kr/fashion/2124",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-15T08:24:11+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 139,
+      "name": "취업·진로정보",
+      "updated_at": "2026-11-15T08:24:11+09:00"
+    },
+    "http://fashion.pknu.ac.kr/fashion/2125": {
+      "source_id": "http://fashion.pknu.ac.kr/fashion/2125",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-15T08:27:45+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 46,
+      "name": "공모전안내",
+      "updated_at": "2026-11-15T08:27:45+09:00"
+    },
+    "http://fashion.pknu.ac.kr/fashion/2126": {
+      "source_id": "http://fashion.pknu.ac.kr/fashion/2126",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-15T08:27:52+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 2,
+      "name": "Q&A",
+      "updated_at": "2026-11-15T08:27:52+09:00"
+    },
+    "http://fashion.pknu.ac.kr/fashion/2127": {
+      "source_id": "http://fashion.pknu.ac.kr/fashion/2127",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-15T08:28:02+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 3,
+      "name": "서식자료실",
+      "updated_at": "2026-11-15T08:28:02+09:00"
+    }
+  }
+}

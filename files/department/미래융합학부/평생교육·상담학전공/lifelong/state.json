@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "dataset": "lifelong",
+  "updated_at": "2026-11-15T11:42:48+09:00",
+  "items": {
+    "https://lifelong.pknu.ac.kr/lifelong/4027": {
+      "source_id": "https://lifelong.pknu.ac.kr/lifelong/4027",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-15T11:38:53+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 6,
+      "name": "전공FAQ",
+      "updated_at": "2026-11-15T11:38:53+09:00"
+    },
+    "https://lifelong.pknu.ac.kr/lifelong/4038": {
+      "source_id": "https://lifelong.pknu.ac.kr/lifelong/4038",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-15T11:42:47+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 90,
+      "name": "공지사항",
+      "updated_at": "2026-11-15T11:42:47+09:00"
+    }
+  }
+}

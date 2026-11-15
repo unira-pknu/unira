@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "dataset": "bme",
-  "updated_at": "2026-11-10T22:38:20+09:00",
+  "updated_at": "2026-11-15T07:14:58+09:00",
   "items": {
     "http://bme.pknu.ac.kr/bme/7236": {
       "source_id": "http://bme.pknu.ac.kr/bme/7236",

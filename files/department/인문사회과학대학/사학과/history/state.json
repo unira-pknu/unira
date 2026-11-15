@@ -1,0 +1,73 @@
+{
+  "schema_version": "1.0",
+  "dataset": "history",
+  "updated_at": "2026-11-15T09:33:52+09:00",
+  "items": {
+    "http://history.pknu.ac.kr/history/3893": {
+      "source_id": "http://history.pknu.ac.kr/history/3893",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-15T09:19:53+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 1,
+      "name": "졸업안내",
+      "updated_at": "2026-11-15T09:19:53+09:00"
+    },
+    "http://history.pknu.ac.kr/history/3895": {
+      "source_id": "http://history.pknu.ac.kr/history/3895",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-15T09:21:35+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 6994,
+      "name": "장학안내",
+      "updated_at": "2026-11-15T09:21:35+09:00"
+    },
+    "http://history.pknu.ac.kr/history/3913": {
+      "source_id": "http://history.pknu.ac.kr/history/3913",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-15T09:24:57+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 37,
+      "name": "공지사항",
+      "updated_at": "2026-11-15T09:24:57+09:00"
+    },
+    "http://history.pknu.ac.kr/history/3915": {
+      "source_id": "http://history.pknu.ac.kr/history/3915",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-15T09:26:48+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 8,
+      "name": "글로벌정책대학원 공지사항",
+      "updated_at": "2026-11-15T09:26:48+09:00"
+    },
+    "http://history.pknu.ac.kr/history/6418": {
+      "source_id": "http://history.pknu.ac.kr/history/6418",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-15T09:29:01+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 51,
+      "name": "사학과 소식",
+      "updated_at": "2026-11-15T09:29:01+09:00"
+    },
+    "http://history.pknu.ac.kr/history/6420": {
+      "source_id": "http://history.pknu.ac.kr/history/6420",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-15T09:33:34+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 59,
+      "name": "취업 및 진로 정보",
+      "updated_at": "2026-11-15T09:33:34+09:00"
+    }
+  }
+}

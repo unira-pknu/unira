@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "dataset": "ee",
-  "updated_at": "2026-11-11T01:40:19+09:00",
+  "updated_at": "2026-11-15T07:53:30+09:00",
   "items": {
     "https://ee.pknu.ac.kr/ee/1663": {
       "source_id": "https://ee.pknu.ac.kr/ee/1663",
@@ -40,12 +40,12 @@
       "source_id": "https://ee.pknu.ac.kr/ee/1669",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-11-11T01:32:48+09:00",
+      "last_seen_at": "2026-11-15T07:50:55+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 1219,
+      "last_no": 1220,
       "name": "전자공학전공",
-      "updated_at": "2026-11-11T01:32:48+09:00"
+      "updated_at": "2026-11-15T07:50:55+09:00"
     },
     "https://ee.pknu.ac.kr/ee/1670": {
       "source_id": "https://ee.pknu.ac.kr/ee/1670",
@@ -73,12 +73,12 @@
       "source_id": "https://ee.pknu.ac.kr/ee/4060",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-11-11T01:40:19+09:00",
+      "last_seen_at": "2026-11-15T07:53:15+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 127,
+      "last_no": 128,
       "name": "취업정보게시판",
-      "updated_at": "2026-11-11T01:40:19+09:00"
+      "updated_at": "2026-11-15T07:53:15+09:00"
     }
   }
 }
