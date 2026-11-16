@@ -58,8 +58,14 @@ def _strings(value: Any, field: str, *, required: bool = False) -> list[str]:
 
 def build_datasets(
     candidates: list[dict[str, Any]], holdouts: list[dict[str, Any]],
+    *, allow_synthetic: bool = False,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], int]:
-    """Fail before writing on incomplete approval, conflicting labels or split leakage."""
+    """Fail on incomplete approval or split leakage.
+
+    Synthetic rows are accepted only by the stage-two pipeline after it has
+    checked generation anchors, current parent feedback and saved evidence.
+    The original CLI continues to accept real feedback only.
+    """
     assigned: dict[str, str] = {}
     for case in holdouts:
         assigned[f"q:{question_key(case['question'])}"] = "holdout"
@@ -82,7 +88,17 @@ def build_datasets(
         if candidate_id in seen_ids:
             raise ValueError(f"duplicate approved feedback id: {candidate_id}")
         seen_ids.add(candidate_id)
-        if row.get("schema_version") != 1 or row.get("rating") != "down" or row.get("pairing_status") != "matched":
+        synthetic = row.get("kind") == "synthetic_feedback_qa"
+        if synthetic and allow_synthetic:
+            if (row.get("schema_version") != 1 or row.get("synthetic") is not True
+                    or row.get("review_package_version") != 1):
+                raise ValueError(f"{candidate_id}: synthetic candidates must come from a stage-two review package")
+            UUID(_text(row.get("parent_feedback_id"), "parent_feedback_id"))
+            for field in ("parent_question_key", "candidate_fingerprint", "parent_feedback_fingerprint"):
+                if not re.fullmatch(r"[a-f0-9]{64}", _text(row.get(field), field)):
+                    raise ValueError(f"{candidate_id}: invalid {field}")
+        elif (synthetic or row.get("synthetic") is True or row.get("schema_version") != 1
+              or row.get("rating") != "down" or row.get("pairing_status") != "matched"):
             raise ValueError(f"{candidate_id}: only matched downvote drafts with schema_version=1 can be approved")
         if review.get("privacy_checked") is not True or review.get("context_checked") is not True:
             raise ValueError(f"{candidate_id}: privacy_checked and context_checked must both be true")
@@ -101,12 +117,14 @@ def build_datasets(
         if not re.sub(r"[\s?!.~…]+", "", question):
             raise ValueError("question must contain more than punctuation")
         answer = _text(review.get("corrected_answer"), "corrected_answer")
-        rejected_answer = _text(row.get("rejected_answer"), "rejected_answer")
-        if question_key(answer) == question_key(rejected_answer):
+        rejected_answer = "" if synthetic else _text(row.get("rejected_answer"), "rejected_answer")
+        if rejected_answer and question_key(answer) == question_key(rejected_answer):
             raise ValueError(f"{candidate_id}: corrected_answer still equals the rejected answer")
         sources = _strings(review.get("verified_sources"), "verified_sources", required=True)
         source_keys = {source_key(url) for url in sources}
         tokens = {f"q:{key}", f"q:{original_key}", *(f"s:{url}" for url in source_keys)}
+        if synthetic:
+            tokens.add(f"q:{row['parent_question_key']}")
         for token in tokens:
             previous = assigned.get(token)
             if previous and previous != split:
@@ -123,7 +141,7 @@ def build_datasets(
             facts = _strings(review.get("required_facts"), "required_facts", required=True)
             forbidden = _strings(review.get("forbidden_claims", []), "forbidden_claims")
             evaluation.append({
-                "id": "feedback_" + candidate_id.replace("-", ""),
+                "id": ("synthetic_feedback_" if synthetic else "feedback_") + candidate_id.replace("-", ""),
                 "question": question,
                 "category": "feedback",
                 "answerable": True,
@@ -133,7 +151,7 @@ def build_datasets(
                                    for index, fact in enumerate(facts, 1)],
                 "forbidden_claims": forbidden,
                 "expected_no_info": False,
-                "tags": ["negative_feedback"],
+                "tags": ["synthetic_feedback"] if synthetic else ["negative_feedback"],
                 "difficulty": "hard",
                 "label_status": "ready",
                 "expected_behavior": answer,

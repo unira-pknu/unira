@@ -24,6 +24,10 @@ class FatalLLMError(RuntimeError):
     """Retrying cannot help (bad key, no permission, bad request): stop the run."""
 
 
+class InvalidLLMOutput(ValueError):
+    """A refused or incomplete JSON response must not become a data label."""
+
+
 FATAL_STATUS_CODES = {400, 401, 403, 404}
 
 
@@ -73,8 +77,12 @@ class BudgetedLLM:
                 usage = getattr(response, "usage", None)
                 self.prompt_tokens += getattr(usage, "prompt_tokens", 0) or 0
                 self.completion_tokens += getattr(usage, "completion_tokens", 0) or 0
-                return (response.choices[0].message.content or "").strip()
-            except BudgetExceeded:
+                choice = response.choices[0]
+                if json_mode and (getattr(choice, "finish_reason", None) not in (None, "stop")
+                                  or getattr(choice.message, "refusal", None)):
+                    raise InvalidLLMOutput("JSON output was incomplete or refused")
+                return (choice.message.content or "").strip()
+            except (BudgetExceeded, InvalidLLMOutput):
                 raise
             except Exception as exc:  # network/rate-limit/API errors
                 last_error = exc

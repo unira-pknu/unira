@@ -6,10 +6,14 @@
 Evaluation commands are in `eval/tools/` and run from the repository root with
 `python -m eval.tools.<command>`.
 
+다음 학습을 준비할 때는 [이후 학습 진행 계획](FEEDBACK_TRAINING_NEXT_STEPS.md)에서
+현재 데이터 상태, 추가 근거·검수, 비용 확인, 시범 학습과 전체 평가 순서를 확인합니다.
+
 평가 케이스는 목적에 따라 분리합니다.
 
 - `cases/smoke.jsonl`: 빠른 확인용 핵심 질문 8~15개. 작은 변경 후 실행합니다.
 - `cases/regression.jsonl`: 출처와 정답 라벨 검수를 마친 100개 질문의 회귀 평가 세트입니다. 모든 행이 `ready` 상태입니다.
+- `cases/feedback_graduation_20261115.jsonl`: 졸업요건 피드백 두 질문의 별도 평가 세트입니다. [공식 자료 기반 라벨 수정 내역](GRADUATION_LABEL_REVIEW_20261115.md)을 참고합니다.
 - `cases/challenge.jsonl`: 범위 밖, 애매한 표현, 오타, 복합 조건처럼 실패 가능성이 높은 질문만 집중 평가합니다. 회귀 세트와 일부 중복될 수 있습니다.
 - `schemas/eval_case.schema.json`: 구조화 평가 케이스의 JSON Schema입니다.
 - `baselines/`: 코드와 모델 및 RAG 설정별 기준 점수를 보관합니다.
@@ -51,8 +55,14 @@ Evaluation commands are in `eval/tools/` and run from the repository root with
   `expected_source`의 별칭 정규화와 ID 기준 Recall@k·MRR 계산은 아직 구현하지 않았습니다.
 - 현재 smoke 8문항과 regression 100문항에는 강의계획서용 명시적 분류가 없습니다.
   공지 외 본교 자료 및 여러 학과를 포함한 분류별 평가 질문을 출처 검수 후 보강해야 합니다.
-- 싫어요 피드백의 검수 후보 다운로드와 승인된 정답의 학습/평가 JSONL 변환은
-  [피드백 학습 데이터](FEEDBACK_TRAINING.md) 절차를 사용합니다. 모델 학습 실행 파이프라인은 없습니다.
+- 싫어요 피드백의 관리자 API CLI 수집·검수 결과 대조와 승인된 정답의 학습/평가 JSONL 변환은
+  [피드백 학습 데이터](FEEDBACK_TRAINING.md) 절차를 사용합니다.
+  [피드백 기반 AI 후보 생성](FEEDBACK_AI_CANDIDATES.md)은 검색 원문을 바탕으로 수정 답변과 관련 질문을
+  검수 대기 초안으로 생성합니다.
+  [② 검수·데이터 변환 자동화](FEEDBACK_REVIEW_AUTOMATION.md)는 합성 질문까지 포함한 검수 큐를 만들고
+  승인·근거·분리 검사를 통과한 항목만 변환하며 보류 사유를 기록합니다.
+  [③ 학습·비교 평가 자동화](FEEDBACK_TRAINING_AUTOMATION.md)는 승인 데이터 재검사, 선택적 OpenAI 학습 제출,
+  상태 확인, 동일 검색 자료에서의 두 모델 비교와 보고서를 연결합니다. 현재 3건은 최소 학습 건수에 미달합니다.
   이관 후 출처 ID를 검증하고 같은 출처의 여러 청크가 학습·평가 양쪽에 섞이지 않도록 분리해야 합니다.
 
 평가 도구의 단위 테스트와 라벨 형식 검사만으로 실제 검색·답변 품질을 판단할 수는 없습니다.
