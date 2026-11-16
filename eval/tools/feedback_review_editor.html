@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'none'; img-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'">
+  <meta name="referrer" content="no-referrer">
+  <title>피드백 검수 편집기</title>
+  <style>
+    :root { color-scheme: light; --ink:#20313c; --muted:#657680; --line:#dce4e4; --paper:#fff; --bg:#f3f6f5; --accent:#166e60; --soft:#e6f3ee; --warning:#985a19; --danger:#a33539; font-family:system-ui,-apple-system,"Malgun Gothic",sans-serif; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--ink); font-size:14px; line-height:1.65; }
+    button,input,select,textarea { font:inherit; }
+    button { cursor:pointer; border:1px solid var(--line); background:var(--paper); color:var(--ink); border-radius:8px; padding:9px 14px; }
+    button:hover:not(:disabled) { border-color:var(--accent); background:var(--soft); }
+    button:disabled { opacity:.45; cursor:not-allowed; }
+    button.primary { color:white; border-color:var(--accent); background:var(--accent); }
+    button.primary:hover:not(:disabled) { background:#10564b; }
+    button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible { outline:3px solid #66afa0; outline-offset:2px; }
+    header { padding:25px 32px 18px; border-bottom:1px solid var(--line); background:var(--paper); }
+    .brand { color:var(--accent); font-size:11px; font-weight:800; letter-spacing:.16em; }
+    h1 { margin:3px 0 4px; font-size:25px; letter-spacing:-.04em; }
+    h2 { font-size:18px; margin:0 0 14px; }
+    h3 { font-size:14px; margin:0 0 8px; }
+    p { margin:6px 0; }
+    .muted { color:var(--muted); }
+    .toolbar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top:18px; }
+    .toolbar .spacer { flex:1; }
+    .file-label { font-size:12px; overflow-wrap:anywhere; }
+    #notice { margin:14px 32px 0; padding:11px 14px; border-radius:8px; background:var(--soft); overflow-wrap:anywhere; white-space:pre-line; }
+    #notice.error { color:var(--danger); background:#fff0ee; }
+    #notice:empty { display:none; }
+    .stats { display:flex; flex-wrap:wrap; gap:24px; padding:15px 32px; color:var(--muted); font-size:12px; }
+    .stats strong { color:var(--ink); font-size:19px; margin-right:5px; }
+    .layout { display:grid; grid-template-columns:290px minmax(0,1fr); gap:20px; max-width:1600px; padding:0 32px 30px; margin:auto; }
+    aside { align-self:start; position:sticky; top:16px; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:var(--paper); }
+    .filters { padding:15px; display:grid; gap:9px; border-bottom:1px solid var(--line); }
+    input[type=text],input[type=search],select,textarea { width:100%; border:1px solid #cbd7d5; border-radius:7px; padding:9px 11px; background:white; color:var(--ink); }
+    textarea { resize:vertical; min-height:100px; line-height:1.8; }
+    .candidate-list { max-height:65vh; overflow:auto; padding:7px; }
+    .candidate { display:block; text-align:left; width:100%; border:1px solid transparent; padding:12px; margin:3px 0; }
+    .candidate[aria-current=true] { border-color:#97c7bb; background:var(--soft); }
+    .candidate .question { display:block; margin-top:6px; overflow-wrap:anywhere; }
+    .candidate .meta { color:var(--muted); font-size:11px; }
+    .badge { display:inline-block; border-radius:30px; padding:1px 8px; font-size:11px; background:#edf0f2; }
+    .badge.approved { background:#d9eee4; color:#176244; }
+    .badge.rejected { background:#f6e6e6; color:#8b4447; }
+    .empty { padding:65px 25px; border:1px dashed #becdca; border-radius:12px; text-align:center; background:#fbfdfc; }
+    .empty h2 { margin-bottom:9px; }
+    .panel { background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:22px; margin-bottom:16px; min-width:0; }
+    .panel-top { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+    .eyebrow { font-size:11px; color:var(--accent); font-weight:700; letter-spacing:.04em; margin-bottom:4px; }
+    .identity { font-family:ui-monospace,monospace; font-size:11px; color:var(--muted); overflow-wrap:anywhere; }
+    .field { display:block; margin-top:15px; }
+    .field-title { display:block; font-weight:650; margin-bottom:6px; }
+    .help { font-size:12px; color:var(--muted); margin-top:5px; }
+    .two-column { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+    .readonly { white-space:pre-wrap; overflow-wrap:anywhere; margin:0; font:inherit; line-height:1.85; }
+    .old-answer { padding:14px; border-radius:8px; background:#f8f4f2; max-height:380px; overflow:auto; }
+    #correctedAnswer { min-height:240px; border-color:#93bcaf; }
+    .checkbox { display:flex; gap:9px; align-items:flex-start; margin-top:12px; }
+    .checkbox input { margin-top:6px; accent-color:var(--accent); }
+    .issues { padding:12px 16px 12px 32px; border-radius:8px; background:#fff7e9; color:var(--warning); font-size:12px; }
+    .issues li + li { margin-top:3px; }
+    .valid { color:var(--accent); font-size:12px; }
+    details { margin-top:14px; border-top:1px solid var(--line); padding-top:12px; }
+    summary { cursor:pointer; font-weight:600; }
+    .source { border:1px solid var(--line); border-radius:8px; padding:14px; margin-top:10px; }
+    .source a { color:var(--accent); overflow-wrap:anywhere; }
+    blockquote { border-left:3px solid #9ac4b6; padding:7px 12px; margin:10px 0; white-space:pre-wrap; overflow-wrap:anywhere; background:#f5faf7; }
+    .actions { display:flex; gap:9px; align-items:center; flex-wrap:wrap; margin-top:18px; }
+    .nav { display:flex; gap:8px; }
+    [hidden] { display:none !important; }
+    footer { padding:0 32px 24px; text-align:center; color:var(--muted); font-size:12px; }
+    @media(max-width:1000px) { .two-column { grid-template-columns:1fr; } .layout { grid-template-columns:245px minmax(0,1fr); padding:0 18px 25px; gap:14px; } header { padding:20px; } }
+    @media(max-width:700px) { .layout { display:block; } aside { position:static; margin-bottom:16px; } .candidate-list { max-height:230px; } .stats { padding:14px 20px; gap:16px; } .toolbar .spacer { display:none; } .panel { padding:17px; } #notice { margin:12px 18px; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">CAMPUS RAG · REVIEW WORKSPACE</div>
+    <h1>답변을 읽고, 근거를 확인하고, 검수하세요.</h1>
+    <p class="muted">선택한 파일은 이 브라우저 안에서 처리합니다. 수정 후 검수본 JSONL을 내려받으세요.</p>
+    <div class="toolbar">
+      <button id="openReview" type="button" class="primary">피드백 JSONL 열기</button>
+      <button id="openEvidence" type="button" disabled>근거 JSONL 연결</button>
+      <span id="fileName" class="file-label muted">review.jsonl을 선택하세요</span>
+      <span class="spacer"></span>
+      <span id="dirtyState" class="muted" role="status"></span>
+      <button id="download" type="button" disabled>검수본 JSONL 저장</button>
+      <button id="confirmSaved" type="button" hidden>파일 저장 완료 확인</button>
+    </div>
+    <input id="reviewFile" type="file" accept=".jsonl,.ndjson,application/x-ndjson" hidden>
+    <input id="evidenceFile" type="file" accept=".jsonl,.ndjson,application/x-ndjson" hidden>
+  </header>
+  <div id="notice" role="status" aria-live="polite"></div>
+  <div class="stats" aria-label="검수 현황">
+    <span><strong id="totalCount">0</strong>전체</span>
+    <span><strong id="pendingCount">0</strong>검수 대기</span>
+    <span><strong id="approvedCount">0</strong>승인</span>
+    <span><strong id="rejectedCount">0</strong>제외</span>
+  </div>
+  <div class="layout">
+    <aside aria-label="피드백 목록">
+      <div class="filters">
+        <label for="search" class="help">질문·답변·의견·ID 검색</label>
+        <input id="search" type="search" placeholder="찾고 싶은 내용을 입력하세요">
+        <label for="statusFilter" class="help">검수 상태</label>
+        <select id="statusFilter"><option value="all">전체 항목</option value="pending">검수 대기</option><option value="approved">승인</option><option value="rejected">제외</option></select>
+      </div>
+      <div id="candidateList" class="candidate-list"><p class="muted" style="padding:12px">아직 불러온 피드백이 없습니다.</p></div>
+    </aside>
+    <main>
+      <section id="empty" class="empty">
+        <div class="eyebrow">01 / OPEN A REVIEW FILE</div>
+        <h2>한 줄의 JSON 대신, 항목별로 검수하세요.</h2>
+        <p>상단에서 <strong>review.jsonl</strong>을 선택하세요.</p>
+        <p class="muted">2단계의 review_queue.jsonl도 열 수 있습니다. evidence.jsonl을 연결하면 근거를 함께 확인합니다.</p>
+      </section>
+      <div id="editor" hidden>
+        <section class="panel">
+          <div class="panel-top">
+            <div><div id="position" class="eyebrow"></div><h2 style="margin:0">질문과 답변 검토</h2></div>
+            <div class="nav"><button id="previous" type="button">이전</button><button id="next" type="button">다음</button></div>
+          </div>
+          <p id="identity" class="identity"></p>
+          <p id="pairing" class="help"></p>
+          <label class="field"><span class="field-title">질문 · 개인정보 제거와 필요한 맥락 보강</span><textarea id="question" data-field="question" rows="3"></textarea></label>
+          <div class="two-column" style="margin-top:20px">
+            <div><h3 id="originalAnswerTitle">기존 답변</h3><pre id="rejectedAnswer" class="readonly old-answer"></pre></div>
+            <label><span class="field-title">검수할 수정 답변</span><textarea id="correctedAnswer" data-field="corrected_answer" rows="10" placeholder="공식 근거를 확인한 정답을 작성하세요"></textarea></label>
+          </div>
+          <details><summary id="feedbackInfoTitle">사용자 피드백과 AI 실패 분석</summary><pre id="feedbackInfo" class="readonly"></pre></details>
+          <pre id="pipelineInfo" class="readonly help"></pre>
+        </section>
+        <section class="panel">
+          <div class="eyebrow">02 / CHECK THE EVIDENCE</div>
+          <h2>근거와 정답 조건</h2>
+          <div id="evidenceContent"></div>
+          <label class="field"><span class="field-title">직접 확인한 공식 문서 URL · 한 줄에 하나</span><textarea id="verifiedSources" data-field="verified_sources" rows="3" placeholder="https://..."></textarea></label>
+          <p class="help">제안된 인용을 확인한 뒤 URL을 직접 입력하세요. 연결된 출처를 자동으로 검증 완료 처리하지 않습니다.</p>
+          <div class="two-column">
+            <label class="field"><span class="field-title">필수 사실 · 한 줄에 하나</span><textarea id="requiredFacts" data-field="required_facts" rows="4"></textarea></label>
+            <label class="field"><span class="field-title">금지할 주장 · 한 줄에 하나</span><textarea id="forbiddenClaims" data-field="forbidden_claims" rows="4"></textarea></label>
+          </div>
+        </section>
+        <section class="panel">
+          <div class="eyebrow">03 / MAKE A REVIEW DECISION</div>
+          <h2>검수 기록과 승인</h2>
+          <div class="two-column">
+            <label><span class="field-title">사용 구분</span><select id="split" data-field="split"><option value="">선택하세요</option><option value="train">학습용 · train</option><option value="evaluation">평가용 · evaluation</option></select></label>
+            <label><span class="field-title">검수자 식별명</span><input id="reviewedBy" type="text" data-field="reviewed_by" autocomplete="off" placeholder="검수자를 구분할 이름"></label>
+          </div>
+          <label class="checkbox"><input id="privacyChecked" type="checkbox" data-field="privacy_checked"><span>학습에 들어갈 질문과 수정 답변의 개인정보를 확인했습니다.</span></label>
+          <label class="checkbox"><input id="contextChecked" type="checkbox" data-field="context_checked"><span>학과·대상·적용 시점·예외와 근거 문맥을 확인했습니다.</span></label>
+          <p id="reviewedAt" class="help"></p>
+          <p class="help">승인 시 현재 시각(한국 시간)을 기록합니다. 승인한 내용을 다시 편집하면 검수 대기로 돌아갑니다.</p>
+          <ul id="issues" class="issues"></ul>
+          <p id="ready" class="valid" hidden>필수 입력이 준비되었습니다. 근거와 정답을 확인했다면 승인하세요.</p>
+          <div class="actions">
+            <label for="reviewStatus">상태</label>
+            <select id="reviewStatus" data-field="status" style="width:auto"><option value="pending">검수 대기</option><option value="rejected">제외</option><option value="approved" disabled>승인</option></select>
+            <button id="approve" type="button" class="primary">검수 완료 · 승인</button>
+            <span class="help">저장 시 검색·필터와 관계없이 전체 항목을 내보냅니다.</span>
+          </div>
+          <details><summary>원본 식별 정보 · 읽기 전용</summary><pre id="provenance" class="readonly identity"></pre></details>
+        </section>
+      </div>
+    </main>
+  </div>
+  <footer>피드백 내용은 새로고침하면 사라집니다. 편집한 검수본을 저장한 뒤 기존 학습 데이터 변환 명령에서 사용하세요.</footer>
+
+  <script id="review-core">
+  "use strict";
+  globalThis.FeedbackReview = (() => {
+    const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+    const SHA = /^[0-9a-f]{64}$/;
+    const REVIEW_FIELDS = ["corrected_answer", "verified_sources", "required_facts", "forbidden_claims", "reviewed_by", "split", "privacy_checked", "context_checked", "status"];
+    const CONTENT_FIELDS = ["question", "corrected_answer", "verified_sources", "required_facts", "forbidden_claims"];
+    const clone = value => JSON.parse(JSON.stringify(value));
+    const synthetic = row => row.kind === "synthetic_feedback_qa";
+    const object = value => value !== null && typeof value === "object" && !Array.isArray(value);
+    const text = value => typeof value === "string" && value.trim().length > 0;
+    const normalize = value => value.trim().replace(/\s+/gu, " ").toLowerCase().replace(/[\s?!.~…]+$/gu, "");
+    function parseLines(input) {
+      const rows = [];
+      input.replace(/^\uFEFF/u, "").split(/\r?\n/u).forEach((line, index) => {
+        if (!line.trim()) return;
+        let row;
+        try { row = JSON.parse(line); } catch { throw new Error(`${index + 1}번째 줄의 JSON 형식이 잘못되었습니다.`); }
+        if (!object(row)) throw new Error(`${index + 1}번째 줄은 JSON 객체여야 합니다.`);
+        rows.push(row);
+      });
+      if (!rows.length) throw new Error("파일에 읽을 수 있는 항목이 없습니다.");
+      return rows;
+    }
+    function parseReviews(input) {
+      const rows = parseLines(input), seen = new Set();
+      for (const [index, row] of rows.entries()) {
+        const where = `${index + 1}번째 항목`;
+        if (row.schema_version !== 1) throw new Error(`${where}: 지원하지 않는 schema_version입니다.`);
+        if (synthetic(row)) {
+          if (row.synthetic !== true || row.review_package_version !== 1 || "rating" in row
+              || !UUID.test(row.parent_feedback_id || "") || !SHA.test(row.parent_question_key || "")
+              || !SHA.test(row.candidate_fingerprint || "") || !SHA.test(row.parent_feedback_fingerprint || "")) {
+            throw new Error(`${where}: 합성 질문은 2단계의 review_queue.jsonl에서 열어야 합니다.`);
+          }
+        } else if (row.rating !== "down" || row.synthetic === true) {
+          throw new Error(`${where}: 실제 싫어요 또는 검수 패키지의 합성 질문이 필요합니다.`);
+        }
+        if (typeof row.id !== "string" || !UUID.test(row.id) || seen.has(row.id)) throw new Error(`${where}: 잘못되거나 중복된 피드백 ID입니다.`);
+        seen.add(row.id);
+        if (!object(row.review) || !["pending", "approved", "rejected"].includes(row.review.status)) throw new Error(`${where}: 검수 상태가 잘못되었습니다.`);
+        if (typeof row.question !== "string" || (!synthetic(row) && typeof row.rejected_answer !== "string")) throw new Error(`${where}: 질문과 기존 답변이 필요합니다.`);
+        if (!synthetic(row) && !["matched", "missing_answer", "missing_question", "ambiguous_question"].includes(row.pairing_status)) throw new Error(`${where}: 질문 연결 상태가 잘못되었습니다.`);
+        for (const key of ["verified_sources", "required_facts", "forbidden_claims"]) {
+          if (key in row.review && (!Array.isArray(row.review[key]) || row.review[key].some(item => typeof item !== "string"))) throw new Error(`${where}: ${key}는 문자열 목록이어야 합니다.`);
+        }
+        for (const key of ["corrected_answer", "reviewed_by", "reviewed_at"]) {
+          if (key in row.review && typeof row.review[key] !== "string") throw new Error(`${where}: ${key}는 문자열이어야 합니다.`);
+        }
+        for (const key of ["privacy_checked", "context_checked"]) {
+          if (key in row.review && typeof row.review[key] !== "boolean") throw new Error(`${where}: ${key}는 true 또는 false여야 합니다.`);
+        }
+        if ("split" in row.review && ![null, "train", "evaluation"].includes(row.review.split)) throw new Error(`${where}: 학습·평가 구분이 잘못되었습니다.`);
+      }
+      return rows;
+    }
+    function sourceKey(value) {
+      if (!text(value)) throw new Error("출처 URL이 비어 있습니다.");
+      let url;
+      try { url = new URL(value.trim()); } catch { throw new Error("출처는 완전한 HTTP(S) URL이어야 합니다."); }
+      if (!["http:", "https:"].includes(url.protocol) || !url.hostname || url.username || url.password) throw new Error("출처는 자격 증명이 없는 HTTP(S) URL이어야 합니다.");
+      return url.protocol + "//" + url.host + url.pathname.replace(/\/+$/u, "") + url.search;
+    }
+    function validTimestamp(value) {
+      if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2})$/u.test(value) || !Number.isFinite(Date.parse(value))) return false;
+      const [year, month, day] = value.slice(0, 10).split("-").map(Number);
+      return year >= 1 && month >= 1 && month <= 12 && day >= 1 && day <= new Date(Date.UTC(year, month, 0)).getUTCDate()
+        && Number(value.slice(11, 13)) <= 23 && Number(value.slice(14, 16)) <= 59;
+    }
+    function approvalIssues(row, requireTime = true) {
+      const review = row.review, issues = [];
+      if (row.schema_version !== 1 || (synthetic(row) ? row.review_package_version !== 1 : row.rating !== "down" || row.pairing_status !== "matched")) issues.push("질문 연결 또는 합성 질문의 검수 패키지를 확인하세요.");
+      if (typeof row.original_question_key !== "string" || !SHA.test(row.original_question_key)) issues.push("원래 질문 키를 확인하세요.");
+      if (!text(row.question) || !row.question.replace(/[\s?!.~…]+/gu, "")) issues.push("질문을 작성하세요.");
+      if (!synthetic(row) && !text(row.rejected_answer)) issues.push("비교할 기존 답변이 없습니다.");
+      if (!text(review.corrected_answer)) issues.push("수정 답변을 작성하세요.");
+      else if (!synthetic(row) && text(row.rejected_answer) && normalize(review.corrected_answer) === normalize(row.rejected_answer)) issues.push("수정 답변이 기존 오답과 같습니다.");
+      if (!Array.isArray(review.verified_sources) || !review.verified_sources.length) issues.push("직접 확인한 공식 문서 URL을 입력하세요.");
+      else { try { review.verified_sources.forEach(sourceKey); } catch (error) { issues.push(error.message); } }
+      if (!["train", "evaluation"].includes(review.split)) issues.push("학습용 또는 평가용 구분을 선택하세요.");
+      if (review.split === "evaluation" && (!Array.isArray(review.required_facts) || !review.required_facts.length)) issues.push("평가용 항목에는 필수 사실이 필요합니다.");
+      for (const key of ["required_facts", "forbidden_claims"]) {
+        if (!Array.isArray(review[key]) || review[key].some(item => !text(item))) issues.push(`${key} 목록에 빈 항목이 있거나 형식이 잘못되었습니다.`);
+      }
+      if (!text(review.reviewed_by)) issues.push("검수자 식별명을 입력하세요.");
+      if (review.privacy_checked !== true) issues.push("개인정보 확인을 완료하세요.");
+      if (review.context_checked !== true) issues.push("적용 조건과 근거 문맥 확인을 완료하세요.");
+      if (requireTime && !validTimestamp(review.reviewed_at)) issues.push("시간대가 포함된 검수 시각이 필요합니다. 승인 버튼으로 다시 기록하세요.");
+      return issues;
+    }
+    function edit(row, field, value) {
+      if (field !== "question" && !REVIEW_FIELDS.includes(field)) throw new Error("수정할 수 없는 필드입니다.");
+      if (field === "status" && !["pending", "rejected"].includes(value)) throw new Error("승인은 검수 완료 버튼을 사용하세요.");
+      const previous = field === "question" ? row.question : row.review[field];
+      if (JSON.stringify(previous) === JSON.stringify(value)) return clone(row);
+      const result = clone(row);
+      if (field === "question") result.question = value;
+      else result.review[field] = clone(value);
+      if (row.review.status === "approved" && field !== "status") result.review.status = "pending";
+      result.review.reviewed_at = "";
+      if (CONTENT_FIELDS.includes(field)) result.review.context_checked = false;
+      if (["question", "corrected_answer"].includes(field)) result.review.privacy_checked = false;
+      return result;
+    }
+    function approve(row, timestamp) {
+      const result = clone(row);
+      result.review.reviewed_at = timestamp;
+      const issues = approvalIssues(result);
+      if (issues.length) throw new Error(issues.join("\n"));
+      result.review.status = "approved";
+      return result;
+    }
+    function parseEvidence(input, rows) {
+      const records = parseLines(input), known = new Map(rows.filter(row => !synthetic(row)).map(row => [row.id, row])), result = new Map();
+      for (const row of rows.filter(synthetic)) {
+        if (known.has(row.parent_feedback_id) && known.get(row.parent_feedback_id).original_question_key !== row.parent_question_key) throw new Error("합성 질문과 부모 질문 키가 다릅니다.");
+        known.set(row.parent_feedback_id, {original_question_key:row.parent_question_key});
+      }
+      for (const record of records) {
+        if (typeof record.feedback_id !== "string" || result.has(record.feedback_id)) throw new Error("근거 파일의 피드백 ID가 없거나 중복되었습니다.");
+        const parent = known.get(record.feedback_id);
+        if (parent && record.original_question_key !== parent.original_question_key) throw new Error("근거 파일과 질문 키가 일치하지 않습니다. 같은 실행 폴더의 파일을 선택하세요.");
+        if (!Array.isArray(record.sources)) throw new Error("근거 sources 목록이 필요합니다.");
+        const ids = new Set();
+        for (const source of record.sources) {
+          if (!object(source) || typeof source.evidence_id !== "string" || ids.has(source.evidence_id)) throw new Error("근거 ID가 없거나 중복되었습니다.");
+          ids.add(source.evidence_id);
+        }
+        result.set(record.feedback_id, record);
+      }
+      return result;
+    }
+    function serialize(rows, originals) {
+      if (rows.length !== originals.length) throw new Error("원본 항목 수가 바뀌었습니다. 저장을 중단합니다.");
+      const assigned = new Map(), seenQuestions = new Set();
+      for (const [index, row] of rows.entries()) {
+        const before = clone(originals[index]), after = clone(row);
+        delete before.question; delete before.review; delete after.question; delete after.review;
+        if (JSON.stringify(before) !== JSON.stringify(after)) throw new Error(`${index + 1}번째 항목의 원본 식별 정보가 바뀌었습니다.`);
+        if (row.review.status !== "approved") continue;
+        const issues = approvalIssues(row);
+        if (issues.length) throw new Error(`${index + 1}번째 승인 항목을 확인하세요.\n${issues.join("\n")}`);
+        const keys = ["original:" + row.original_question_key, "question:" + normalize(row.question)];
+        if (keys.some(key => seenQuestions.has(key))) throw new Error("승인 항목에 중복 질문이 있습니다. 대표 교정본 하나만 승인하세요.");
+        keys.forEach(key => seenQuestions.add(key));
+        const tokens = [...keys, ...row.review.verified_sources.map(url => "source:" + sourceKey(url)), ...(synthetic(row) ? ["original:" + row.parent_question_key] : [])];
+        for (const token of tokens) {
+          if (assigned.has(token) && assigned.get(token) !== row.review.split) throw new Error("같은 질문 또는 출처가 학습용과 평가용에 함께 포함되었습니다.");
+          assigned.set(token, row.review.split);
+        }
+      }
+      // A fresh parse checks row types/IDs too. Every row, including pending/rejected, is exported.
+      const output = rows.map(row => JSON.stringify(row)).join("\n") + "\n";
+      parseReviews(output);
+      return output;
+    }
+    return Object.freeze({clone, parseReviews, parseEvidence, sourceKey, approvalIssues, edit, approve, serialize, synthetic});
+  })();
+  </script>
+
+  <script id="review-ui">
+  "use strict";
+  (() => {
+    const core = globalThis.FeedbackReview, $ = id => document.getElementById(id);
+    const state = {rows:[], originals:[], evidence:new Map(), selected:-1, dirty:false, name:"", loadRequest:0, revision:0};
+    const labels = {pending:"검수 대기", approved:"승인", rejected:"제외"};
+    const fields = {question:"question", corrected_answer:"correctedAnswer", verified_sources:"verifiedSources", required_facts:"requiredFacts", forbidden_claims:"forbiddenClaims", split:"split", reviewed_by:"reviewedBy", privacy_checked:"privacyChecked", context_checked:"contextChecked", status:"reviewStatus"};
+    const listFields = new Set(["verified_sources", "required_facts", "forbidden_claims"]);
+    const content = value => value == null || value === "" ? "(없음)" : typeof value === "string" ? value : JSON.stringify(value, null, 2);
+    function message(text, error = false) { $("notice").textContent = text; $("notice").classList.toggle("error", error); }
+    function koreaTime() { return new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().replace(/Z$/u, "+09:00"); }
+    function visible() {
+      const query = $("search").value.trim().toLowerCase(), status = $("statusFilter").value;
+      return state.rows.map((row, index) => ({row,index})).filter(({row}) =>
+        (status === "all" || row.review.status === status) && (!query || [row.id,row.question,row.rejected_answer,row.review.corrected_answer,row.comment].join("\n").toLowerCase().includes(query)));
+    }
+    function renderList() {
+      const container = $("candidateList"); container.replaceChildren();
+      for (const {row,index} of visible()) {
+        const button = document.createElement("button"); button.type = "button"; button.className = "candidate";
+        button.setAttribute("aria-current", String(index === state.selected));
+        const badge = document.createElement("span"); badge.className = "badge " + row.review.status; badge.textContent = labels[row.review.status];
+        const meta = document.createElement("span"); meta.className = "meta"; meta.textContent = `  ${index + 1} / ${state.rows.length}${core.synthetic(row) ? " · 합성" : " · 실제 피드백"}`;
+        const title = document.createElement("span"); title.className = "question"; title.textContent = row.question || "(질문 연결 안 됨)";
+        button.append(badge,meta,title); button.addEventListener("click", () => { state.selected = index; renderEditor(); renderList(); }); container.append(button);
+      }
+      if (!container.childElementCount) { const p = document.createElement("p"); p.className = "muted"; p.style.padding = "12px"; p.textContent = "조건에 맞는 항목이 없습니다."; container.append(p); }
+    }
+    function updateSummary() {
+      $("totalCount").textContent = state.rows.length;
+      for (const status of ["pending","approved","rejected"]) $(status + "Count").textContent = state.rows.filter(row => row.review.status === status).length;
+      $("dirtyState").textContent = state.dirty ? "저장하지 않은 변경 있음" : "";
+      $("download").disabled = state.rows.length === 0;
+      updateNavigation();
+    }
+    function updateNavigation() {
+      const items = visible(), position = items.findIndex(item => item.index === state.selected);
+      $("previous").disabled = position <= 0;
+      $("next").disabled = !items.length || position === items.length - 1;
+    }
+    function updateIssues() {
+      if (state.selected < 0) return;
+      const row = state.rows[state.selected], issues = core.approvalIssues(row, row.review.status === "approved"), list = $("issues"); list.replaceChildren();
+      for (const text of issues) { const li = document.createElement("li"); li.textContent = text; list.append(li); }
+      list.hidden = !issues.length; $("ready").hidden = !!issues.length || row.review.status === "approved";
+      $("approve").disabled = !!issues.length || row.review.status === "approved";
+      $("reviewedAt").textContent = "검수 시각: " + (row.review.reviewed_at || "승인 시 기록됩니다");
+    }
+    function renderEvidence(row) {
+      const container = $("evidenceContent"); container.replaceChildren();
+      const snapshot = state.evidence.get(core.synthetic(row) ? row.parent_feedback_id : row.id), sources = snapshot ? snapshot.sources : [];
+      const correction = core.synthetic(row) ? row : row.ai_generation && row.ai_generation.correction;
+      const citations = correction && Array.isArray(correction.citations) ? correction.citations : [];
+      if (!snapshot) { const p = document.createElement("p"); p.className = "muted"; p.textContent = "evidence.jsonl을 연결하면 실제 사용한 원문과 출처를 볼 수 있습니다."; container.append(p); }
+      if (!citations.length) { const p = document.createElement("p"); p.className = "help"; p.textContent = "AI가 제안한 인용이 없습니다. 근거를 직접 확인해 주세요."; container.append(p); }
+      for (const source of sources) {
+        const card = document.createElement("div"); card.className = "source";
+        const title = document.createElement("h3"); title.textContent = (source.evidence_id || "") + " · " + (source.title || "근거 문서"); card.append(title);
+        try { core.sourceKey(source.uri); const link = document.createElement("a"); link.href = source.uri.trim(); link.target = "_blank"; link.rel = "noopener noreferrer"; link.textContent = source.uri; card.append(link); }
+        catch { const p = document.createElement("p"); p.textContent = content(source.uri); card.append(p); }
+        for (const citation of citations.filter(item => item && item.evidence_id === source.evidence_id)) { const quote = document.createElement("blockquote"); quote.textContent = content(citation.quote); card.append(quote); }
+        const metadata = document.createElement("p"); metadata.className = "help"; metadata.textContent = "조건·시점: " + content(source.metadata); card.append(metadata);
+        const details = document.createElement("details"), summary = document.createElement("summary"), body = document.createElement("pre"); summary.textContent = "근거 본문 펼치기"; body.className = "readonly"; body.textContent = content(source.content); details.append(summary,body); card.append(details);
+        if (source.truncated === true) { const p = document.createElement("p"); p.className = "help"; p.textContent = "길이 제한으로 잘린 발췌입니다. 원문 전체도 확인하세요."; card.append(p); }
+        container.append(card);
+      }
+      for (const citation of citations.filter(item => item && !sources.some(source => source.evidence_id === item.evidence_id))) {
+        const quote = document.createElement("blockquote"); quote.textContent = `연결되지 않은 근거 ${content(citation.evidence_id)}\n${content(citation.quote)}`; container.append(quote);
+      }
+    }
+    function renderEditor() {
+      const row = state.rows[state.selected]; $("empty").hidden = !!row; $("editor").hidden = !row; if (!row) return;
+      $("position").textContent = `FEEDBACK ${String(state.selected + 1).padStart(2,"0")} / ${state.rows.length}`;
+      $("identity").textContent = row.id;
+      $("pairing").textContent = core.synthetic(row) ? `합성 질문 · 부모 피드백: ${row.parent_feedback_id}` : `질문 연결: ${row.pairing_status} · 피드백 수정: ${row.feedback_updated_at || "기록 없음"}`;
+      $("originalAnswerTitle").textContent = core.synthetic(row) ? "AI가 처음 제안한 답변" : "기존 답변";
+      $("rejectedAnswer").textContent = (core.synthetic(row) ? row.proposed_answer : row.rejected_answer) || "(없음)";
+      $("feedbackInfoTitle").textContent = core.synthetic(row) ? "생성 정보와 부모 피드백" : "사용자 피드백과 AI 실패 분석";
+      const ai = row.ai_generation || {};
+      $("feedbackInfo").textContent = `사용자 사유: ${content(row.reasons)}\n사용자 의견: ${content(row.comment)}\n\nAI 상태: ${content(ai.status)}\n실패 유형: ${content(ai.failure_type)}\n분석: ${content(ai.failure_analysis)}\n오류 유형: ${content(ai.error_type)}`;
+      if (core.synthetic(row)) $("feedbackInfo").textContent = `부모 피드백: ${row.parent_feedback_id}\n원래 질문 키: ${row.parent_question_key}\n생성 정보: ${content(row.generator)}`;
+      const pipeline = row.review_pipeline;
+      const decisionLabels = {ready:"변환 가능", blocked:"변환 보류", pending:"검수 대기", rejected:"제외"};
+      $("pipelineInfo").textContent = pipeline ? `이전 자동 검사: ${decisionLabels[pipeline.decision] || pipeline.decision}\n사유: ${(pipeline.reason_labels || pipeline.reasons || []).join(", ") || "없음"}\n편집 후 변환 명령에서 다시 검사합니다.` : "";
+      const raw = core.clone(state.originals[state.selected]); delete raw.question; delete raw.review; delete raw.ai_generation; $("provenance").textContent = JSON.stringify(raw,null,2);
+      for (const [field,id] of Object.entries(fields)) {
+        const value = field === "question" ? row.question : row.review[field], element = $(id);
+        if (element.type === "checkbox") element.checked = value === true;
+        else element.value = listFields.has(field) ? (value || []).join("\n") : value == null ? "" : value;
+      }
+      updateNavigation();
+      renderEvidence(row); updateIssues();
+    }
+    for (const [field,id] of Object.entries(fields)) {
+      const element = $(id);
+      element.addEventListener(element.tagName === "SELECT" || element.type === "checkbox" ? "change" : "input", () => {
+        if (state.selected < 0) return;
+        const previous = state.rows[state.selected];
+        const value = element.type === "checkbox" ? element.checked : listFields.has(field) ? element.value.split(/\r?\n/u).map(line => line.trim()).filter(Boolean) : field === "split" ? element.value || null : element.value;
+        try {
+          const row = core.edit(previous,field,value); state.rows[state.selected] = row; state.dirty = true; state.revision++; $("confirmSaved").hidden = true;
+          $("reviewStatus").value = row.review.status;
+          $("privacyChecked").checked = row.review.privacy_checked === true; $("contextChecked").checked = row.review.context_checked === true;
+          if (previous.review.status === "approved" && row.review.status === "pending") message("승인한 내용이 바뀌어 검수 대기로 되돌렸습니다. 수정 후 다시 확인하고 승인하세요.");
+          updateIssues(); updateSummary(); renderList();
+        } catch (error) { message(error.message,true); renderEditor(); }
+      });
+    }
+    $("approve").addEventListener("click", () => {
+      if (state.selected < 0) return;
+      try { state.rows[state.selected] = core.approve(state.rows[state.selected],koreaTime()); state.dirty = true; state.revision++; $("confirmSaved").hidden = true; renderEditor(); renderList(); updateSummary(); message("현재 항목을 승인했습니다. 검수본 JSONL을 저장하면 변경 내용이 파일에 반영됩니다."); }
+      catch (error) { message(error.message,true); }
+    });
+    $("openReview").addEventListener("click", () => $("reviewFile").click());
+    $("openEvidence").addEventListener("click", () => $("evidenceFile").click());
+    $("reviewFile").addEventListener("change", async event => {
+      const file = event.target.files[0]; event.target.value = ""; if (!file) return;
+      if (state.dirty && !window.confirm("저장하지 않은 변경 내용이 있습니다. 새 파일을 열면 현재 작업이 사라집니다. 계속할까요?")) return;
+      const request = ++state.loadRequest, revision = state.revision;
+      try {
+        const rows = core.parseReviews(await file.text());
+        if (request !== state.loadRequest) return;
+        if (state.revision !== revision && !window.confirm("파일을 읽는 동안 현재 검수 내용을 수정했습니다. 새 파일로 바꿀까요?")) return;
+        state.rows = rows; state.originals = core.clone(rows); state.evidence = new Map(); state.selected = 0; state.dirty = false; state.name = file.name;
+        $("fileName").textContent = file.name; $("openEvidence").disabled = false; $("confirmSaved").hidden = true; $("search").value = ""; $("statusFilter").value = "all";
+        renderList(); renderEditor(); updateSummary(); message(`${rows.length}개 피드백을 불러왔습니다. 같은 폴더의 evidence.jsonl도 연결할 수 있습니다.`);
+      } catch (error) { message(error.message,true); }
+    });
+    $("evidenceFile").addEventListener("change", async event => {
+      const file = event.target.files[0]; event.target.value = ""; if (!file) return;
+      const originals = state.originals;
+      try {
+        const evidence = core.parseEvidence(await file.text(),originals);
+        if (originals !== state.originals) throw new Error("피드백 파일이 바뀌었습니다. 근거 파일을 다시 선택하세요.");
+        state.evidence = evidence; renderEditor(); message(`${file.name} 연결 완료 · 현재 피드백 ${state.rows.filter(row => evidence.has(row.id)).length}건에 근거가 연결되었습니다.`);
+      } catch (error) { message(error.message,true); }
+    });
+    for (const id of ["search","statusFilter"]) $(id).addEventListener(id === "search" ? "input" : "change", () => { const items = visible(); state.selected = items.length ? items[0].index : -1; renderList(); renderEditor(); });
+    for (const [id,step] of [["previous",-1],["next",1]]) $(id).addEventListener("click", () => { const items = visible(); if (!items.length) return; const position = items.findIndex(item => item.index === state.selected); state.selected = items[Math.max(0,Math.min(items.length - 1,position + step))].index; renderList(); renderEditor(); });
+    $("download").addEventListener("click", () => {
+      try {
+        const serialized = core.serialize(state.rows,state.originals), blob = new Blob([serialized],{type:"application/x-ndjson;charset=utf-8"});
+        const url = URL.createObjectURL(blob), link = document.createElement("a"); link.href = url; link.download = "reviewed.jsonl"; document.body.append(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url),30000);
+        $("confirmSaved").hidden = !state.dirty; message(`전체 ${state.rows.length}건을 reviewed.jsonl 다운로드로 전달했습니다. 브라우저에서 파일이 저장됐는지 확인한 뒤 저장 완료 확인을 누르세요.`);
+      } catch (error) { message(error.message,true); }
+    });
+    $("confirmSaved").addEventListener("click", () => { state.dirty = false; $("confirmSaved").hidden = true; updateSummary(); message("검수본 파일 저장을 확인했습니다. 추가로 편집하면 다시 저장해야 합니다."); });
+    window.addEventListener("beforeunload", event => { if (state.dirty) { event.preventDefault(); event.returnValue = ""; } });
+  })();
+  </script>
+</body>
+</html>

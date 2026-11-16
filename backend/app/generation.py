@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import time
+from datetime import date
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional, Tuple
 
@@ -156,14 +157,18 @@ def build_user_message(
     question: str,
     rows: List[Dict[str, Any]],
     max_chars_per_chunk: int,
+    *,
+    source_block: Optional[str] = None,
+    as_of: Optional[date] = None,
 ) -> str:
-    sources_block = (
+    # Offline experiments replay the captured evidence and date for both models.
+    sources_block = source_block if source_block is not None else (
         _format_source_block(rows, max_chars_per_chunk, question) if rows else "(자료 없음)"
     )
     # The model doesn't know today's date; without it a 2025 notice reads as
     # "the" schedule (observed 2026-10-13: "수강신청 기간" was answered with
     # 2025-1학기 dates as if they were current).
-    today = today_kst()
+    today = as_of or today_kst()
     requested_format = next((r.get("metadata", {}).get("request_response_format") for r in rows if r.get("metadata", {}).get("request_response_format")), None)
     format_note = f"\n- 요청한 출력 형식: {requested_format}. 이 형식을 지키세요." if requested_format else ""
     request_metadata = (rows[0].get("metadata") or {}) if rows else {}
