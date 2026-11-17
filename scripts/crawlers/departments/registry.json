@@ -214,6 +214,59 @@
           "document_type": "notice",
           "enabled": true,
           "bbs_id": "2403447"
+        },
+        {
+          "id": "menu_5179",
+          "name": "교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/korean/5179",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_9261",
+          "name": "2026학년도 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/korean/9261",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_9263",
+          "name": "이전 교육과정 (2021~2025)",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/korean/9263",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_5180",
+          "name": "교과목별 역량 매핑",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/korean/5180",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_5181",
+          "name": "모듈형 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/korean/5181",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
         }
       ]
     },
@@ -319,6 +372,123 @@
           "document_type": "notice",
           "bbs_id": "2402360",
           "enabled": true
+        },
+        {
+          "id": "menu_3817",
+          "name": "학부소개 교수진",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/english/3817",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_3835",
+          "name": "졸업자격요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/english/3835",
+          "document_type": "guide",
+          "enabled": true,
+          "notes": "본문 선택자 보완 후 수집 결과 확인 필요."
+        },
+        {
+          "id": "menu_3826",
+          "name": "학부(영어영문학전공) 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/english/3826",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "본문 선택자 보완 후 수집 결과 확인 필요."
+        },
+        {
+          "id": "menu_3831",
+          "name": "전공능력 및 핵심역량",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/english/3831",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "본문 선택자 보완 후 수집 결과 확인 필요; 이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_3832",
+          "name": "학부(영미문화산업전공) 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/english/3832",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "본문 선택자 보완 후 수집 결과 확인 필요."
+        },
+        {
+          "id": "menu_3833",
+          "name": "전공능력 및 핵심역량",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/english/3833",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "본문 선택자 보완 후 수집 결과 확인 필요; 이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_3841",
+          "name": "일반대학원 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/english/3841",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "본문 선택자 보완 후 수집 결과 확인 필요; 이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_3848",
+          "name": "글로벌정책대학원 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/english/3848",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "본문 선택자 보완 후 수집 결과 확인 필요."
+        },
+        {
+          "id": "menu_3850",
+          "name": "교과과정 운영지침",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/english/3850",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "본문 선택자 보완 후 수집 결과 확인 필요."
+        },
+        {
+          "id": "menu_3849",
+          "name": "학위수여요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/english/3849",
+          "document_type": "guide",
+          "enabled": true,
+          "notes": "본문 선택자 보완 후 수집 결과 확인 필요."
+        },
+        {
+          "id": "menu_3844",
+          "name": "교육대학원 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/english/3844",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "본문 선택자 보완 후 수집 결과 확인 필요."
         }
       ]
     },
@@ -513,6 +683,25 @@
           "document_type": "notice",
           "bbs_id": "2405151",
           "enabled": true
+        },
+        {
+          "id": "menu_4325",
+          "name": "교수진소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/japanese/4325",
+          "document_type": "guide",
+          "enabled": true
+        }
+      ],
+      "menu_aliases": [
+        {
+          "path": "/japanese/4314",
+          "representative_path": "/japanese/4325",
+          "category": "교수진",
+          "basis": "2026-11-17 공개 메뉴의 실제 이동 목적지 확인",
+          "final_url": "https://japanese.pknu.ac.kr/japanese/4325",
+          "verified": true
         }
       ]
     },
@@ -617,6 +806,45 @@
           "document_type": "notice",
           "bbs_id": "2403647",
           "enabled": true
+        },
+        {
+          "id": "menu_3898",
+          "name": "교수진소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/history/3898",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_3892",
+          "name": "학부 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/history/3892",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_3907",
+          "name": "일반대학원 사학과 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/history/3907",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_3911",
+          "name": "글로벌정책대학원 한국문화학전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/history/3911",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
         }
       ]
     },
@@ -997,6 +1225,68 @@
           "document_type": "notice",
           "bbs_id": "2402352",
           "enabled": true
+        },
+        {
+          "id": "menu_3765",
+          "name": "교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/pknulaw/3765",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_5958",
+          "name": "학부 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/pknulaw/5958",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_7272",
+          "name": "학부 교육과정 이수 로드맵",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/pknulaw/7272",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_5959",
+          "name": "대학원 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/pknulaw/5959",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_6101",
+          "name": "학생설계전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/pknulaw/6101",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_3763",
+          "name": "교수진소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/pknulaw/3763",
+          "document_type": "guide",
+          "enabled": true
         }
       ]
     },
@@ -1191,6 +1481,90 @@
           "document_type": "notice",
           "bbs_id": "2402872",
           "enabled": true
+        },
+        {
+          "id": "menu_3144",
+          "name": "행정복지학부 교수진 소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/pknupasw/3144",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_3150",
+          "name": "행정학전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/pknupasw/3150",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_3149",
+          "name": "졸업요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/pknupasw/3149",
+          "document_type": "guide",
+          "enabled": true,
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_6851",
+          "name": "사회복지학전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/pknupasw/6851",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_3152",
+          "name": "사회복지융합전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/pknupasw/3152",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_9019",
+          "name": "해양수산행정융합전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/pknupasw/9019",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_7447",
+          "name": "마이크로전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/pknupasw/7447",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        }
+      ],
+      "menu_aliases": [
+        {
+          "path": "/pknupasw/3148",
+          "representative_path": "/pknupasw/3150",
+          "category": "교육과정",
+          "basis": "2026-11-17 공개 메뉴의 실제 이동 목적지 확인",
+          "final_url": "https://pknupa.pknu.ac.kr/pknupasw/3150",
+          "verified": true
         }
       ]
     },
@@ -1407,6 +1781,58 @@
           "document_type": "notice",
           "bbs_id": "2404248",
           "enabled": true
+        },
+        {
+          "id": "menu_6390",
+          "name": "사회복지학전공(학사) 교수진소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/ps1/6390",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_6392",
+          "name": "교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/ps1/6392",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_6394",
+          "name": "졸업요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/ps1/6394",
+          "document_type": "guide",
+          "enabled": true,
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_6929",
+          "name": "사회복지학전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/ps1/6929",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_6930",
+          "name": "복지ICT 마이크로전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/ps1/6930",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
         }
       ]
     },
@@ -1481,6 +1907,179 @@
           "document_type": "notice",
           "bbs_id": "2402015",
           "enabled": true
+        },
+        {
+          "id": "menu_3981",
+          "name": "학부안내 교수진소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/dias/3981",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_3987",
+          "name": "국제개발협력학 전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/dias/3987",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_3989",
+          "name": "전공별 커리큘럼",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/dias/3989",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_4712",
+          "name": "국제개발협력학 전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/dias/4712",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_3992",
+          "name": "졸업규정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/dias/3992",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_4007",
+          "name": "대학원 국제지역학과 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/dias/4007",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_3988",
+          "name": "국제학전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/dias/3988",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_4932",
+          "name": "글로벌외국어융합(공유)전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/dias/4932",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_6233",
+          "name": "글로벌도시학융합(공유)전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/dias/6233",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_4713",
+          "name": "국제학전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/dias/4713",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_3991",
+          "name": "Level-Up 시스템 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/dias/3991",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_9233",
+          "name": "국외현지조사 프로그램 교육과정",
+          "category": "교육과정",
+          "kind": "board",
+          "path": "/dias/9233",
+          "document_type": "notice",
+          "bbs_id": "2406229",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_4008",
+          "name": "대학원 글로벌지역학과 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/dias/4008",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_4009",
+          "name": "글로벌정책대학원 국제학과 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/dias/4009",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        }
+      ],
+      "menu_aliases": [
+        {
+          "path": "/dias/3973",
+          "representative_path": "/dias/3987",
+          "category": "교육과정",
+          "basis": "2026-11-17 공개 메뉴의 실제 이동 목적지 확인",
+          "final_url": "https://dias.pknu.ac.kr/dias/3987",
+          "verified": true
+        },
+        {
+          "path": "/dias/3990",
+          "representative_path": "/dias/4712",
+          "category": "교육과정",
+          "basis": "2026-11-17 공개 메뉴의 실제 이동 목적지 확인",
+          "final_url": "https://dias.pknu.ac.kr/dias/4712",
+          "verified": true
+        },
+        {
+          "path": "/dias/4003",
+          "representative_path": "/dias/4007",
+          "category": "교육과정",
+          "basis": "2026-11-17 공개 메뉴의 실제 이동 목적지 확인",
+          "final_url": "https://dias.pknu.ac.kr/dias/4007",
+          "verified": true
+        },
+        {
+          "path": "/dias/3986",
+          "representative_path": "/dias/3987",
+          "category": "교육과정",
+          "basis": "2026-11-17 공개 메뉴의 실제 이동 목적지 확인",
+          "final_url": "https://dias.pknu.ac.kr/dias/3987",
+          "verified": true
         }
       ]
     },
@@ -1593,6 +2192,102 @@
           "path": "/chinese/4300",
           "document_type": "notice",
           "bbs_id": "2401873",
+          "enabled": true
+        },
+        {
+          "id": "menu_4271",
+          "name": "교수진 소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/chinese/4271",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_4275",
+          "name": "교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/chinese/4275",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_4276",
+          "name": "교과목 개요",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/chinese/4276",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_4277",
+          "name": "졸업요건 안내",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/chinese/4277",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_4278",
+          "name": "졸업자격인증제",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/chinese/4278",
+          "document_type": "guide",
+          "enabled": true,
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_4292",
+          "name": "일반대학원 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/chinese/4292",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_4294",
+          "name": "졸업요건 안내",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/chinese/4294",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_4297",
+          "name": "글로벌정책대학원 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/chinese/4297",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_4299",
+          "name": "교과목 개요",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/chinese/4299",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_4298",
+          "name": "졸업요건 안내",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/chinese/4298",
+          "document_type": "guide",
           "enabled": true
         }
       ]
@@ -1758,6 +2453,59 @@
           "document_type": "notice",
           "bbs_id": "2401744",
           "enabled": true
+        },
+        {
+          "id": "menu_3775",
+          "name": "교수진 소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/politics/3775",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_3784",
+          "name": "학과정보 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/politics/3784",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_3786",
+          "name": "모듈형 역량 매핑",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/politics/3786",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_3790",
+          "name": "일반대학원 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/politics/3790",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_3794",
+          "name": "글로벌정책대학원 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/politics/3794",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
         }
       ]
     },
@@ -1931,6 +2679,78 @@
           "document_type": "notice",
           "bbs_id": "2400481",
           "enabled": true
+        },
+        {
+          "id": "menu_1536",
+          "name": "교수진소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/education/1536",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_1531",
+          "name": "교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/education/1531",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_1542",
+          "name": "학부 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/education/1542",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_1543",
+          "name": "일대원 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/education/1543",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_1544",
+          "name": "교대원 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/education/1544",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_7300",
+          "name": "이수체계도",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/education/7300",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_5077",
+          "name": "전공능력진단도구 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/education/5077",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
         }
       ]
     },
@@ -2065,6 +2885,47 @@
           "document_type": "notice",
           "bbs_id": "2400617",
           "enabled": true
+        },
+        {
+          "id": "menu_2112",
+          "name": "교수진소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/fashion/2112",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_2116",
+          "name": "학부 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/fashion/2116",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_2117",
+          "name": "졸업요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/fashion/2117",
+          "document_type": "guide",
+          "enabled": true,
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_2118",
+          "name": "대학원 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/fashion/2118",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
         }
       ]
     },
@@ -2128,6 +2989,16 @@
           "document_type": "notice",
           "bbs_id": "2404340",
           "enabled": true
+        },
+        {
+          "id": "menu_7132",
+          "name": "교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/hssliberal/7132",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
         }
       ]
     },
@@ -2280,6 +3151,62 @@
           "document_type": "notice",
           "bbs_id": "2400150",
           "enabled": true
+        },
+        {
+          "id": "menu_318",
+          "name": "교수진 소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/math/318",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_327",
+          "name": "졸업요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/math/327",
+          "document_type": "guide",
+          "enabled": true,
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_328",
+          "name": "학부 졸업요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/math/328",
+          "document_type": "guide",
+          "enabled": true,
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_329",
+          "name": "일반대학원 졸업요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/math/329",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_330",
+          "name": "교육대학원 수학교육 졸업요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/math/330",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_331",
+          "name": "교육대학원 초등수학교육 졸업요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/math/331",
+          "document_type": "guide",
+          "enabled": true
         }
       ]
     },
@@ -2393,6 +3320,71 @@
           "document_type": "notice",
           "bbs_id": "2400157",
           "enabled": true
+        },
+        {
+          "id": "menu_303",
+          "name": "구성원 교수진 소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/physics/303",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_449",
+          "name": "학부 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/physics/449",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_451",
+          "name": "학부 졸업요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/physics/451",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_450",
+          "name": "대학원 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/physics/450",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_452",
+          "name": "대학원 졸업요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/physics/452",
+          "document_type": "guide",
+          "enabled": true
+        }
+      ],
+      "menu_aliases": [
+        {
+          "path": "/physics/369",
+          "representative_path": "/physics/449",
+          "category": "교육과정",
+          "basis": "2026-11-17 공개 메뉴의 실제 이동 목적지 확인",
+          "final_url": "https://icms.pknu.ac.kr/physics/449",
+          "verified": true
+        },
+        {
+          "path": "/physics/370",
+          "representative_path": "/physics/451",
+          "category": "교육과정",
+          "basis": "2026-11-17 공개 메뉴의 실제 이동 목적지 확인",
+          "final_url": "https://icms.pknu.ac.kr/physics/451",
+          "verified": true
         }
       ]
     },
@@ -2495,6 +3487,25 @@
           "document_type": "notice",
           "bbs_id": "2400623",
           "enabled": true
+        },
+        {
+          "id": "menu_2169",
+          "name": "구성원 교수진 소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/chem/2169",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_2174",
+          "name": "교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/chem/2174",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
         }
       ]
     },
@@ -2597,6 +3608,84 @@
           "document_type": "notice",
           "enabled": true,
           "bbs_id": "600146"
+        },
+        {
+          "id": "menu_386",
+          "name": "교과과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/microbiology/386",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_387",
+          "name": "졸업요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/microbiology/387",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_486",
+          "name": "학부 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/microbiology/486",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_487",
+          "name": "일반대학원 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/microbiology/487",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_488",
+          "name": "산업대학원 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/microbiology/488",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_490",
+          "name": "학부 졸업요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/microbiology/490",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_491",
+          "name": "일반대학원 졸업요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/microbiology/491",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_492",
+          "name": "산업대학원 졸업요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/microbiology/492",
+          "document_type": "guide",
+          "enabled": true
         }
       ]
     },
@@ -2681,6 +3770,44 @@
           "document_type": "notice",
           "bbs_id": "2000146",
           "enabled": true
+        },
+        {
+          "id": "menu_425",
+          "name": "교수진 소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/nursing/425",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_428",
+          "name": "학과정보 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/nursing/428",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_429",
+          "name": "졸업요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/nursing/429",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_439",
+          "name": "대학원 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/nursing/439",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
         }
       ]
     },
@@ -2784,6 +3911,44 @@
           "path": "/scicomp/7012",
           "document_type": "notice",
           "bbs_id": "2400209",
+          "enabled": true
+        },
+        {
+          "id": "menu_566",
+          "name": "교수진 소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/scicomp/566",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_571",
+          "name": "교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/scicomp/571",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_572",
+          "name": "교과목해설",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/scicomp/572",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_573",
+          "name": "졸업요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/scicomp/573",
+          "document_type": "guide",
           "enabled": true
         }
       ]
@@ -3109,6 +4274,128 @@
           "document_type": "notice",
           "bbs_id": "2400382",
           "enabled": true
+        },
+        {
+          "id": "menu_1228",
+          "name": "학부소개 교수진",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/dba/1228",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_1227",
+          "name": "학부소개 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/dba/1227",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_1231",
+          "name": "경영학전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/dba/1231",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_8017",
+          "name": "졸업요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/dba/8017",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_1248",
+          "name": "일반대학원 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/dba/1248",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_1252",
+          "name": "경영학전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/dba/1252",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_1253",
+          "name": "회계·재무학전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/dba/1253",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_1254",
+          "name": "관광경영학전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/dba/1254",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_1232",
+          "name": "회계·재무학전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/dba/1232",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_1233",
+          "name": "관광경영학전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/dba/1233",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_2097",
+          "name": "데이터비즈니스융합전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/dba/2097",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        }
+      ],
+      "menu_aliases": [
+        {
+          "path": "/dba/1230",
+          "representative_path": "/dba/1231",
+          "category": "교육과정",
+          "basis": "2026-11-17 공개 메뉴의 실제 이동 목적지 확인",
+          "final_url": "https://icms.pknu.ac.kr/dba/1231",
+          "verified": true
         }
       ]
     },
@@ -3171,6 +4458,69 @@
           "document_type": "notice",
           "bbs_id": "2404187",
           "enabled": true
+        },
+        {
+          "id": "menu_1191",
+          "name": "교과목 매핑 및 모듈",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/pknudic/1191",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_1192",
+          "name": "졸업사정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/pknudic/1192",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_6909",
+          "name": "일반대학원 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/pknudic/6909",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_6379",
+          "name": "국제통상학전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/pknudic/6379",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_6380",
+          "name": "국제무역물류학전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/pknudic/6380",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_6381",
+          "name": "국제경영학전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/pknudic/6381",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
         }
       ]
     },
@@ -3235,6 +4585,46 @@
           "document_type": "notice",
           "bbs_id": "2404332",
           "enabled": true
+        },
+        {
+          "id": "menu_7100",
+          "name": "학부소개 교수진 소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/cbaliberal/7100",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_7140",
+          "name": "교육 과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/cbaliberal/7140",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_7141",
+          "name": "교양과목 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/cbaliberal/7141",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_7247",
+          "name": "전공이해과목 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/cbaliberal/7247",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
         }
       ]
     },
@@ -3667,6 +5057,58 @@
           "document_type": "notice",
           "bbs_id": "2401893",
           "enabled": true
+        },
+        {
+          "id": "menu_4071",
+          "name": "전공소개 교수진소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/electric-eng/4071",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_4074",
+          "name": "전공정보 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/electric-eng/4074",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_4075",
+          "name": "졸업요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/electric-eng/4075",
+          "document_type": "guide",
+          "enabled": true,
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_4078",
+          "name": "모듈형 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/electric-eng/4078",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_4085",
+          "name": "대학원 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/electric-eng/4085",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
         }
       ]
     },
@@ -3773,6 +5215,47 @@
           "document_type": "notice",
           "bbs_id": "2401766",
           "enabled": true
+        },
+        {
+          "id": "menu_3866",
+          "name": "전공소개 교수진소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/control/3866",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_3868",
+          "name": "전공정보 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/control/3868",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_3869",
+          "name": "교과요목",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/control/3869",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_3870",
+          "name": "졸업요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/control/3870",
+          "document_type": "guide",
+          "enabled": true,
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
         }
       ]
     },
@@ -3849,6 +5332,67 @@
           "document_type": "notice",
           "bbs_id": "2401720",
           "enabled": true
+        },
+        {
+          "id": "menu_3646",
+          "name": "교수님소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/semicon/3646",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_3640",
+          "name": "전공 교과과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/semicon/3640",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_3650",
+          "name": "모듈형 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/semicon/3650",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_3651",
+          "name": "졸업요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/semicon/3651",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_3652",
+          "name": "교과목 역량 매핑",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/semicon/3652",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        }
+      ],
+      "menu_aliases": [
+        {
+          "path": "/semicon/3627",
+          "representative_path": "/semicon/3640",
+          "category": "교육과정",
+          "basis": "2026-11-17 공개 메뉴의 실제 이동 목적지 확인",
+          "final_url": "https://semicon.pknu.ac.kr/semicon/3640",
+          "verified": true
         }
       ]
     },
@@ -3934,6 +5478,66 @@
           "document_type": "notice",
           "bbs_id": "2400430",
           "enabled": true
+        },
+        {
+          "id": "menu_1282",
+          "name": "학부 교수진",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/me/1282",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_1267",
+          "name": "교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/me/1267",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_1287",
+          "name": "교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/me/1287",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_1288",
+          "name": "모듈형 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/me/1288",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_1289",
+          "name": "전공능력 및 핵심역량 매핑",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/me/1289",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_1268",
+          "name": "졸업요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/me/1268",
+          "document_type": "guide",
+          "enabled": true
         }
       ]
     },
@@ -4008,6 +5612,56 @@
           "document_type": "notice",
           "bbs_id": "2400632",
           "enabled": true
+        },
+        {
+          "id": "menu_2204",
+          "name": "교수진소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/mae/2204",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_2208",
+          "name": "교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/mae/2208",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_2209",
+          "name": "졸업요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/mae/2209",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_2210",
+          "name": "전공 로드맵",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/mae/2210",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_2211",
+          "name": "전공능력 및 핵심역량",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/mae/2211",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
         }
       ]
     },
@@ -4094,6 +5748,79 @@
           "document_type": "notice",
           "bbs_id": "2400570",
           "enabled": true
+        },
+        {
+          "id": "menu_1757",
+          "name": "교수소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/ref/1757",
+          "document_type": "guide",
+          "enabled": true,
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_9108",
+          "name": "교수",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/ref/9108",
+          "document_type": "guide",
+          "enabled": true,
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_9104",
+          "name": "명예교수",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/ref/9104",
+          "document_type": "guide",
+          "enabled": true,
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_1777",
+          "name": "교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/ref/1777",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_1778",
+          "name": "졸업요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/ref/1778",
+          "document_type": "guide",
+          "enabled": true,
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_1765",
+          "name": "일반대학원 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/ref/1765",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_1767",
+          "name": "산업대학원 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/ref/1767",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
         }
       ]
     },
@@ -4238,6 +5965,89 @@
           "document_type": "notice",
           "bbs_id": "2402895",
           "enabled": true
+        },
+        {
+          "id": "menu_5599",
+          "name": "학과커리큘럼",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/mse/5599",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_5595",
+          "name": "교수진소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/mse/5595",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_5606",
+          "name": "이수체계도",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/mse/5606",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_5607",
+          "name": "교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/mse/5607",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_5609",
+          "name": "모듈형 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/mse/5609",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_5602",
+          "name": "졸업요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/mse/5602",
+          "document_type": "guide",
+          "enabled": true,
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_5608",
+          "name": "핵심역량 매핑",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/mse/5608",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        }
+      ],
+      "menu_aliases": [
+        {
+          "path": "/mse/5601",
+          "representative_path": "/mse/5606",
+          "category": "교육과정",
+          "basis": "2026-11-17 공개 메뉴의 실제 이동 목적지 확인",
+          "final_url": "https://mse.pknu.ac.kr/mse/5606",
+          "verified": true
         }
       ]
     },
@@ -4342,6 +6152,56 @@
           "document_type": "notice",
           "bbs_id": "2400728",
           "enabled": true
+        },
+        {
+          "id": "menu_2524",
+          "name": "학과 구성원 교수진",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/name/2524",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_2499",
+          "name": "교과 과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/name/2499",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_2492",
+          "name": "교과 과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/name/2492",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_4603",
+          "name": "학년별 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/name/4603",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_4604",
+          "name": "모듈형 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/name/4604",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
         }
       ]
     },
@@ -4404,6 +6264,125 @@
           "document_type": "notice",
           "bbs_id": "2400709",
           "enabled": true
+        },
+        {
+          "id": "menu_2457",
+          "name": "교과목개요",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/chemeng/2457",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_2453",
+          "name": "교과목과 전공능력 및 핵심역량 매핑",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/chemeng/2453",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_2454",
+          "name": "모듈형 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/chemeng/2454",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_2455",
+          "name": "2021학년도 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/chemeng/2455",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_6434",
+          "name": "2022학년도 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/chemeng/6434",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_6435",
+          "name": "2023학년도 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/chemeng/6435",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_6436",
+          "name": "2024학년도 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/chemeng/6436",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_7252",
+          "name": "2025학년도 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/chemeng/7252",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_8350",
+          "name": "2026학년도 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/chemeng/8350",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_2460",
+          "name": "대학원 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/chemeng/2460",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_8634",
+          "name": "진출분야 및 전공능력 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/chemeng/8634",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
         }
       ]
     },
@@ -4490,6 +6469,36 @@
           "document_type": "notice",
           "bbs_id": "2400396",
           "enabled": true
+        },
+        {
+          "id": "menu_821",
+          "name": "교수진소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/induseng/821",
+          "document_type": "guide",
+          "enabled": true,
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_1085",
+          "name": "졸업요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/induseng/1085",
+          "document_type": "guide",
+          "enabled": true,
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_1077",
+          "name": "졸업요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/induseng/1077",
+          "document_type": "guide",
+          "enabled": true,
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
         }
       ]
     },
@@ -4546,6 +6555,36 @@
           "document_type": "notice",
           "bbs_id": "2400491",
           "enabled": true
+        },
+        {
+          "id": "menu_1308",
+          "name": "교수진소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/polymer/1308",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_1310",
+          "name": "교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/polymer/1310",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        }
+      ],
+      "menu_aliases": [
+        {
+          "path": "/polymer/1301",
+          "representative_path": "/polymer/1310",
+          "category": "교육과정",
+          "basis": "2026-11-17 공개 메뉴의 실제 이동 목적지 확인",
+          "final_url": "https://polymer.pknu.ac.kr/polymer/1310",
+          "verified": true
         }
       ]
     },
@@ -4622,6 +6661,83 @@
           "document_type": "notice",
           "bbs_id": "2400562",
           "enabled": true
+        },
+        {
+          "id": "menu_1876",
+          "name": "교수진 소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/nano/1876",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_1877",
+          "name": "커리큘럼",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/nano/1877",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_4840",
+          "name": "모듈형 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/nano/4840",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_1878",
+          "name": "졸업요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/nano/1878",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_1905",
+          "name": "졸업요건 안내",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/nano/1905",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_1906",
+          "name": "졸업사정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/nano/1906",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_4843",
+          "name": "마이크로전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/nano/4843",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_1907",
+          "name": "조기졸업 및 졸업유보",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/nano/1907",
+          "document_type": "guide",
+          "enabled": true
         }
       ]
     },
@@ -4688,6 +6804,113 @@
           "document_type": "notice",
           "bbs_id": "2403022",
           "enabled": true
+        },
+        {
+          "id": "menu_5510",
+          "name": "교수진소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/semiconductor/5510",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_5514",
+          "name": "교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/semiconductor/5514",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_6080",
+          "name": "교과목 개요",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/semiconductor/6080",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_6098",
+          "name": "마이크로디그리전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/semiconductor/6098",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_6845",
+          "name": "고신뢰성반도체소재융합전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/semiconductor/6845",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_7084",
+          "name": "고신뢰성인공지능반도체융합전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/semiconductor/7084",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_7085",
+          "name": "고신뢰성파워반도체융합전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/semiconductor/7085",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_6099",
+          "name": "반도체소재공정전공트랙 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/semiconductor/6099",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_7546",
+          "name": "모듈형 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/semiconductor/7546",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_5515",
+          "name": "졸업요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/semiconductor/5515",
+          "document_type": "guide",
+          "enabled": true,
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
         }
       ]
     },
@@ -4834,6 +7057,15 @@
           "document_type": "notice",
           "bbs_id": "2400551",
           "enabled": true
+        },
+        {
+          "id": "menu_1866",
+          "name": "교수소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/sme/1866",
+          "document_type": "guide",
+          "enabled": true
         }
       ]
     },
@@ -4929,6 +7161,79 @@
           "document_type": "notice",
           "bbs_id": "2400589",
           "enabled": true
+        },
+        {
+          "id": "menu_2068",
+          "name": "교수진소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/safety/2068",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_2060",
+          "name": "교과과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/safety/2060",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_2071",
+          "name": "학과 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/safety/2071",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_2072",
+          "name": "교과목과 전공능력 및 핵심역량 매핑",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/safety/2072",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_2073",
+          "name": "모듈형 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/safety/2073",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_2074",
+          "name": "교과목 개요",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/safety/2074",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_2075",
+          "name": "대학원 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/safety/2075",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
         }
       ]
     },
@@ -5012,6 +7317,87 @@
           "document_type": "notice",
           "bbs_id": "2400376",
           "enabled": true
+        },
+        {
+          "id": "menu_2921",
+          "name": "교수",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/fire/2921",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_869",
+          "name": "졸업요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/fire/869",
+          "document_type": "guide",
+          "enabled": true,
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_1528",
+          "name": "학과 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/fire/1528",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_871",
+          "name": "모듈형 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/fire/871",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_872",
+          "name": "전공능력 및 핵심역량 매핑",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/fire/872",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_7275",
+          "name": "교육과정 이수 로드맵",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/fire/7275",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_877",
+          "name": "대학원 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/fire/877",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_878",
+          "name": "졸업요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/fire/878",
+          "document_type": "guide",
+          "enabled": true
         }
       ]
     },
@@ -5067,6 +7453,54 @@
           "path": "/metal/2252",
           "document_type": "notice",
           "bbs_id": "2400635",
+          "enabled": true
+        },
+        {
+          "id": "menu_2235",
+          "name": "교수진 소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/metal/2235",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_2236",
+          "name": "교수진 소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/metal/2236",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_2239",
+          "name": "교과 과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/metal/2239",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_2240",
+          "name": "교과목 소개",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/metal/2240",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_2241",
+          "name": "졸업 요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/metal/2241",
+          "document_type": "guide",
           "enabled": true
         }
       ]
@@ -5133,6 +7567,57 @@
           "document_type": "notice",
           "bbs_id": "2403010",
           "enabled": true
+        },
+        {
+          "id": "menu_5756",
+          "name": "교수진소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/materials-eng/5756",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_5762",
+          "name": "2026학년도 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/materials-eng/5762",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_5763",
+          "name": "로드맵 및 모듈 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/materials-eng/5763",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_5780",
+          "name": "교육과정 운영 로드맵",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/materials-eng/5780",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        }
+      ],
+      "menu_aliases": [
+        {
+          "path": "/materials-eng/5761",
+          "representative_path": "/materials-eng/5762",
+          "category": "교육과정",
+          "basis": "2026-11-17 공개 메뉴의 실제 이동 목적지 확인",
+          "final_url": "https://materials-engineering.pknu.ac.kr/materials-eng/5762",
+          "verified": true
         }
       ]
     },
@@ -5199,6 +7684,68 @@
           "document_type": "notice",
           "bbs_id": "2400385",
           "enabled": true
+        },
+        {
+          "id": "menu_1062",
+          "name": "교수진소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/materials/1062",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_1063",
+          "name": "교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/materials/1063",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_1065",
+          "name": "교과목 소개",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/materials/1065",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_1066",
+          "name": "전공능력강화로드맵",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/materials/1066",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_1068",
+          "name": "졸업요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/materials/1068",
+          "document_type": "guide",
+          "enabled": true,
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        }
+      ],
+      "menu_aliases": [
+        {
+          "path": "/materials/1055",
+          "representative_path": "/materials/1062",
+          "category": "교수진",
+          "basis": "2026-11-17 공개 메뉴의 실제 이동 목적지 확인",
+          "final_url": "https://materials.pknu.ac.kr/materials/1062",
+          "verified": true
         }
       ]
     },
@@ -5293,6 +7840,45 @@
           "document_type": "notice",
           "bbs_id": "2402648",
           "enabled": true
+        },
+        {
+          "id": "menu_1416",
+          "name": "교수진 및 교직원",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/archieng/1416",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_1417",
+          "name": "교과목과 전공능력, 핵심역량 매핑",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/archieng/1417",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_1418",
+          "name": "교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/archieng/1418",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_1419",
+          "name": "교과요목",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/archieng/1419",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
         }
       ]
     },
@@ -5348,6 +7934,136 @@
           "document_type": "notice",
           "bbs_id": "2402688",
           "enabled": true
+        },
+        {
+          "id": "menu_5345",
+          "name": "학부 공지사항",
+          "category": "공지사항",
+          "kind": "board",
+          "path": "/civil/5345",
+          "document_type": "notice",
+          "bbs_id": "2402699",
+          "enabled": true
+        },
+        {
+          "id": "menu_5372",
+          "name": "대학원 공지사항",
+          "category": "대학원공지",
+          "kind": "board",
+          "path": "/civil/5372",
+          "document_type": "notice",
+          "bbs_id": "2402700",
+          "enabled": true
+        },
+        {
+          "id": "menu_5312",
+          "name": "교수진 소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/civil/5312",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_8019",
+          "name": "겸임교수진 소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/civil/8019",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_5331",
+          "name": "전공교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/civil/5331",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_5332",
+          "name": "구조공학 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/civil/5332",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_5333",
+          "name": "수자원/항만 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/civil/5333",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_5334",
+          "name": "지반공학 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/civil/5334",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_5335",
+          "name": "건설관리 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/civil/5335",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_5336",
+          "name": "환경공학 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/civil/5336",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_5337",
+          "name": "측량 및 지형공간정보학 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/civil/5337",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_5330",
+          "name": "전공시간표 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/civil/5330",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        }
+      ],
+      "menu_aliases": [
+        {
+          "path": "/civil/5327",
+          "representative_path": "/civil/5331",
+          "category": "교육과정",
+          "basis": "2026-11-17 공개 메뉴의 실제 이동 목적지 확인",
+          "final_url": "https://civil.pknu.ac.kr/civil/5331",
+          "verified": true
         }
       ]
     },
@@ -5433,6 +8149,35 @@
           "document_type": "notice",
           "bbs_id": "2402927",
           "enabled": true
+        },
+        {
+          "id": "menu_5709",
+          "name": "교수소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/ecoeng/5709",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_5654",
+          "name": "학사/행정 교과과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/ecoeng/5654",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        }
+      ],
+      "menu_aliases": [
+        {
+          "path": "/ecoeng/5643",
+          "representative_path": "/ecoeng/5709",
+          "category": "교수진",
+          "basis": "2026-11-17 공개 메뉴의 실제 이동 목적지 확인",
+          "final_url": "https://ecoeng.pknu.ac.kr/ecoeng/5709",
+          "verified": true
         }
       ]
     },
@@ -5536,6 +8281,55 @@
           "document_type": "notice",
           "bbs_id": "2404336",
           "enabled": true
+        },
+        {
+          "id": "menu_7144",
+          "name": "학부소개 교수진 소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/engopen/7144",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_7726",
+          "name": "학사길라잡이 교수진 소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/engopen/7726",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_7122",
+          "name": "교양교과목",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/engopen/7122",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_7123",
+          "name": "전공이해과목 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/engopen/7123",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        }
+      ],
+      "menu_aliases": [
+        {
+          "path": "/engopen/7115",
+          "representative_path": "/engopen/7122",
+          "category": "교육과정",
+          "basis": "2026-11-17 공개 메뉴의 실제 이동 목적지 확인",
+          "final_url": "https://engopen.pknu.ac.kr/engopen/7122",
+          "verified": true
         }
       ]
     },
@@ -5908,6 +8702,72 @@
           "document_type": "notice",
           "bbs_id": "2404472",
           "enabled": true
+        },
+        {
+          "id": "menu_7365",
+          "name": "교과목개요",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/food/7365",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_7366",
+          "name": "학과교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/food/7366",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_7367",
+          "name": "대학원교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/food/7367",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_7371",
+          "name": "교수소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/food/7371",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_8187",
+          "name": "명예교수 소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/food/8187",
+          "document_type": "guide",
+          "enabled": true
+        }
+      ],
+      "menu_aliases": [
+        {
+          "path": "/food/7351",
+          "representative_path": "/food/7365",
+          "category": "교육과정",
+          "basis": "2026-11-17 공개 메뉴의 실제 이동 목적지 확인",
+          "final_url": "https://food.pknu.ac.kr/food/7365",
+          "verified": true
+        },
+        {
+          "path": "/food/7353",
+          "representative_path": "/food/7371",
+          "category": "교수진",
+          "basis": "2026-11-17 공개 메뉴의 실제 이동 목적지 확인",
+          "final_url": "https://food.pknu.ac.kr/food/7371",
+          "verified": true
         }
       ]
     },
@@ -5993,6 +8853,66 @@
           "document_type": "notice",
           "bbs_id": "2401943",
           "enabled": true
+        },
+        {
+          "id": "menu_4389",
+          "name": "교과목개요",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/nulife/4389",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_4390",
+          "name": "학과교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/nulife/4390",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_4391",
+          "name": "대학원교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/nulife/4391",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_4395",
+          "name": "교수소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/nulife/4395",
+          "document_type": "guide",
+          "enabled": true
+        }
+      ],
+      "menu_aliases": [
+        {
+          "path": "/nulife/4375",
+          "representative_path": "/nulife/4389",
+          "category": "교육과정",
+          "basis": "2026-11-17 공개 메뉴의 실제 이동 목적지 확인",
+          "final_url": "https://icms.pknu.ac.kr/nulife/4389",
+          "verified": true
+        },
+        {
+          "path": "/nulife/4377",
+          "representative_path": "/nulife/4395",
+          "category": "교수진",
+          "basis": "2026-11-17 공개 메뉴의 실제 이동 목적지 확인",
+          "final_url": "https://icms.pknu.ac.kr/nulife/4395",
+          "verified": true
         }
       ]
     },
@@ -6076,6 +8996,64 @@
           "document_type": "notice",
           "bbs_id": "2401844",
           "enabled": true
+        },
+        {
+          "id": "menu_4142",
+          "name": "교과목개요",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/biotech/4142",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_4143",
+          "name": "학과교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/biotech/4143",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_4144",
+          "name": "대학원교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/biotech/4144",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_4183",
+          "name": "교수소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/biotech/4183",
+          "document_type": "guide",
+          "enabled": true
+        }
+      ],
+      "menu_aliases": [
+        {
+          "path": "/biotech/4141",
+          "representative_path": "/biotech/4142",
+          "category": "교육과정",
+          "basis": "2026-11-17 공개 메뉴의 실제 이동 목적지 확인",
+          "final_url": "https://biotech.pknu.ac.kr/biotech/4142",
+          "verified": true
+        },
+        {
+          "path": "/biotech/4149",
+          "representative_path": "/biotech/4183",
+          "category": "교수진",
+          "basis": "2026-11-17 공개 메뉴의 실제 이동 목적지 확인",
+          "final_url": "https://biotech.pknu.ac.kr/biotech/4183",
+          "verified": true
         }
       ]
     },
@@ -6468,6 +9446,64 @@
           "document_type": "notice",
           "bbs_id": "2405889",
           "enabled": true
+        },
+        {
+          "id": "menu_4184",
+          "name": "교과목개요",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/aqua-culture/4184",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_4185",
+          "name": "학과교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/aqua-culture/4185",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_4186",
+          "name": "대학원교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/aqua-culture/4186",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_4190",
+          "name": "교수소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/aqua-culture/4190",
+          "document_type": "guide",
+          "enabled": true
+        }
+      ],
+      "menu_aliases": [
+        {
+          "path": "/aqua-culture/4167",
+          "representative_path": "/aqua-culture/4184",
+          "category": "교육과정",
+          "basis": "2026-11-17 공개 메뉴의 실제 이동 목적지 확인",
+          "final_url": "https://aqua-culture.pknu.ac.kr/aqua-culture/4184",
+          "verified": true
+        },
+        {
+          "path": "/aqua-culture/4169",
+          "representative_path": "/aqua-culture/4190",
+          "category": "교수진",
+          "basis": "2026-11-17 공개 메뉴의 실제 이동 목적지 확인",
+          "final_url": "https://aqua-culture.pknu.ac.kr/aqua-culture/4190",
+          "verified": true
         }
       ]
     },
@@ -6553,6 +9589,64 @@
           "document_type": "notice",
           "bbs_id": "2401839",
           "enabled": true
+        },
+        {
+          "id": "menu_4109",
+          "name": "교과목개요",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/marinebio/4109",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_4110",
+          "name": "학과교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/marinebio/4110",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_4111",
+          "name": "대학원교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/marinebio/4111",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_4115",
+          "name": "교수소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/marinebio/4115",
+          "document_type": "guide",
+          "enabled": true
+        }
+      ],
+      "menu_aliases": [
+        {
+          "path": "/marinebio/4096",
+          "representative_path": "/marinebio/4109",
+          "category": "교육과정",
+          "basis": "2026-11-17 공개 메뉴의 실제 이동 목적지 확인",
+          "final_url": "https://marinebio.pknu.ac.kr/marinebio/4109",
+          "verified": true
+        },
+        {
+          "path": "/marinebio/4098",
+          "representative_path": "/marinebio/4115",
+          "category": "교수진",
+          "basis": "2026-11-17 공개 메뉴의 실제 이동 목적지 확인",
+          "final_url": "https://marinebio.pknu.ac.kr/marinebio/4115",
+          "verified": true
         }
       ]
     },
@@ -6636,6 +9730,69 @@
           "document_type": "notice",
           "bbs_id": "2401849",
           "enabled": true
+        },
+        {
+          "id": "menu_4204",
+          "name": "교과과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/aquamed/4204",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_4217",
+          "name": "교과목개요",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/aquamed/4217",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_4218",
+          "name": "학과교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/aquamed/4218",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_4219",
+          "name": "대학원교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/aquamed/4219",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_4481",
+          "name": "교수소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/aquamed/4481",
+          "document_type": "guide",
+          "enabled": true
+        }
+      ],
+      "menu_aliases": [
+        {
+          "path": "/aquamed/4206",
+          "representative_path": "/aquamed/4481",
+          "category": "교수진",
+          "basis": "2026-11-17 공개 메뉴의 실제 이동 목적지 확인",
+          "final_url": "https://aquamed.pknu.ac.kr/aquamed/4481",
+          "verified": true
         }
       ]
     },
@@ -6759,6 +9916,66 @@
           "document_type": "notice",
           "bbs_id": "2402108",
           "enabled": true
+        },
+        {
+          "id": "menu_4452",
+          "name": "교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/fedu/4452",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_4464",
+          "name": "학과 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/fedu/4464",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_4465",
+          "name": "대학원 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/fedu/4465",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_4455",
+          "name": "교수소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/fedu/4455",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_4469",
+          "name": "교수 소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/fedu/4469",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_4811",
+          "name": "보직교수진 소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/fedu/4811",
+          "document_type": "guide",
+          "enabled": true
         }
       ]
     },
@@ -6870,6 +10087,65 @@
           "document_type": "notice",
           "bbs_id": "2402791",
           "enabled": true
+        },
+        {
+          "id": "menu_5471",
+          "name": "교과목개요",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/mbe/5471",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_5472",
+          "name": "전공교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/mbe/5472",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_5473",
+          "name": "대학원교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/mbe/5473",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_5477",
+          "name": "교수소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/mbe/5477",
+          "document_type": "guide",
+          "enabled": true
+        }
+      ],
+      "menu_aliases": [
+        {
+          "path": "/mbe/5459",
+          "representative_path": "/mbe/5471",
+          "category": "교육과정",
+          "basis": "2026-11-17 공개 메뉴의 실제 이동 목적지 확인",
+          "final_url": "https://mbe.pknu.ac.kr/mbe/5471",
+          "verified": true
+        },
+        {
+          "path": "/mbe/5461",
+          "representative_path": "/mbe/5477",
+          "category": "교수진",
+          "basis": "2026-11-17 공개 메뉴의 실제 이동 목적지 확인",
+          "final_url": "https://mbe.pknu.ac.kr/mbe/5477",
+          "verified": true
         }
       ]
     },
@@ -6925,6 +10201,57 @@
           "path": "/ree/8642",
           "document_type": "notice",
           "bbs_id": "2405032",
+          "enabled": true
+        },
+        {
+          "id": "menu_8106",
+          "name": "교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/ree/8106",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_2811",
+          "name": "교과목개요",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/ree/2811",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_8108",
+          "name": "전공교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/ree/8108",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_2812",
+          "name": "교수소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/ree/2812",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_8740",
+          "name": "교수진",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/ree/8740",
+          "document_type": "guide",
           "enabled": true
         }
       ]
@@ -6990,6 +10317,27 @@
           "document_type": "notice",
           "bbs_id": "2404359",
           "enabled": true
+        },
+        {
+          "id": "menu_7206",
+          "name": "학부소개 교수진 소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/fisheries/7206",
+          "document_type": "guide",
+          "enabled": true,
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_7598",
+          "name": "교육과정 안내",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/fisheries/7598",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
         }
       ]
     },
@@ -7118,6 +10466,56 @@
           "document_type": "notice",
           "bbs_id": "2400574",
           "enabled": true
+        },
+        {
+          "id": "menu_1986",
+          "name": "교수진소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/env-eng/1986",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_2001",
+          "name": "학부 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/env-eng/2001",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_2003",
+          "name": "일반대학원 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/env-eng/2003",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_2005",
+          "name": "산업대학원 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/env-eng/2005",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_5219",
+          "name": "졸업요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/env-eng/5219",
+          "document_type": "guide",
+          "enabled": true,
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
         }
       ]
     },
@@ -7204,6 +10602,57 @@
           "document_type": "notice",
           "bbs_id": "2400451",
           "enabled": true
+        },
+        {
+          "id": "menu_1469",
+          "name": "교수진 소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/pkuocean/1469",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_2515",
+          "name": "학부 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/pkuocean/2515",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_2517",
+          "name": "교과목 매핑 및 모듈",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/pkuocean/2517",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_1494",
+          "name": "교과과정(해양학전공)",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/pkuocean/1494",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_1495",
+          "name": "교과과정(지구환경시스템과학부)",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/pkuocean/1495",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
         }
       ]
     },
@@ -7289,6 +10738,66 @@
           "document_type": "notice",
           "bbs_id": "2400534",
           "enabled": true
+        },
+        {
+          "id": "menu_1628",
+          "name": "교수진 및 연구실 소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/earth/1628",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_1629",
+          "name": "명예교수진 소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/earth/1629",
+          "document_type": "guide",
+          "enabled": true,
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_1622",
+          "name": "학부교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/earth/1622",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_1634",
+          "name": "대학원교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/earth/1634",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_1635",
+          "name": "교육대학원교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/earth/1635",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_1639",
+          "name": "졸업요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/earth/1639",
+          "document_type": "guide",
+          "enabled": true,
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
         }
       ]
     },
@@ -7383,6 +10892,77 @@
           "path": "/envatm/2273",
           "document_type": "notice",
           "bbs_id": "2400651",
+          "enabled": true
+        },
+        {
+          "id": "menu_2260",
+          "name": "교수진소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/envatm/2260",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_2263",
+          "name": "학부 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/envatm/2263",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_2264",
+          "name": "모듈형 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/envatm/2264",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_7078",
+          "name": "졸업기준",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/envatm/7078",
+          "document_type": "guide",
+          "enabled": true,
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_7087",
+          "name": "졸업소요학점",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/envatm/7087",
+          "document_type": "guide",
+          "enabled": true,
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_2265",
+          "name": "대학원 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/envatm/2265",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_7080",
+          "name": "수료(졸업)기준",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/envatm/7080",
+          "document_type": "guide",
           "enabled": true
         }
       ]
@@ -7555,6 +11135,109 @@
           "document_type": "notice",
           "bbs_id": "cate050305",
           "enabled": true
+        },
+        {
+          "id": "php_03specialty_00_php",
+          "name": "전공과정 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/03specialty/00.php",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "php_03specialty_01_php",
+          "name": "교과목과 전공능력 및 핵심역량 매핑",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/03specialty/01.php",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "php_03specialty_02_php",
+          "name": "모듈형 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/03specialty/02.php",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "php_04professor_00_00_php",
+          "name": "교수진 및 연구실 안내",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/04professor/00_00.php",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "php_04professor_01_00_php",
+          "name": "최철웅 교수 [드론·위성사진측량연구실]",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/04professor/01_00.php",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "php_04professor_02_00_php",
+          "name": "윤홍주 교수 [해양 RS/GIS/드론 연구실]",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/04professor/02_00.php",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "php_04professor_03_00_php",
+          "name": "배상훈 교수 [지능형교통시스템연구실]",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/04professor/03_00.php",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "php_04professor_04_00_php",
+          "name": "한경수 교수 [생태기후원격탐사연구실]",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/04professor/04_00.php",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "php_04professor_05_00_php",
+          "name": "이양원 교수 [인공지능 원격탐사 연구실]",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/04professor/05_00.php",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "php_04professor_06_00_php",
+          "name": "이한림 교수 [초분광 원격탐사 연구실]",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/04professor/06_00.php",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "php_04professor_07_00_php",
+          "name": "김진수 교수 [GIS모델링연구실]",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/04professor/07_00.php",
+          "document_type": "guide",
+          "enabled": true
         }
       ]
     },
@@ -7658,6 +11341,67 @@
           "document_type": "notice",
           "bbs_id": "2404709",
           "enabled": true
+        },
+        {
+          "id": "menu_932",
+          "name": "교수진소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/oceaneng/932",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_952",
+          "name": "학부 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/oceaneng/952",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_943",
+          "name": "모듈형 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/oceaneng/943",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_944",
+          "name": "전공 능력 강화 로드맵",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/oceaneng/944",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_945",
+          "name": "학부졸업논문",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/oceaneng/945",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_7600",
+          "name": "교과목 개요",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/oceaneng/7600",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
         }
       ]
     },
@@ -7741,6 +11485,46 @@
           "document_type": "notice",
           "bbs_id": "2400497",
           "enabled": true
+        },
+        {
+          "id": "menu_1440",
+          "name": "교수진소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/ere/1440",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_1434",
+          "name": "학사행정 교과과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/ere/1434",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_1451",
+          "name": "학부 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/ere/1451",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_1452",
+          "name": "일반대학원 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/ere/1452",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "iframe 연결 콘텐츠는 별도 수집 검증 필요."
         }
       ]
     },
@@ -7805,6 +11589,46 @@
           "document_type": "notice",
           "bbs_id": "2404354",
           "enabled": true
+        },
+        {
+          "id": "menu_7184",
+          "name": "학부소개 교수진소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/lem/7184",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_7186",
+          "name": "교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/lem/7186",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_7273",
+          "name": "교양교과목",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/lem/7273",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_7274",
+          "name": "전공이해과목 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/lem/7274",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
         }
       ]
     },
@@ -7841,6 +11665,16 @@
           "document_type": "notice",
           "bbs_id": null,
           "enabled": true
+        },
+        {
+          "id": "html_html_03_01_php_category_1",
+          "name": "교수진",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/html/03/01.php?category_idx=1",
+          "document_type": "guide",
+          "enabled": true,
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
         }
       ]
     },
@@ -7945,6 +11779,45 @@
           "path": "/bigdata/601",
           "document_type": "notice",
           "bbs_id": "2400217",
+          "enabled": true
+        },
+        {
+          "id": "menu_588",
+          "name": "교수진소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/bigdata/588",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_625",
+          "name": "교육및학사안내 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/bigdata/625",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_626",
+          "name": "교과목설명",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/bigdata/626",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_627",
+          "name": "졸업요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/bigdata/627",
+          "document_type": "guide",
           "enabled": true
         }
       ]
@@ -8052,6 +11925,102 @@
           "document_type": "notice",
           "bbs_id": "1200146",
           "enabled": true
+        },
+        {
+          "id": "menu_272",
+          "name": "교수",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/stat/272",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_277",
+          "name": "학사과정 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/stat/277",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_278",
+          "name": "졸업요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/stat/278",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_6473",
+          "name": "대학원과정 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/stat/6473",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_6474",
+          "name": "졸업요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/stat/6474",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_420",
+          "name": "통계·데이터사이언스전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/stat/420",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_4554",
+          "name": "데이터비즈니스융합전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/stat/4554",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_422",
+          "name": "학부 졸업요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/stat/422",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_6477",
+          "name": "대학원(통계학과) 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/stat/6477",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_421",
+          "name": "대학원(통계학과) 졸업요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/stat/421",
+          "document_type": "guide",
+          "enabled": true
         }
       ]
     },
@@ -8149,6 +12118,16 @@
           "kind": "static_page",
           "path": "/comm/3127",
           "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_3119",
+          "name": "기존 공지사항",
+          "category": "공지사항",
+          "kind": "board",
+          "path": "/comm/3119",
+          "document_type": "notice",
+          "bbs_id": "2401369",
           "enabled": true
         },
         {
@@ -8292,6 +12271,100 @@
           "document_type": "notice",
           "bbs_id": "2404532",
           "enabled": true
+        },
+        {
+          "id": "menu_7251",
+          "name": "교수진 교수진소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/bme/7251",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_7230",
+          "name": "의공학전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/bme/7230",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_7249",
+          "name": "졸업요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/bme/7249",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_7231",
+          "name": "의공학IT융합전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/bme/7231",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_7335",
+          "name": "4차산업융합바이오닉스공학과 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/bme/7335",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_7336",
+          "name": "바이오메디컬공학과 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/bme/7336",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        }
+      ],
+      "menu_aliases": [
+        {
+          "path": "/bme/7250",
+          "representative_path": "/bme/7251",
+          "category": "교수진",
+          "basis": "2026-11-17 공개 메뉴의 실제 이동 목적지 확인",
+          "final_url": "https://bme.pknu.ac.kr/bme/7251",
+          "verified": true
+        },
+        {
+          "path": "/bme/7215",
+          "representative_path": "/bme/7230",
+          "category": "교육과정",
+          "basis": "2026-11-17 공개 메뉴의 실제 이동 목적지 확인",
+          "final_url": "https://bme.pknu.ac.kr/bme/7230",
+          "verified": true
+        },
+        {
+          "path": "/bme/7492",
+          "representative_path": "/bme/7230",
+          "category": "교육과정",
+          "basis": "2026-11-17 공개 메뉴의 실제 이동 목적지 확인",
+          "final_url": "https://bme.pknu.ac.kr/bme/7230",
+          "verified": true
+        },
+        {
+          "path": "/bme/7232",
+          "representative_path": "/bme/7335",
+          "category": "교육과정",
+          "basis": "2026-11-17 공개 메뉴의 실제 이동 목적지 확인",
+          "final_url": "https://bme.pknu.ac.kr/bme/7335",
+          "verified": true
         }
       ]
     },
@@ -8378,6 +12451,67 @@
           "document_type": "notice",
           "bbs_id": "2404809",
           "enabled": true
+        },
+        {
+          "id": "menu_2019",
+          "name": "교수진 소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/marinesports/2019",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_2023",
+          "name": "교과목 해설",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/marinesports/2023",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_2022",
+          "name": "교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/marinesports/2022",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_2152",
+          "name": "모듈형 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/marinesports/2152",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_2029",
+          "name": "일반대학원 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/marinesports/2029",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_2030",
+          "name": "일반대학원 교과목 해설",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/marinesports/2030",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
         }
       ]
     },
@@ -8454,6 +12588,91 @@
           "document_type": "notice",
           "bbs_id": "2405471",
           "enabled": true
+        },
+        {
+          "id": "menu_2871",
+          "name": "구성원 교수진",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/humanbio/2871",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_2879",
+          "name": "학사과정 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/humanbio/2879",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_2881",
+          "name": "교과목소개",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/humanbio/2881",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_2883",
+          "name": "졸업요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/humanbio/2883",
+          "document_type": "guide",
+          "enabled": true,
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_8355",
+          "name": "전공선택 길라잡이 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/humanbio/8355",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_8317",
+          "name": "휴먼바이오융합학과 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/humanbio/8317",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        }
+      ],
+      "menu_aliases": [
+        {
+          "path": "/humanbio/2878",
+          "representative_path": "/humanbio/2879",
+          "category": "교육과정",
+          "basis": "2026-11-17 공개 메뉴의 실제 이동 목적지 확인",
+          "final_url": "https://humanbio.pknu.ac.kr/humanbio/2879",
+          "verified": true
+        },
+        {
+          "path": "/humanbio/8316",
+          "representative_path": "/humanbio/2879",
+          "category": "교육과정",
+          "basis": "2026-11-17 공개 메뉴의 실제 이동 목적지 확인",
+          "final_url": "https://humanbio.pknu.ac.kr/humanbio/2879",
+          "verified": true
+        },
+        {
+          "path": "/humanbio/8315",
+          "representative_path": "/humanbio/8317",
+          "category": "교육과정",
+          "basis": "2026-11-17 공개 메뉴의 실제 이동 목적지 확인",
+          "final_url": "https://humanbio.pknu.ac.kr/humanbio/8317",
+          "verified": true
         }
       ]
     },
@@ -8580,6 +12799,26 @@
           "document_type": "notice",
           "bbs_id": "2401627",
           "enabled": true
+        },
+        {
+          "id": "menu_1662",
+          "name": "전공소개 교수진소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/ee/1662",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_1666",
+          "name": "이수체계도",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/ee/1666",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
         }
       ]
     },
@@ -8765,6 +13004,39 @@
           "document_type": "notice",
           "enabled": true,
           "bbs_id": "2403850"
+        },
+        {
+          "id": "menu_3284",
+          "name": "학부 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/pknuice/3284",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "본문 선택자 보완 후 수집 결과 확인 필요; 이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_844",
+          "name": "2026학년도 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/pknuice/844",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "본문 선택자 보완 후 수집 결과 확인 필요; 이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_5082",
+          "name": "교과요목",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/pknuice/5082",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "본문 선택자 보완 후 수집 결과 확인 필요."
         }
       ]
     },
@@ -8850,6 +13122,48 @@
           "document_type": "notice",
           "bbs_id": "2400421",
           "enabled": true
+        },
+        {
+          "id": "menu_961",
+          "name": "교수진소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/pknuarchi/961",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_6491",
+          "name": "교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/pknuarchi/6491",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_963",
+          "name": "전공능력 및 핵심역량",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/pknuarchi/963",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_4063",
+          "name": "교과목 이수 체계",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/pknuarchi/4063",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
         }
       ]
     },
@@ -8937,6 +13251,48 @@
           "document_type": "notice",
           "bbs_id": "2401812",
           "enabled": true
+        },
+        {
+          "id": "menu_3705",
+          "name": "교수진소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/industrial/3705",
+          "document_type": "guide",
+          "enabled": true,
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_3725",
+          "name": "공업디자인전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/industrial/3725",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "본문 선택자 보완 후 수집 결과 확인 필요; 이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_3726",
+          "name": "교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/industrial/3726",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "본문 선택자 보완 후 수집 결과 확인 필요; 이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        }
+      ],
+      "menu_aliases": [
+        {
+          "path": "/industrial/3709",
+          "representative_path": "/industrial/3725",
+          "category": "교육과정",
+          "basis": "2026-11-17 공개 메뉴의 실제 이동 목적지 확인",
+          "final_url": "https://icms.pknu.ac.kr/industrial/3725",
+          "verified": true
         }
       ]
     },
@@ -9092,6 +13448,35 @@
           "document_type": "notice",
           "bbs_id": "2401754",
           "enabled": true
+        },
+        {
+          "id": "menu_3666",
+          "name": "교수진 소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/visual/3666",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_3668",
+          "name": "교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/visual/3668",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_3693",
+          "name": "일반대학원 교과과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/visual/3693",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
         }
       ]
     },
@@ -9146,6 +13531,16 @@
           "path": "/ce/2426",
           "bbs_id": "2400691",
           "document_type": "notice"
+        },
+        {
+          "id": "career_notice",
+          "name": "진로·취업 공지사항",
+          "category": "취업정보",
+          "kind": "board",
+          "path": "/ce/1813",
+          "bbs_id": "2400535",
+          "document_type": "notice",
+          "enabled": true
         },
         {
           "id": "resources",
@@ -9257,6 +13652,197 @@
           "path": "/ce/2889",
           "document_type": "static_page",
           "source_type": "curriculum"
+        },
+        {
+          "id": "menu_4955",
+          "name": "데이터사이언스 융합전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/ce/4955",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_6934",
+          "name": "인공지능·소프트웨어 융합전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/ce/6934",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_6936",
+          "name": "정보보안 마이크로전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/ce/6936",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_6938",
+          "name": "소프트웨어입문 마이크로전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/ce/6938",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_6939",
+          "name": "소프트웨어기초 마이크로전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/ce/6939",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_6940",
+          "name": "소프트웨어심화 마이크로전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/ce/6940",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_6955",
+          "name": "소프트웨어응용제조 마이크로전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/ce/6955",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_6956",
+          "name": "소프트웨어응용물류 마이크로전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/ce/6956",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_6957",
+          "name": "소프트웨어응용미디어콘텐츠 마이크로전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/ce/6957",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_6958",
+          "name": "소프트웨어응용핀테크 마이크로전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/ce/6958",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_6959",
+          "name": "소프트웨어응용조선해양 마이크로전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/ce/6959",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_6960",
+          "name": "소프트웨어응용헬스케어 마이크로전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/ce/6960",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_6961",
+          "name": "산업·인공지능융합 학생설계전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/ce/6961",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_6962",
+          "name": "생체모방·인공지능 학생설계전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/ce/6962",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_6963",
+          "name": "양자계산과학 학생설계전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/ce/6963",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_6964",
+          "name": "인공지능과학범죄학 학생설계전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/ce/6964",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_6965",
+          "name": "인공지능영상공학 학생설계전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/ce/6965",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_6966",
+          "name": "창의융합응용공학 학생설계전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/ce/6966",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_8309",
+          "name": "스포츠인공지능데이터사이언스학생설계전공 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/ce/8309",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
         }
       ],
       "request_delay_seconds": 0.8,
@@ -9349,6 +13935,36 @@
           "path": "/digitalfinance/5519",
           "document_type": "guide",
           "enabled": true
+        },
+        {
+          "id": "menu_5495",
+          "name": "교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/digitalfinance/5495",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_5497",
+          "name": "교수소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/digitalfinance/5497",
+          "document_type": "guide",
+          "enabled": true
+        }
+      ],
+      "menu_aliases": [
+        {
+          "path": "/digitalfinance/5488",
+          "representative_path": "/digitalfinance/5497",
+          "category": "교수진",
+          "basis": "2026-11-17 공개 메뉴의 실제 이동 목적지 확인",
+          "final_url": "https://icms.pknu.ac.kr/digitalfinance/5497",
+          "verified": true
         }
       ]
     },
@@ -9432,6 +14048,36 @@
           "document_type": "notice",
           "bbs_id": "2403328",
           "enabled": true
+        },
+        {
+          "id": "menu_5443",
+          "name": "구성원 교수진",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/smartmobility/5443",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_5448",
+          "name": "교과과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/smartmobility/5448",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_5450",
+          "name": "졸업요건",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/smartmobility/5450",
+          "document_type": "guide",
+          "enabled": true,
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
         }
       ]
     },
@@ -9487,6 +14133,46 @@
           "document_type": "notice",
           "bbs_id": "2404347",
           "enabled": true
+        },
+        {
+          "id": "menu_7150",
+          "name": "학부소개 교수진 소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/liberalitc/7150",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_7152",
+          "name": "교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/liberalitc/7152",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_7276",
+          "name": "교양교과목",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/liberalitc/7276",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_7281",
+          "name": "전공이해과목 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/liberalitc/7281",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
         }
       ]
     },
@@ -9560,6 +14246,52 @@
           "document_type": "notice",
           "bbs_id": "2402629",
           "enabled": true
+        },
+        {
+          "id": "menu_5280",
+          "name": "교수소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/future/5280",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_5290",
+          "name": "교수소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/future/5290",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_7506",
+          "name": "교수소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/future/7506",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_5292",
+          "name": "교수소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/future/5292",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_5294",
+          "name": "교수소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/future/5294",
+          "document_type": "guide",
+          "enabled": true,
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
         }
       ]
     },
@@ -9787,6 +14519,49 @@
           "document_type": "notice",
           "bbs_id": "2400468",
           "enabled": true
+        },
+        {
+          "id": "menu_1323",
+          "name": "교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/safe/1323",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_6439",
+          "name": "교육과정표",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/safe/6439",
+          "document_type": "guide",
+          "enabled": false,
+          "source_type": "curriculum",
+          "notes": "공개 페이지에 제목만 있고 본문·첨부·이미지가 없어 수집 보류. 원본 내용 게시 후 활성화 검토."
+        },
+        {
+          "id": "menu_1335",
+          "name": "과목별강의개요 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/safe/1335",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_6438",
+          "name": "교과목별 역량",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/safe/6438",
+          "document_type": "guide",
+          "enabled": false,
+          "source_type": "curriculum",
+          "notes": "공개 페이지에 제목만 있고 본문·첨부·이미지가 없어 수집 보류. 원본 내용 게시 후 활성화 검토."
         }
       ]
     },
@@ -9844,6 +14619,59 @@
           "document_type": "notice",
           "bbs_id": "2404487",
           "enabled": true
+        },
+        {
+          "id": "menu_7417",
+          "name": "교수소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/Welfare/7417",
+          "document_type": "guide",
+          "enabled": true,
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_7420",
+          "name": "교과목별 역량",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/Welfare/7420",
+          "document_type": "guide",
+          "enabled": false,
+          "source_type": "curriculum",
+          "notes": "공개 페이지에 제목만 있고 본문·첨부·이미지가 없어 수집 보류. 원본 내용 게시 후 활성화 검토."
+        },
+        {
+          "id": "menu_8267",
+          "name": "교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/Welfare/8267",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_7421",
+          "name": "교육과정표",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/Welfare/7421",
+          "document_type": "guide",
+          "enabled": false,
+          "source_type": "curriculum",
+          "notes": "공개 페이지에 제목만 있고 본문·첨부·이미지가 없어 수집 보류. 원본 내용 게시 후 활성화 검토."
+        }
+      ],
+      "menu_aliases": [
+        {
+          "path": "/welfare/7408",
+          "representative_path": "/Welfare/7420",
+          "category": "교육과정",
+          "basis": "2026-11-17 공개 메뉴의 실제 이동 목적지 확인",
+          "final_url": "https://icms.pknu.ac.kr/Welfare/7420",
+          "verified": true
         }
       ]
     },
@@ -9945,6 +14773,17 @@
           "document_type": "notice",
           "bbs_id": "2401991",
           "enabled": true
+        },
+        {
+          "id": "menu_4617",
+          "name": "교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/msce/4617",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
         }
       ]
     },
@@ -10120,6 +14959,67 @@
           "path": "/duem/1597",
           "document_type": "guide",
           "enabled": true
+        },
+        {
+          "id": "menu_1583",
+          "name": "학부소개 교수진 소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/duem/1583",
+          "document_type": "guide",
+          "enabled": true
+        },
+        {
+          "id": "menu_1584",
+          "name": "교육과정(학부)",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/duem/1584",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_1585",
+          "name": "교육과정(유학생트랙)",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/duem/1585",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
+        },
+        {
+          "id": "menu_6695",
+          "name": "교육과정(글로벌매니지먼트·거버넌스 GMG 트랙)",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/duem/6695",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_1586",
+          "name": "유학생 교양교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/duem/1586",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "이미지 중심 본문; 이미지 원본 보존과 텍스트 확보 여부 확인 필요."
+        },
+        {
+          "id": "menu_1590",
+          "name": "교육과정(대학원)",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/duem/1590",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum"
         }
       ]
     },
@@ -10184,6 +15084,69 @@
           "document_type": "notice",
           "bbs_id": "2400350",
           "enabled": true
+        },
+        {
+          "id": "menu_7052",
+          "name": "학부대학 소개 교수진 소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/college/7052",
+          "document_type": "guide",
+          "enabled": true,
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_6977",
+          "name": "교양교육원 교수진 소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/college/6977",
+          "document_type": "guide",
+          "enabled": true,
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_6985",
+          "name": "자유전공길라잡이센터 교수진 소개",
+          "category": "교수진",
+          "kind": "static_page",
+          "path": "/college/6985",
+          "document_type": "guide",
+          "enabled": true,
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_6986",
+          "name": "교육과정 소개",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/college/6986",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_7000",
+          "name": "교양과목 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/college/7000",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
+        },
+        {
+          "id": "menu_7002",
+          "name": "전공이해과목 교육과정",
+          "category": "교육과정",
+          "kind": "static_page",
+          "path": "/college/7002",
+          "document_type": "guide",
+          "enabled": true,
+          "source_type": "curriculum",
+          "notes": "기존 파서의 본문 영역 선택 검증 필요."
         }
       ]
     },
