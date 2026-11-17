@@ -240,6 +240,12 @@ def crawl_dataset(name: str, args: argparse.Namespace) -> None:
         if args.student_life_mode in {"guide", "all"} and args.student_life_limit:
             command.extend(["--limit", str(args.student_life_limit)])
         run_command(command)
+        if args.student_life_mode == "all":
+            # 학사일정·교육과정·수강신청·전공제도 use their own collectors, outside
+            # the student-life CLI; written under 대학생활 so process_recent picks them up.
+            from scripts.crawlers.main.categories.student_life import SPECIAL_PAGE_IDS
+            run_command([python, "-m", "scripts.crawlers.main.run", "--page-ids",
+                         *(str(page_id) for page_id in SPECIAL_PAGE_IDS)])
     elif name == "rule":
         run_command(
             [

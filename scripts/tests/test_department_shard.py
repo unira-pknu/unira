@@ -116,3 +116,24 @@ class FixedDailySetTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class StudentLifeSpecialPagesTests(unittest.TestCase):
+    # 2026-11-13: 학사일정·전공제도 had never reached the DB; only the full weekly run adds them.
+    def run_mode(self, mode):
+        args = SimpleNamespace(student_life_mode=mode, student_life_limit=None)
+        with patch.object(recent, "run_command") as run:
+            recent.crawl_dataset("pknu_student_life", args)
+        return [call.args[0] for call in run.call_args_list]
+
+    def test_full_run_also_collects_special_student_life_pages(self):
+        from scripts.crawlers.main.categories.student_life import SPECIAL_PAGE_IDS
+        commands = self.run_mode("all")
+        self.assertEqual(len(commands), 2)
+        self.assertEqual(commands[1][1:4], ["-m", "scripts.crawlers.main.run", "--page-ids"])
+        self.assertEqual(commands[1][4:], [str(page_id) for page_id in SPECIAL_PAGE_IDS])
+        self.assertIn("31", commands[1])  # 학사일정
+        self.assertNotIn("434", commands[1])  # the guide is collected by --mode guide
+
+    def test_daily_guide_run_is_unchanged(self):
+        self.assertEqual(len(self.run_mode("guide")), 1)
