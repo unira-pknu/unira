@@ -21,8 +21,11 @@ class Embedder:
         model_name: str,
         device: str,
         expected_dimensions: int,
+        query_prefix: str = "",
     ) -> None:
         from sentence_transformers import SentenceTransformer  # heavy import
+
+        self._query_prefix = query_prefix
 
         logger.info("Loading embedding model: %s (device=%s)", model_name, device)
         self._model = SentenceTransformer(model_name, device=device)
@@ -42,7 +45,7 @@ class Embedder:
 
     def encode_query(self, query: str) -> List[float]:
         vector = self._model.encode(
-            [query],
+            [self._query_prefix + query],
             normalize_embeddings=True,
             show_progress_bar=False,
         )[0]
