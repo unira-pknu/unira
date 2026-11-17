@@ -3,13 +3,14 @@ from __future__ import annotations
 import json
 import tempfile
 import unittest
+from copy import deepcopy
 from pathlib import Path
 from unittest.mock import patch
 
 from scripts.crawlers.common.storage import (
     StateLoadError, archive_document, empty_state, find_document_json,
     get_dataset_paths, load_state_with_migration, safe_component,
-    save_state_atomic, state_migration_plan, write_document,
+    save_state_atomic, save_state_delta, state_migration_plan, write_document,
     get_dataset_root, iter_dataset_roots,
 )
 from scripts.crawlers.common.reader import infer_dataset_from_path
@@ -67,6 +68,24 @@ class CrawlerStorageTests(unittest.TestCase):
         self.assertTrue(legacy.exists())
         self.assertTrue(self.paths.state.exists())
         self.assertEqual("seven", state["items"]["7"]["slug"])
+
+    def test_parallel_state_commits_preserve_other_workers_changes(self) -> None:
+        initial = empty_state("pknu_notice")
+        initial["items"] = {key: {"slug": key} for key in ("old", "changed")}
+        save_state_atomic(self.paths.state, initial, "pknu_notice")
+        first, _ = load_state_with_migration(self.paths)
+        second = deepcopy(first)
+        baseline = deepcopy(first["items"])
+        first["items"]["one"] = {"slug": "one"}
+        first["items"]["changed"]["content_hash"] = "new"
+        save_state_delta(self.paths, first, baseline)
+        second["items"].pop("old")
+        second["items"].pop("changed")
+        second["items"]["two"] = {"slug": "two"}
+        save_state_delta(self.paths, second, baseline)
+        committed, _ = load_state_with_migration(self.paths)
+        self.assertEqual({"one", "two", "changed"}, set(committed["items"]))
+        self.assertEqual("new", committed["items"]["changed"]["content_hash"])
 
     def test_legacy_state_timestamps_are_normalized_to_kst(self) -> None:
         legacy = self.root / "state.json"

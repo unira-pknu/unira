@@ -23,6 +23,7 @@ import ssl
 import sys
 import time
 import zipfile
+from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -61,7 +62,7 @@ from scripts.crawlers.common.logging import (  # noqa: E402
     configure_crawler_logging, log_attachment_events, log_event, set_run_id,
 )
 from scripts.crawlers.common.storage import (  # noqa: E402
-    get_dataset_paths, load_state_with_migration, save_state_atomic, write_document,
+    get_dataset_paths, load_state_with_migration, save_state_delta, write_document,
 )
 from scripts.crawlers.common.reader import remove_redundant_legacy_fields  # noqa: E402
 
@@ -1413,10 +1414,13 @@ def main() -> int:
 
     mode = "smoke" if args.max_law_items is not None or args.max_bylaw_pages is not None else "full"
     result = RunResult(dataset="rule", mode=mode)
+    if args.laws != args.bylaws:
+        result.run_id += "-laws" if args.laws else "-bylaws"
     set_run_id(log_context, result.run_id)
     log_event(log, logging.INFO, "run_started", mode=mode, laws=args.laws, bylaws=args.bylaws)
     try:
         state, state_origin = load_state_with_migration(PATHS)
+        initial_items = deepcopy(state["items"])
         log_event(log, logging.INFO, "state_loaded", path=STATE_FILE, entries=len(state["items"]), origin=state_origin)
         session = build_session()
         if args.laws:
@@ -1440,7 +1444,7 @@ def main() -> int:
             log_event(log, logging.INFO, "section_started", section="bylaws")
             result.stats.add(crawl_bylaws(session, args.max_bylaw_pages, args.download_files, state))
             log_event(log, logging.INFO, "section_finished", section="bylaws")
-        save_state_atomic(STATE_FILE, state, "rule")
+        save_state_delta(PATHS, state, initial_items)
         log_event(log, logging.INFO, "state_saved", path=STATE_FILE, entries=len(state["items"]))
         if result.stats.failed:
             result.add_error("DOCUMENT_FAILURES", f"{result.stats.failed} document(s) failed", retryable=True)

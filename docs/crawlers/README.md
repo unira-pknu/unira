@@ -69,6 +69,25 @@ python -m scripts.crawlers.main.run --boards --all-board-pages --report files/pk
 학과의 `--all`은 전체 사이트 선택이며 `--recent-only`를 생략하면 최근 목록 제한 없이 동작합니다.
 학과 엔진은 현재 한 번 실행하고 종료하며 `--once`는 의도를 명시하는 호환 옵션입니다.
 
+### 범위를 나눈 병렬 실행
+
+학과는 데이터셋을 서로 겹치지 않는 큐로 나누고, 각 창에서 `--dataset NAME --once`를
+순서대로 실행합니다. 같은 데이터셋이나 `--all`을 다른 창에서 중복 실행하지 마세요.
+메인은 연결된 하위 페이지가 같은 작업에 남도록 최상위 카테고리 단위로 나누며,
+각 창의 `--report` 경로도 다르게 지정합니다. 규정집은 `--laws`와 `--bylaws`로 나눌 수 있습니다.
+
+2026-11-17부터 메인 공통 페이지와 규정집의 상태 저장은 파일 잠금 안에서 최신 상태를 읽고,
+각 작업이 변경한 항목만 병합합니다. 서로 다른 수집 범위의 상태가 이전 스냅샷으로
+덮어써지는 것을 방지합니다. 동일 항목의 중복 수집을 허용하는 기능은 아닙니다.
+규정집의 단독 `--laws`·`--bylaws` 실행 결과 파일도 접미사로 구분합니다.
+
+이 변경의 회귀 테스트 명령은 다음과 같습니다. 병렬 수집 실행에는 테스트가 포함되지 않습니다.
+
+```powershell
+.\.venv\Scripts\python.exe -X utf8 -m unittest scripts.tests.core.test_crawler_storage
+.\.venv\Scripts\python.exe -X utf8 -m unittest discover -s scripts/tests -t . -p "test_*.py"
+```
+
 ## 3. 수집 대상 확인과 제한 실행
 
 ### 메인 홈페이지
