@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "dataset": "english",
-  "updated_at": "2026-11-15T08:00:35+09:00",
+  "updated_at": "2026-11-17T11:35:42+09:00",
   "items": {
     "http://english.pknu.ac.kr/english/3936": {
       "source_id": "http://english.pknu.ac.kr/english/3936",
@@ -51,12 +51,12 @@
       "source_id": "http://english.pknu.ac.kr/english/3852",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-11-11T02:06:10+09:00",
+      "last_seen_at": "2026-11-17T11:32:42+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 421,
+      "last_no": 425,
       "name": "채용공고",
-      "updated_at": "2026-11-11T02:06:10+09:00"
+      "updated_at": "2026-11-17T11:32:42+09:00"
     },
     "http://english.pknu.ac.kr/english/3853": {
       "source_id": "http://english.pknu.ac.kr/english/3853",

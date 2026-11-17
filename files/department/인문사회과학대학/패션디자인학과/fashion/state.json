@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "dataset": "fashion",
-  "updated_at": "2026-11-15T08:28:12+09:00",
+  "updated_at": "2026-11-17T11:48:46+09:00",
   "items": {
     "http://fashion.pknu.ac.kr/fashion/2129": {
       "source_id": "http://fashion.pknu.ac.kr/fashion/2129",

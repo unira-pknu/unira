@@ -1,18 +1,18 @@
 {
   "schema_version": "1.0",
   "dataset": "ecoeng",
-  "updated_at": "2026-11-15T07:48:26+09:00",
+  "updated_at": "2026-11-17T11:24:46+09:00",
   "items": {
     "http://ecoeng.pknu.ac.kr/ecoeng/5664": {
       "source_id": "http://ecoeng.pknu.ac.kr/ecoeng/5664",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-11-11T01:07:17+09:00",
+      "last_seen_at": "2026-11-17T11:20:28+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 309,
+      "last_no": 310,
       "name": "학과 공지사항",
-      "updated_at": "2026-11-11T01:07:17+09:00"
+      "updated_at": "2026-11-17T11:20:28+09:00"
     },
     "http://ecoeng.pknu.ac.kr/ecoeng/5665": {
       "source_id": "http://ecoeng.pknu.ac.kr/ecoeng/5665",

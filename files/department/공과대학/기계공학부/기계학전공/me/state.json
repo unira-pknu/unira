@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "dataset": "me",
+  "updated_at": "2026-11-17T14:35:54+09:00",
+  "items": {
+    "http://me.pknu.ac.kr/me/1274": {
+      "source_id": "http://me.pknu.ac.kr/me/1274",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-17T14:18:08+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 390,
+      "name": "취업공지",
+      "updated_at": "2026-11-17T14:18:08+09:00"
+    },
+    "http://me.pknu.ac.kr/me/1290": {
+      "source_id": "http://me.pknu.ac.kr/me/1290",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-17T14:24:59+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 1199,
+      "name": "학과 공지사항",
+      "updated_at": "2026-11-17T14:24:59+09:00"
+    },
+    "http://me.pknu.ac.kr/me/1291": {
+      "source_id": "http://me.pknu.ac.kr/me/1291",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-17T14:32:35+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 121,
+      "name": "장학 공지사항",
+      "updated_at": "2026-11-17T14:32:35+09:00"
+    },
+    "http://me.pknu.ac.kr/me/1292": {
+      "source_id": "http://me.pknu.ac.kr/me/1292",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-17T14:33:11+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 15,
+      "name": "자료실",
+      "updated_at": "2026-11-17T14:33:11+09:00"
+    }
+  }
+}

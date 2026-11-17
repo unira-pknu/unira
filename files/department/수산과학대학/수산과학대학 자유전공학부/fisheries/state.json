@@ -1,18 +1,18 @@
 {
   "schema_version": "1.0",
   "dataset": "fisheries",
-  "updated_at": "2026-11-15T08:42:48+09:00",
+  "updated_at": "2026-11-17T11:55:51+09:00",
   "items": {
     "http://fisheries.pknu.ac.kr/fisheries/7204": {
       "source_id": "http://fisheries.pknu.ac.kr/fisheries/7204",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-11-15T08:38:51+09:00",
+      "last_seen_at": "2026-11-17T11:51:15+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 165,
+      "last_no": 166,
       "name": "공지사항",
-      "updated_at": "2026-11-15T08:38:51+09:00"
+      "updated_at": "2026-11-17T11:51:15+09:00"
     },
     "http://fisheries.pknu.ac.kr/fisheries/7208": {
       "source_id": "http://fisheries.pknu.ac.kr/fisheries/7208",
