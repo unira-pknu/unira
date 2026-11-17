@@ -1,6 +1,7 @@
 'Main website common storage.'
 
 from __future__ import annotations
+from copy import deepcopy
 from pathlib import Path
 from scripts.crawlers.common.logging import configure_crawler_logging, log_event
 from scripts.crawlers.common.storage import (
@@ -8,6 +9,7 @@ from scripts.crawlers.common.storage import (
     get_dataset_paths,
     load_state_with_migration,
     save_state_atomic,
+    save_state_delta,
     write_document,
 )
 from typing import Any
@@ -57,14 +59,24 @@ LEGACY_STATE_FILES = (PROJECT_ROOT / "state_pknu_student_life.json",)
 SUBCATEGORY_ACADEMIC_INFO = "학사정보"
 
 
+class _LoadedState(dict):
+    def __init__(self, state: dict[str, Any]):
+        super().__init__(state)
+        self.initial_items = deepcopy(state["items"])
+
+
 def load_state() -> dict[str, Any]:
     state, origin = load_state_with_migration(PATHS, legacy_paths=LEGACY_STATE_FILES)
     log_event(log, logging.INFO, "state_loaded", path=STATE_FILE, entries=len(state["items"]), origin=origin)
-    return state
+    return _LoadedState(state)
 
 
 def save_state(state: dict[str, Any]) -> None:
-    save_state_atomic(STATE_FILE, state, "pknu_student_life")
+    if isinstance(state, _LoadedState):
+        save_state_delta(PATHS, state, state.initial_items)
+        state.initial_items = deepcopy(state["items"])
+    else:
+        save_state_atomic(STATE_FILE, state, "pknu_student_life")
     log_event(log, logging.INFO, "state_saved", path=STATE_FILE, entries=len(state.get("items", {})))
 
 

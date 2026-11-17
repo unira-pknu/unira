@@ -67,6 +67,127 @@ py -3.12 -m venv .venv
 기존 결과를 이어 수집할 때는 상태를 유지하고 같은 명령을 다시 실행합니다.
 수집은 로컬 파일 저장 단계이며 임베딩·Supabase 적재는 별도 작업입니다.
 
+## 2026-11-16 누락 게시판 등록
+
+홈페이지 메뉴와 실제 게시판 ID를 대조해 다음 게시판을 활성 section으로 추가했습니다.
+기존 학과 데이터셋과 저장 경로를 사용하며, 학과 전체 실행과 `--all`에도 포함됩니다.
+
+| 데이터셋 | 게시판 | section ID | 경로 | 게시판 ID |
+| --- | --- | --- | --- | --- |
+| `civil` | 토목공학전공 학부 공지사항 | `menu_5345` | `/civil/5345` | `2402699` |
+| `civil` | 토목공학전공 대학원 공지사항 | `menu_5372` | `/civil/5372` | `2402700` |
+| `ce` | 컴퓨터·인공지능공학부 진로·취업 공지사항 | `career_notice` | `/ce/1813` | `2400535` |
+| `masscom` | 언론정보전공 사이트의 기존 공지사항 | `menu_3119` | `/comm/3119` | `2401369` |
+
+등록 변경만으로 기존 수집 결과가 갱신되지는 않습니다. 구성 검증과 새 게시판만의 수집은
+프로젝트 루트 PowerShell에서 사용자가 실행합니다. 기존 증분 상태를 초기화할 필요는 없습니다.
+
+```powershell
+.\.venv\Scripts\python.exe -X utf8 -m scripts.crawlers.departments.cli validate
+
+.\.venv\Scripts\python.exe -u -X utf8 -m scripts.crawlers.departments.engine --dataset civil --section menu_5345 --once
+.\.venv\Scripts\python.exe -u -X utf8 -m scripts.crawlers.departments.engine --dataset civil --section menu_5372 --once
+.\.venv\Scripts\python.exe -u -X utf8 -m scripts.crawlers.departments.engine --dataset ce --section career_notice --once
+.\.venv\Scripts\python.exe -u -X utf8 -m scripts.crawlers.departments.engine --dataset masscom --section menu_3119 --once
+```
+
+위 수집 명령은 최근 목록 제한 없이 해당 게시판의 전체 목록을 확인하고 첨부파일도 다운로드합니다.
+먼저 소량만 확인하려면 각 수집 명령에 `--recent-only 1 --max-items 2 --no-download-files`를 추가하세요.
+소량 확인 뒤에는 제한 옵션을 제거한 같은 section 명령으로 전체 범위를 수집합니다.
+이번 변경은 기존 `numeric_cms` 파서를 재사용하는 설정 추가이며, 크롤링과 테스트는 실행하지 않았습니다.
+기존 구성 회귀 테스트와 전체 회귀 테스트는 다음 명령으로 확인합니다.
+
+```powershell
+.\.venv\Scripts\python.exe -X utf8 -m unittest scripts.tests.departments.test_department_config
+.\.venv\Scripts\python.exe -X utf8 -m unittest discover -s scripts/tests -t . -p "test_*.py"
+```
+
+## 2026-11-17 학과별 핵심 메뉴 등록
+
+공개 홈페이지의 메뉴 계층과 실제 이동 목적지를 확인해 교육과정·졸업요건·교수진 메뉴를 보완했습니다.
+학부·대학원, 전공별 교육과정, 모듈형·마이크로전공·학생설계전공의 하위 메뉴도 포함합니다.
+84개 데이터셋에 451개 section을 추가했으며, 447개는 활성이고 원본 본문이 빈 4개는 비활성 보류입니다.
+교육과정 296개, 졸업요건 57개, 교수진 98개이며, 교육과정 수에는 비활성 보류 4개가 포함됩니다.
+
+| 소속 | 보완 데이터셋 | 활성 추가 | 원본 공백 보류 |
+| --- | ---: | ---: | ---: |
+| 인문사회과학대학 | 13 | 80 | 0 |
+| 자연과학대학 | 6 | 29 | 0 |
+| 경영대학 | 3 | 21 | 0 |
+| 공과대학 | 23 | 128 | 0 |
+| 수산과학대학 | 10 | 43 | 0 |
+| 환경·해양대학 | 8 | 48 | 0 |
+| 정보융합대학 | 15 | 76 | 0 |
+| 미래융합학부 | 4 | 10 | 4 |
+| 글로벌자율전공학부 | 1 | 6 | 0 |
+| 학부대학 | 1 | 6 | 0 |
+
+기존 section의 ID·경로·설정과 데이터셋 저장 경로는 유지합니다.
+동일한 이동 목적지를 가리키는 상위 메뉴는 대표 section으로 모았고,
+확인한 이동 별칭 40개를 `menu_aliases`에 추가했습니다.
+예를 들어 물리학과는 상위 교과과정·졸업요건 주소 대신 학부·대학원의 실제 하위 페이지를 각각 등록했습니다.
+컴퓨터·인공지능공학부에는 기존 전공 교육과정에 더해 융합·마이크로·학생설계전공 교육과정 19개를 등록했습니다.
+
+등록은 수집 완료를 뜻하지 않습니다. 기존 파서를 재사용하는 설정 변경이며, 크롤러·테스트·DB 작업은 실행하지 않았습니다.
+공개 HTML에서 확인한 이미지 중심 본문, 별도 본문 영역, iframe 등의 제한은 각 신규 section의 `notes`에 남겼습니다.
+이 메모는 검토용 설정이며 파서를 수정하거나 OCR을 실행하지 않습니다.
+특히 영어영문학부의 `.e_sbCont #sub`, `#stance` 계열과 기존 선택자로 본문을 확인하지 못한 페이지는
+파서 보완 및 실제 저장 결과 확인이 필요합니다. 교수진 등록은 메뉴에 있는 목록·구분 페이지 범위이며,
+목록의 모든 교수 상세 프로필을 자동으로 따라가도록 바꾼 것은 아닙니다.
+
+### 원본 공백으로 비활성 등록한 메뉴
+
+| 데이터셋 | section ID | 경로 | 사유 |
+| --- | --- | --- | --- |
+| `safe` | `menu_6438` | `/safe/6438` | 교과목별 역량: 공개 본문에 제목만 있음 |
+| `safe` | `menu_6439` | `/safe/6439` | 교육과정표: 공개 본문에 제목만 있음 |
+| `welfare` | `menu_7420` | `/Welfare/7420` | 교과목별 역량: 공개 본문에 제목만 있음 |
+| `welfare` | `menu_7421` | `/Welfare/7421` | 교육과정표: 공개 본문에 제목만 있음 |
+
+위 네 페이지는 제목 외 본문·첨부·이미지가 없는 것을 확인했습니다. 원본 내용이 게시된 뒤 활성화를 검토합니다.
+기존 사용자 제외·보류 항목과 `humanict`·`dmfbe`의 상태는 유지합니다.
+
+### 별도 연결·응답 검토가 필요한 메뉴
+
+| 데이터셋 | 메뉴 주소 | 확인한 연결·제한 |
+| --- | --- | --- |
+| `english` | `/english/3845` | 교육대학원 `https://pknuedu.pknu.ac.kr/pknuedu/1383`으로 302 이동. 다른 홈페이지의 범위·TLS 검토 필요 |
+| `chinese` | `/chinese/4293` | 학위수여 규정이 국가법령정보센터로 이동. 외부 규정 원문을 학과 자체 본문으로 등록하지 않음 |
+| `industrial` | `/industrial/3854` | 교과과정이 `https://icms.pknu.ac.kr/visual/3678`로 이동. 다른 전공의 내용을 중복 활성화하지 않음 |
+| `ice` | `/pknuice/5083` | 강의계획서 연결 요청의 응답 대기 시간 초과. 주소·접근 상태 추가 확인 필요 |
+
+토목공학전공의 상위 `/civil/5304`는 교육목적·인재상으로 이동하므로 교육과정으로 등록하지 않았습니다.
+실제 전공교육과정 `/civil/5331`과 그 하위 메뉴를 등록했습니다.
+
+### 사용자 실행 확인
+
+프로젝트 루트 PowerShell에서 구성 검증과 기존 회귀 테스트를 실행합니다.
+
+```powershell
+.\.venv\Scripts\python.exe -X utf8 -m scripts.crawlers.departments.cli validate
+.\.venv\Scripts\python.exe -X utf8 -m unittest scripts.tests.departments.test_department_config
+.\.venv\Scripts\python.exe -X utf8 -m unittest discover -s scripts/tests -t . -p "test_*.py"
+```
+
+학과별 실제 section ID·경로·검토 메모는 레지스트리에서 확인합니다.
+
+```powershell
+$registry = Get-Content scripts/crawlers/departments/registry.json -Raw -Encoding UTF8 | ConvertFrom-Json
+($registry.departments | Where-Object dataset -eq 'physics').sections |
+    Where-Object { $_.category -in @('교육과정', '교수진') } |
+    Select-Object id,name,path,enabled,notes
+
+# 먼저 표·본문이 있는 신규 정적 페이지 한 개만 확인
+.\.venv\Scripts\python.exe -u -X utf8 -m scripts.crawlers.departments.engine --dataset physics --section menu_449 --once --no-download-files
+.\.venv\Scripts\python.exe -u -X utf8 -m scripts.crawlers.departments.engine --dataset ce --section menu_4955 --once --no-download-files
+
+# 파서 보완이 필요한 항목과 소량 결과를 확인한 후 학과 전체 수집
+.\.venv\Scripts\python.exe -u -X utf8 -m scripts.crawlers.departments.engine --dataset physics --once
+```
+
+`--no-download-files`를 제거하면 첨부파일·본문 이미지도 다운로드합니다.
+활성으로 등록한 새 section은 기존 학과 전체 실행과 `--all`에 자동 포함되며, 증분 상태 초기화는 필요하지 않습니다.
+
 ## 일부 학과의 본문 영역 선택
 
 2026-10-28부터 다음 대상은 정적 안내 페이지에서도 `.a_bdCont`를 우선 선택합니다.

@@ -287,6 +287,43 @@ def load_state_with_migration(
     return empty_state(paths.dataset), "new"
 
 
+def save_state_delta(paths: DatasetPaths, state: dict[str, Any],
+                     initial_items: dict[str, Any]) -> Path:
+    """Commit this collector's changes without replacing parallel collectors' items."""
+    lock_path = paths.state.with_suffix(paths.state.suffix + ".lock")
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    with lock_path.open("a+b") as handle:
+        if lock_path.stat().st_size == 0:
+            handle.write(b"0")
+            handle.flush()
+        handle.seek(0)
+        if os.name == "nt":
+            import msvcrt
+            msvcrt.locking(handle.fileno(), msvcrt.LK_LOCK, 1)
+        else:
+            import fcntl
+            fcntl.flock(handle, fcntl.LOCK_EX)
+        try:
+            merged, _origin = load_state_with_migration(paths)
+            current_items = state.get("items", {})
+            for key, value in current_items.items():
+                if key not in initial_items or value != initial_items[key]:
+                    merged["items"][key] = value
+            for key in initial_items.keys() - current_items.keys():
+                if merged["items"].get(key) == initial_items[key]:
+                    merged["items"].pop(key, None)
+            save_state_atomic(paths.state, merged, paths.dataset)
+            state.clear()
+            state.update(merged)
+            return paths.state
+        finally:
+            if os.name == "nt":
+                handle.seek(0)
+                msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+            else:
+                fcntl.flock(handle, fcntl.LOCK_UN)
+
+
 def state_migration_plan(paths: DatasetPaths, legacy_paths: Iterable[Path]) -> list[dict[str, str]]:
     actions: list[dict[str, str]] = []
     if paths.state.exists():
