@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
+from contextvars import ContextVar
+from dataclasses import dataclass
 import hashlib
 import logging
 import re
@@ -266,6 +268,26 @@ SOURCE_KIND_PRIORITIES = {
 # them into the existing candidate pool/scoring pipeline unchanged.
 _RRF_K = 60
 _LEXICAL_SIMILARITY_CEILING = 0.75
+
+
+@dataclass(frozen=True)
+class _VectorSource:
+    """Which stored vectors the query embedding is compared with."""
+    suffix: str = ""  # "_e5": <family>_chunks_e5 and match_<family>_documents_e5
+    floor: float = 0.0
+
+
+# Set by search() for the duration of one call, so the title/notice helpers that
+# read chunk vectors directly (_fetch_notice_chunks) read the same kind as the
+# vector RPCs without passing it through every helper's signature.
+_VECTOR_SOURCE: ContextVar[_VectorSource] = ContextVar("vector_source", default=_VectorSource())
+
+
+def rescale_similarity(value: Any, floor: float) -> Any:
+    """Map cosine similarity [floor, 1] onto [0, 1] (see Settings.embedding_similarity_floor)."""
+    if not floor or not isinstance(value, (int, float)):
+        return value
+    return (float(value) - floor) / (1.0 - floor)
 
 
 def _lexical_rrf_norm(rank_index: int) -> float:
@@ -1078,6 +1100,7 @@ def _fetch_rpc_responses(
     lexical_query: Optional[str],
     max_workers: int = 1,
     metadata_filters: Optional[Dict[str, Dict[str, Any]]] = None,
+    vector_rpc_suffix: str = "",
 ) -> Dict[str, RpcResult]:
     """Call every vector RPC (and its `<name>_lexical` companion when there is
     a lexical query), at most `max_workers` at a time; with 1 they run in the
@@ -1085,6 +1108,7 @@ def _fetch_rpc_responses(
     (response, elapsed_ms, error); a failed call carries its exception instead
     of raising, so successful vector/lexical channels remain independent."""
     calls: Dict[str, Dict[str, Any]] = {}
+    vector_names = set(rpc_names)
     for rpc_name in rpc_names:
         calls[rpc_name] = {**base_payload, "match_count": candidate_counts[rpc_name]}
         if metadata_filters and rpc_name in metadata_filters:
@@ -1108,7 +1132,10 @@ def _fetch_rpc_responses(
             # Client construction can fail too; keep that failure local to
             # this channel rather than raising from future.result().
             rpc_client = _worker_client(client) if use_worker_client else client
-            response = rpc_client.rpc(name, calls[name]).execute()
+            # Results stay keyed by the configured name; only the vector call
+            # goes to the suffixed function (lexical RPCs have no variant).
+            called = name + vector_rpc_suffix if name in vector_names else name
+            response = rpc_client.rpc(called, calls[name]).execute()
             if not isinstance(response.data, list) or any(not isinstance(row, dict) for row in response.data):
                 raise ValueError("invalid search RPC response")
             return response, (time.perf_counter() - started) * 1000, None
@@ -1229,7 +1256,13 @@ def _fetch_notice_chunks(
     first_chunks: Optional[int] = None,
 ) -> Optional[Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]]:
     """Source rows and their chunks (with embeddings; only the first
-    `first_chunks` of each if given), or None on failure."""
+    `first_chunks` of each if given), or None on failure.
+
+    With the e5 vectors on, each chunk's `embedding` comes from its
+    <chunk_table>_e5 row (one request via the foreign key), and is None when
+    that row is missing or was computed from older content."""
+    suffix = _VECTOR_SOURCE.get().suffix
+    vector_column = f"content_hash, e5:{chunk_table}{suffix}(content_hash, embedding)" if suffix else "embedding"
     try:
         sources = (
             client.table(source_table)
@@ -1239,12 +1272,17 @@ def _fetch_notice_chunks(
         ).data or []
         query = (
             client.table(chunk_table)
-            .select("id, source_id, chunk_id, chunk_index, content, metadata, embedding")
+            .select(f"id, source_id, chunk_id, chunk_index, content, metadata, {vector_column}")
             .in_("source_id", source_ids)
         )
         if first_chunks is not None:
             query = query.lt("chunk_index", first_chunks)
         chunks = query.limit(400).execute().data or []
+        if suffix:
+            for chunk in chunks:
+                stored = chunk.pop("e5", None) or {}
+                current = stored.get("content_hash") == chunk.get("content_hash")
+                chunk["embedding"] = stored.get("embedding") if current else None
     except Exception:
         logger.warning("retrieval: notice chunk fetch failed table=%s", chunk_table, exc_info=True)
         return None
@@ -1265,11 +1303,14 @@ def _notice_chunk_rows(
     """Chunks shaped like the vector RPC's rows (source columns + chunk, real
     cosine similarity), run through the normal per-row pipeline."""
     source_by_id = {source["id"]: source for source in sources}
+    floor = _VECTOR_SOURCE.get().floor
     rows: List[Dict[str, Any]] = []
     for chunk in chunks:
         source = source_by_id.get(chunk.get("source_id"))
         vector = title_anchor.parse_vector(chunk.get("embedding"))
-        if source is None or vector is None:
+        # cosine() zips the two lists, so a 384-dim row against a 768-dim query
+        # would give a wrong score instead of an error.
+        if source is None or vector is None or len(vector) != len(embedding):
             continue
         row = {
             "id": chunk["id"],
@@ -1288,7 +1329,7 @@ def _notice_chunk_rows(
                 "priority_score": source.get("priority_score") or 0.0,
                 "priority_details": source.get("priority_details") or {},
             },
-            "similarity": title_anchor.cosine(embedding, vector),
+            "similarity": rescale_similarity(title_anchor.cosine(embedding, vector), floor),
         }
         processed, outcome = _process_candidate_row(
             row, rpc_name, query_text, query_terms,
@@ -1803,7 +1844,17 @@ def _focus_department(
     return kept
 
 
-def search(
+def search(client: Client, **options: Any) -> SearchResults:
+    """See _search. Sets which stored vectors the helpers compare with."""
+    token = _VECTOR_SOURCE.set(_VectorSource(options.get("vector_rpc_suffix", ""),
+                                             options.get("similarity_floor", 0.0)))
+    try:
+        return _search(client, **options)
+    finally:
+        _VECTOR_SOURCE.reset(token)
+
+
+def _search(
     client: Client,
     *,
     rpc_names: List[str],
@@ -1813,6 +1864,8 @@ def search(
     per_rpc_first_stage_k: Optional[Dict[str, int]] = None,
     rpc_concurrency: int = 1,
     min_similarity: float,
+    vector_rpc_suffix: str = "",
+    similarity_floor: float = 0.0,
     priority_weight: float = 0.30,
     dataset_priority_weight: float = 0.15,
     source_kind_weight: float = 0.10,
@@ -1856,7 +1909,9 @@ def search(
         )
     payload = {
         "query_embedding": _vector_literal(embedding),
-        "min_similarity": min_similarity,
+        # The RPC compares raw cosine similarity; min_similarity is on the
+        # rescaled scale (see Settings.embedding_similarity_floor).
+        "min_similarity": similarity_floor + min_similarity * (1.0 - similarity_floor),
         "metadata_filter": metadata_filter or {},
     }
 
@@ -1874,8 +1929,14 @@ def search(
     # Settings.rag_rpc_concurrency for why). Ranking below is unchanged.
     fetched = _fetch_rpc_responses(
         client, rpc_names, payload, candidate_counts, lexical_query, max_workers=rpc_concurrency,
-        metadata_filters=per_rpc_metadata_filters,
+        metadata_filters=per_rpc_metadata_filters, vector_rpc_suffix=vector_rpc_suffix,
     )
+    if similarity_floor:
+        for rpc_name in rpc_names:
+            response, _elapsed_ms, error = fetched[rpc_name]
+            if error is None:
+                for row in response.data:
+                    row["similarity"] = rescale_similarity(row.get("similarity"), similarity_floor)
 
     per_rpc_rows: List[Tuple[str, List[Dict[str, Any]]]] = []
     merged: List[Dict[str, Any]] = []

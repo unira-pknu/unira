@@ -41,6 +41,7 @@ async def lifespan(app: FastAPI):
         model_name=settings.embedding_model,
         device=settings.embedding_device,
         expected_dimensions=settings.expected_dimensions,
+        query_prefix=settings.embedding_query_prefix,
     )
     reranker = None
     if settings.reranker_enabled:

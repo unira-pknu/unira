@@ -4,6 +4,15 @@ import math
 DEFAULT_SENTENCE_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 EXPECTED_DIMENSIONS = 384
 
+# Second embedding, stored in <family>_chunks_e5 (migration 021). Measured on 48k of
+# our chunks (eval/tools/embedding_benchmark.py, 2026-11-13): the gold document is in
+# the top 10 for 69% of questions vs 6% with the model above. e5 was trained with
+# these prefixes; leaving them out lowers its scores.
+E5_MODEL = "intfloat/multilingual-e5-base"
+E5_DIMENSIONS = 768
+E5_PASSAGE_PREFIX = "passage: "
+E5_QUERY_PREFIX = "query: "
+
 
 def load_sentence_model(model_name=DEFAULT_SENTENCE_MODEL, *, device=None):
     from sentence_transformers import SentenceTransformer

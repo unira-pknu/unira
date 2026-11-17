@@ -20,6 +20,17 @@ Routing uses original `metadata.source_dataset`, including attachments where `is
 
 The two old student-life public RPC names temporarily query `pknu_main_*` for existing deployed clients. Physical student-life tables are removed. Update a deployed backend's explicit `RPC_NAMES` override to the five canonical names and redeploy to include syllabus search.
 
+## e5 embeddings (021)
+
+`021_e5_embeddings.sql` adds a 768-dim `intfloat/multilingual-e5-base` vector per chunk in side tables `<family>_chunks_e5` (id → `<family>_chunks.id`, on delete cascade; `content_hash`; `halfvec(768)`), their empty HNSW indexes, and `match_<family>_documents_e5`. Nothing existing is altered, so it can be applied while the service runs on the 384-dim functions.
+
+1. Apply `021_e5_embeddings.sql`.
+2. On the GPU server: `python -m scripts.vectorization.backfill_e5 --count-only`, a trial with `--families rule --limit 500`, then the full run. It can be stopped and restarted; rerun it after crawls until the loader writes e5 vectors itself.
+3. Check `pg_indexes` for the five `*_chunks_e5_embedding_hnsw_idx` indexes and `EXPLAIN` one `match_*_documents_e5` call (expect an index scan on the side table).
+4. Switch the backend with the five settings in `backend/.env.example` (`VECTOR_RPC_SUFFIX=_e5` …) and compare the regression eval. Setting `VECTOR_RPC_SUFFIX` back to empty returns to the 384-dim search.
+
+A side row counts only while its `content_hash` equals the chunk's; an edited chunk is left out of e5 search until the backfill embeds it again.
+
 ## Execution order
 
 1. Run `000_inspect_database.sql` for read-only schema, index, RPC and RLS inspection.
