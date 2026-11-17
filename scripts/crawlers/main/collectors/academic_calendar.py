@@ -106,6 +106,13 @@ def parse_month(payload: bytes, *, year: int, month: int,
     return events, rejected
 
 
+def _event_line(event: dict) -> str:
+    """'2026-03-02 – 2026-03-06 수강신청 변경 기간 (설명)' — one searchable line per event."""
+    span = event["start_date"] if event["start_date"] == event["end_date"] else f"{event['start_date']} – {event['end_date']}"
+    detail = f" ({event['description']})" if event.get("description") and event["description"] != event["title"] else ""
+    return f"{span} {event['title']}{detail}"
+
+
 def collect_calendar(session: requests.Session, year: int, months: list[int],
                      *, delay: float = 0.2) -> dict:
     if not 2000 <= year <= 2100 or not months or any(not 1 <= m <= 12 for m in months):
@@ -153,7 +160,10 @@ def collect_calendar(session: requests.Session, year: int, months: list[int],
                                                      item["source_record_id"]))
     rejected_events = sorted(rejected_by_key.values(), key=lambda item: (
         str(item["raw_start_date"]), str(item["source_record_id"])))
-    return {"page_id": 31, "title": "학사일정", "url": PAGE_URL,
+    # The preprocessor reads `content`; without it only the title "학사일정" reached
+    # the search index and none of the dates did.
+    content = "\n".join(_event_line(event) for event in events)
+    return {"page_id": 31, "title": f"{year}년 학사일정", "url": PAGE_URL, "content": content,
             "source_url": API_URL, "site_id": site_id, "year": year,
             "months_requested": months, "retrieved_at": datetime.now(timezone.utc).isoformat(),
             "status": "needs_review" if rejected_events else ("collected" if events else "empty"),
