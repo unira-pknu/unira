@@ -70,5 +70,12 @@ jobs:
               git add -f -- "$state_path"
             fi
           done
-          git diff --cached --quiet || git commit -m "chore(crawler): update crawl state [skip ci]"
-          git push
+          git diff --cached --quiet && exit 0
+          git commit -m "chore(crawler): update crawl state [skip ci]"
+          # A PR merged during the run makes a plain push fail; on 2026-11-14 and 11-16
+          # the state was lost that way and the next day re-processed the same posts.
+          for attempt in 1 2 3; do
+            git pull --rebase && git push && exit 0
+            sleep $((attempt * 10))
+          done
+          exit 1
