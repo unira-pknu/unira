@@ -60,6 +60,9 @@ jobs:
           echo "value=$shard" >> "$GITHUB_OUTPUT"
           echo "department slice: $shard/3"
 
+      # The budget is checked between departments only. With 300 of 330 minutes a
+      # department that started late ran past the step limit (2026-11-16); 270 leaves
+      # an hour for the last one while new registry menus are first collected.
       - name: Crawl + preprocess + vectorize + load (one department at a time)
         timeout-minutes: 330
         env:
@@ -68,7 +71,7 @@ jobs:
           python scripts/vectorization/preprocessing_pipeline_recent.py
           --department-shard "${{ steps.shard.outputs.value }}/3"
           --recent-pages "${{ inputs.recent_pages || '2' }}"
-          --time-budget-minutes 300
+          --time-budget-minutes 270
           --completed-file "$RUNNER_TEMP/completed-departments.txt"
 
       - name: Commit crawl state of the departments that finished
@@ -89,5 +92,8 @@ jobs:
           git diff --cached --quiet && exit 0
           git commit -m "chore(crawler): update department crawl state [skip ci]"
           # A PR may have been merged during the run.
-          git pull --rebase
-          git push
+          for attempt in 1 2 3; do
+            git pull --rebase && git push && exit 0
+            sleep $((attempt * 10))
+          done
+          exit 1
