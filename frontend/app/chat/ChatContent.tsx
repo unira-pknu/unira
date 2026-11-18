@@ -99,6 +99,11 @@ function chatTitleFromQuestion(question: string): string {
 }
 
 /** persisted chat row id (uuid v4) */
+/** 손가락으로 쓰는 화면(휴대폰·태블릿)이면 true. 마우스가 있는 컴퓨터는 창 크기와 상관없이 false. */
+function usesTouchKeyboard(): boolean {
+  return typeof window !== "undefined" && window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+}
+
 function isPersistedChatId(id: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
 }
@@ -1956,7 +1961,9 @@ export default function ChatContent() {
         <div className="flex-shrink-0 px-3 pb-3 sm:px-5 sm:pb-4 flex flex-col gap-1.5 sm:gap-2">
           <div className="glass-input flex items-end rounded-xl sm:rounded-2xl px-3 sm:px-4 py-1.5 sm:py-2 shadow-sm gap-1.5 sm:gap-2">
             {/* 텍스트 입력: 답변 중에도 다음 질문을 미리 쓸 수 있다(보내기만 막힘).
-                컴퓨터는 Enter 보내기·Shift+Enter 줄바꿈, 휴대폰은 Shift가 없어 Enter 줄바꿈·버튼으로 보내기. */}
+                컴퓨터는 Enter 보내기·Shift+Enter 줄바꿈, 휴대폰은 Shift가 없어 Enter 줄바꿈·버튼으로 보내기.
+                휴대폰 판단은 화면 너비가 아니라 터치 화면 여부: 너비(isMobile)로 보면 컴퓨터에서
+                창을 좁혔을 때도 Enter가 줄바꿈이 됐다. */}
             <textarea
               ref={inputRef}
               rows={1}
@@ -1964,7 +1971,7 @@ export default function ChatContent() {
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={(e) => {
                 // 한글 조합 중 Enter는 글자 확정용이라 보내지 않는다(마지막 글자 중복 방지).
-                if (e.key !== "Enter" || e.shiftKey || e.nativeEvent.isComposing || isMobile) return;
+                if (e.key !== "Enter" || e.shiftKey || e.nativeEvent.isComposing || usesTouchKeyboard()) return;
                 e.preventDefault();
                 handleSend();
               }}
