@@ -2,7 +2,7 @@ name: Crawl departments
 
 # 학과 홈페이지(ce 제외 약 100개)를 하루에 1/3씩 돌아가며 증분 크롤링하고,
 # 학과 하나씩 크롤링 -> 전처리 -> 벡터화 -> Supabase 적재 -> 우선순위 재계산을 끝낸다(3일에 한 바퀴).
-# 끝난 학과의 수집 기록(state.json)은 작업이 시간 제한에 끊겨도 저장해서, 다음 차례엔 새 글만 본다.
+# 끝난 학과의 수집 기록(state/department/.../<학과>.json)은 작업이 시간 제한에 끊겨도 저장해서, 다음 차례엔 새 글만 본다.
 # 학과 사이트는 전부 학교 서버 한 대라, 사람이 적은 03:00 KST에 한 묶음씩만 천천히 본다:
 # 요청마다 0.8초(학과 설정), 학과 사이 5초를 쉬고, 연속 3개 학과가 실패하면
 # 서버가 막기 시작한 것으로 보고 그날은 멈춘다.
@@ -85,8 +85,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           while IFS= read -r name; do
-            find files/department -path "*/$name/state.json" | while IFS= read -r state_path; do
-              git add -f -- "$state_path"
+            find state/department -name "$name.json" | while IFS= read -r state_path; do
+              git add -- "$state_path"
             done
           done < "$done_file"
           git diff --cached --quiet && exit 0
