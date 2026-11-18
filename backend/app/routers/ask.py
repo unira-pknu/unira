@@ -174,6 +174,7 @@ def _search_one(state: AppState, search_query: str, task: SearchTask | None = No
         min_similarity=state.settings.rag_min_similarity,
         vector_rpc_suffix=state.settings.vector_rpc_suffix,
         similarity_floor=state.settings.embedding_similarity_floor,
+        similarity_ceiling=state.settings.embedding_similarity_ceiling,
         priority_weight=state.settings.rag_priority_weight,
         dataset_priority_weight=state.settings.rag_dataset_priority_weight,
         source_kind_weight=state.settings.rag_source_kind_weight,

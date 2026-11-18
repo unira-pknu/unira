@@ -11,6 +11,10 @@ from older content (content_hash differs). The script can therefore be stopped a
 started again at any time, and run after a crawl to cover new or edited chunks.
 Each round of --round-size chunks is committed on its own.
 
+On the school server the scheduled task unira-backfill-e5 runs it every 4 hours
+(backend/deploy/run_backfill_e5.ps1), so chunks the daily crawls load get their e5
+vectors without the crawl jobs (CPU-only GitHub runners) computing them.
+
 The text embedded is the chunk content, the same text the current 384-dim vectors
 were computed from (vectorization.py embeds record["text"], loaded as content).
 """
@@ -19,6 +23,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import sys
 import time
 from pathlib import Path
@@ -37,6 +42,8 @@ log = logging.getLogger("backfill_e5")
 # Smallest first, so a trial run finishes quickly and problems show up early.
 FAMILIES = ("rule", "pknu_main", "pknu_syllabus", "pknu_notice", "rag")
 MAX_SEQ_LENGTH = 512  # e5-base limit; longer chunks are cut, as in the benchmark
+# One run at a time: the scheduled run must not start a second pass beside a long one.
+LOCK_PATH = PROJECT_ROOT / "var" / "backfill_e5.lock"
 
 Encoder = Callable[[list[str]], Sequence[Sequence[float]]]
 
@@ -47,22 +54,24 @@ def tables(family: str) -> tuple[str, str]:
     return f"{family}_chunks", f"{family}_chunks_e5"
 
 
-def pending_sql(family: str) -> str:
+def _pending_where(family: str) -> str:
     chunks, e5 = tables(family)
     return (
-        f"select c.id, c.content_hash, c.content from public.{chunks} c "
-        f"left join public.{e5} e on e.id = c.id "
-        "where c.id > %s and (e.id is null or e.content_hash <> c.content_hash) "
-        "order by c.id limit %s"
+        f"from public.{chunks} c where not exists "
+        f"(select 1 from public.{e5} e where e.id = c.id and e.content_hash = c.content_hash)"
     )
+
+
+def pending_sql(family: str) -> str:
+    # No ORDER BY on purpose: the chunk table is read once in storage order (a
+    # sequential scan anti-joined to the side table). Walking it in id order read
+    # one scattered heap/TOAST page per row; rag_chunks is 20 GB, far beyond the
+    # database's memory, and that ran at 8-17 rows/s (2026-11-18).
+    return f"select c.id, c.content_hash, c.content {_pending_where(family)}"
 
 
 def count_sql(family: str) -> str:
-    chunks, e5 = tables(family)
-    return (
-        f"select count(*) from public.{chunks} c left join public.{e5} e on e.id = c.id "
-        "where e.id is null or e.content_hash <> c.content_hash"
-    )
+    return f"select count(*) {_pending_where(family)}"
 
 
 def merge_sql(family: str) -> str:
@@ -87,21 +96,48 @@ def passage_texts(contents: Sequence[str]) -> list[str]:
     return [E5_PASSAGE_PREFIX + (content or "") for content in contents]
 
 
-def fill_family(conn, family: str, encode: Encoder, *, round_size: int, limit: int | None = None) -> int:
-    """Embed this family's pending chunks; returns how many were written."""
-    written, last_id, started = 0, "", time.perf_counter()
-    with conn.cursor() as cur:
-        cur.execute(count_sql(family))
-        total = cur.fetchone()[0]
-    conn.commit()
+def acquire_run_lock(path: Path):
+    """Exclusive lock on a file, released when the process exits (also on a crash).
+    Returns the open file, or None when another run holds it. A database advisory
+    lock would not do: DATABASE_URL may point at the transaction pooler."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    handle = open(path, "a+")
+    try:
+        if os.name == "nt":
+            import msvcrt
+            msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+        else:
+            import fcntl
+            fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        handle.close()
+        return None
+    return handle
+
+
+def fill_family(conn, family: str, encode: Encoder, *, round_size: int, limit: int | None = None,
+                total: int | None = None, read_conn=None) -> int:
+    """Embed this family's pending chunks; returns how many were written.
+
+    Pending rows stream from a server-side cursor on `read_conn` (one long read
+    transaction); each round is written and committed on `conn`. Committing on
+    the reading connection would close the cursor."""
+    written, started = 0, time.perf_counter()
+    if total is None:
+        with conn.cursor() as cur:
+            cur.execute(count_sql(family))
+            total = cur.fetchone()[0]
+        conn.commit()
     log.info("%s: %d chunks to embed", family, total)
     if limit is not None:
         total = min(total, limit)
-    while total and written < total:
-        size = min(round_size, total - written)
-        with conn.cursor() as cur:
-            cur.execute(pending_sql(family), (last_id, size))
-            rows = cur.fetchall()
+    if not total:
+        return 0
+    reader = (read_conn or conn).cursor(name=f"e5_pending_{family}")
+    reader.itersize = round_size
+    reader.execute(pending_sql(family))
+    while written < total:
+        rows = reader.fetchmany(min(round_size, total - written))
         if not rows:
             break
         vectors = encode(passage_texts([row[2] for row in rows]))
@@ -117,7 +153,6 @@ def fill_family(conn, family: str, encode: Encoder, *, round_size: int, limit: i
             cur.execute(merge_sql(family))
         conn.commit()
         written += len(rows)
-        last_id = rows[-1][0]
         elapsed = time.perf_counter() - started
         rate = written / elapsed if elapsed else 0.0
         eta = (total - written) / rate / 60 if rate else 0.0
@@ -166,20 +201,38 @@ def main(argv: list[str] | None = None) -> int:
 
     from scripts.db import connect_postgres
 
+    lock = None if args.count_only else acquire_run_lock(LOCK_PATH)
+    if not args.count_only and lock is None:
+        log.info("another backfill_e5 is running; nothing to do")
+        return 0
     with connect_postgres() as conn:
         # Rounds wait on HNSW inserts; the session default (2 min) is for searches.
         conn.execute("set statement_timeout = '15min'")
         conn.commit()
+        pending = {family: conn.execute(count_sql(family)).fetchone()[0] for family in args.families}
+        conn.commit()
         if args.count_only:
-            for family in args.families:
-                total = conn.execute(count_sql(family)).fetchone()[0]
+            for family, total in pending.items():
                 print(f"{family}: {total}")
+            return 0
+        if not any(pending.values()):
+            # The scheduled run (backend/deploy/run_backfill_e5.ps1) ends here on most
+            # days, without loading the model.
+            log.info("all e5 vectors are current")
             return 0
         device = args.device or default_device()
         log.info("model %s on %s", E5_MODEL, device)
         encode = load_encoder(device, args.batch_size)
-        for family in args.families:
-            fill_family(conn, family, encode, round_size=args.round_size, limit=args.limit)
+        # The reading transaction stays open for the whole family (hours for rag);
+        # its statement only streams rows, so no timeout applies there.
+        with connect_postgres() as read_conn:
+            read_conn.execute("set statement_timeout = 0")
+            read_conn.execute("set idle_in_transaction_session_timeout = 0")
+            for family, total in pending.items():
+                if total:
+                    fill_family(conn, family, encode, round_size=args.round_size, limit=args.limit,
+                                total=total, read_conn=read_conn)
+                    read_conn.commit()
     return 0
 
 

@@ -275,6 +275,7 @@ class _VectorSource:
     """Which stored vectors the query embedding is compared with."""
     suffix: str = ""  # "_e5": <family>_chunks_e5 and match_<family>_documents_e5
     floor: float = 0.0
+    ceiling: float = 1.0
 
 
 # Set by search() for the duration of one call, so the title/notice helpers that
@@ -283,11 +284,18 @@ class _VectorSource:
 _VECTOR_SOURCE: ContextVar[_VectorSource] = ContextVar("vector_source", default=_VectorSource())
 
 
-def rescale_similarity(value: Any, floor: float) -> Any:
-    """Map cosine similarity [floor, 1] onto [0, 1] (see Settings.embedding_similarity_floor)."""
-    if not floor or not isinstance(value, (int, float)):
+def rescale_similarity(value: Any, floor: float, ceiling: float = 1.0) -> Any:
+    """Map cosine similarity [floor, ceiling] onto [0, 1], capped at 1
+    (see Settings.embedding_similarity_floor)."""
+    if (not floor and ceiling == 1.0) or not isinstance(value, (int, float)):
         return value
-    return (float(value) - floor) / (1.0 - floor)
+    return min(1.0, (float(value) - floor) / (ceiling - floor))
+
+
+def raw_min_similarity(min_similarity: float, floor: float, ceiling: float = 1.0) -> float:
+    """The cosine similarity an RPC must compare with so that the rescaled value
+    is at least min_similarity."""
+    return floor + min_similarity * (ceiling - floor)
 
 
 def _lexical_rrf_norm(rank_index: int) -> float:
@@ -1303,7 +1311,7 @@ def _notice_chunk_rows(
     """Chunks shaped like the vector RPC's rows (source columns + chunk, real
     cosine similarity), run through the normal per-row pipeline."""
     source_by_id = {source["id"]: source for source in sources}
-    floor = _VECTOR_SOURCE.get().floor
+    vectors = _VECTOR_SOURCE.get()
     rows: List[Dict[str, Any]] = []
     for chunk in chunks:
         source = source_by_id.get(chunk.get("source_id"))
@@ -1329,7 +1337,7 @@ def _notice_chunk_rows(
                 "priority_score": source.get("priority_score") or 0.0,
                 "priority_details": source.get("priority_details") or {},
             },
-            "similarity": rescale_similarity(title_anchor.cosine(embedding, vector), floor),
+            "similarity": rescale_similarity(title_anchor.cosine(embedding, vector), vectors.floor, vectors.ceiling),
         }
         processed, outcome = _process_candidate_row(
             row, rpc_name, query_text, query_terms,
@@ -1847,7 +1855,8 @@ def _focus_department(
 def search(client: Client, **options: Any) -> SearchResults:
     """See _search. Sets which stored vectors the helpers compare with."""
     token = _VECTOR_SOURCE.set(_VectorSource(options.get("vector_rpc_suffix", ""),
-                                             options.get("similarity_floor", 0.0)))
+                                             options.get("similarity_floor", 0.0),
+                                             options.get("similarity_ceiling", 1.0)))
     try:
         return _search(client, **options)
     finally:
@@ -1866,6 +1875,7 @@ def _search(
     min_similarity: float,
     vector_rpc_suffix: str = "",
     similarity_floor: float = 0.0,
+    similarity_ceiling: float = 1.0,
     priority_weight: float = 0.30,
     dataset_priority_weight: float = 0.15,
     source_kind_weight: float = 0.10,
@@ -1911,7 +1921,7 @@ def _search(
         "query_embedding": _vector_literal(embedding),
         # The RPC compares raw cosine similarity; min_similarity is on the
         # rescaled scale (see Settings.embedding_similarity_floor).
-        "min_similarity": similarity_floor + min_similarity * (1.0 - similarity_floor),
+        "min_similarity": raw_min_similarity(min_similarity, similarity_floor, similarity_ceiling),
         "metadata_filter": metadata_filter or {},
     }
 
@@ -1931,12 +1941,12 @@ def _search(
         client, rpc_names, payload, candidate_counts, lexical_query, max_workers=rpc_concurrency,
         metadata_filters=per_rpc_metadata_filters, vector_rpc_suffix=vector_rpc_suffix,
     )
-    if similarity_floor:
+    if similarity_floor or similarity_ceiling != 1.0:
         for rpc_name in rpc_names:
             response, _elapsed_ms, error = fetched[rpc_name]
             if error is None:
                 for row in response.data:
-                    row["similarity"] = rescale_similarity(row.get("similarity"), similarity_floor)
+                    row["similarity"] = rescale_similarity(row.get("similarity"), similarity_floor, similarity_ceiling)
 
     per_rpc_rows: List[Tuple[str, List[Dict[str, Any]]]] = []
     merged: List[Dict[str, Any]] = []

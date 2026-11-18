@@ -103,6 +103,20 @@ GPU가 있는 곳(학교 서버)에서 실행합니다. CPU로는 큰 모델 하
 2026-11-12 CPU 측정에서 현재 모델(paraphrase-multilingual-MiniLM-L12-v2)은 질문 64개 중
 정답 문서를 10위 안에 올린 비율이 12%였습니다.
 
+불러오지 못하는 모델(예: `.bin`만 있는 bge-m3와 torch 2.6 미만)은 `skipped`로 기록하고
+나머지 모델은 계속 비교합니다.
+
+### e5 유사도 눈금 (`EMBEDDING_SIMILARITY_FLOOR` / `_CEILING`)
+
+e5는 상위 30개의 유사도가 좁은 범위(약 0.82–0.87)에 몰립니다. 검색 순위는 유사도에 중요도 점수와
+키워드 결과의 가짜 유사도(0.30–0.75)를 섞는데, 모두 MiniLM의 퍼짐(약 0.44–0.72)에 맞춰져 있습니다.
+백엔드는 e5 점수를 `(s − floor) ÷ (ceiling − floor)`로 바꿉니다. 두 값은 같은 regression 질문으로
+두 모델의 검색 결과를 받아 분위가 같아지도록 맞춥니다(DB 읽기 전용, `backfill_e5` 뒤에 실행).
+
+```powershell
+python -m eval.tools.similarity_scale
+```
+
 ## 100개 질문 초안
 
 질문 초안은 `draft_question.schema.json` 형식이며, `case_type`,

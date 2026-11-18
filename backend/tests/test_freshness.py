@@ -84,6 +84,17 @@ class AdjustmentTests(unittest.TestCase):
         grad_q = freshness_adjustment(grad, "match_rag_documents", "대학원 수강신청 방법", TODAY)
         self.assertAlmostEqual(grad_q - GRADUATE_PENALTY, undergrad_q)
 
+    def test_opening_hours_questions_count_as_schedule(self):
+        from app.freshness import is_schedule_query
+        for q in ("도서관 운영 시간 알려줘", "열람실 이용시간", "헬스장 몇 시까지 해?", "도서관 몇시에 열어"):
+            self.assertTrue(is_schedule_query(q), q)
+        for q in ("도서관 위치", "휴학 신청 방법", "시간표 짜는 법"):
+            self.assertFalse(is_schedule_query(q), q)
+        # A 2023 repost of the hours loses to a newer one by more than on a plain question.
+        old = freshness_adjustment(row("도서관 운영시간 변경 알림", date="2023-10-30"), "match_rag_documents", "도서관 운영 시간", TODAY)
+        newer = freshness_adjustment(row("도서관 운영시간 안내", date="2026-06-22"), "match_rag_documents", "도서관 운영 시간", TODAY)
+        self.assertGreater(newer - old, 0.15)
+
     def test_seed_slots_only_for_notice_tables_on_schedule_questions(self):
         self.assertEqual(SCHEDULE_SEED_SLOTS, seed_slots(NOTICE, "수강신청 언제야"))
         self.assertEqual(1, seed_slots(NOTICE, "수강신청 방법"))

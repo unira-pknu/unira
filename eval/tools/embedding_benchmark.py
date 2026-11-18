@@ -202,7 +202,12 @@ def run(out: Path, models: list[str], rerankers: list[str], device: str, max_seq
     results = {"device": device, "corpus": len(corpus), "queries": len(queries), "embedding": {}, "rerank": {}}
     orders = {}
     for key in models:
-        q, d, seconds = embed(out, key, device, max_seq, batch)
+        try:
+            q, d, seconds = embed(out, key, device, max_seq, batch)
+        except Exception as error:  # one model that cannot load must not lose the others' results
+            print(f"[embed] {key:9} skipped: {type(error).__name__}: {str(error)[:200]}", flush=True)
+            results["embedding"][key] = {"skipped": f"{type(error).__name__}: {str(error)[:500]}"}
+            continue
         sims = q @ d.T
         order = np.argsort(-sims, axis=1)[:, :400]
         orders[key] = order
@@ -215,8 +220,12 @@ def run(out: Path, models: list[str], rerankers: list[str], device: str, max_seq
     if rerankers and rerankers != ["none"] and orders:
         from sentence_transformers import CrossEncoder
         for rkey in rerankers:
-            model = _load(lambda **kw: CrossEncoder(RERANKERS[rkey], device=device, max_length=max_seq,
-                                                    automodel_args=kw))
+            try:
+                model = _load(lambda **kw: CrossEncoder(RERANKERS[rkey], device=device, max_length=max_seq,
+                                                        automodel_args=kw))
+            except Exception as error:
+                print(f"[rerank] {rkey} skipped: {type(error).__name__}: {str(error)[:200]}", flush=True)
+                continue
             if device == "cuda":
                 model.model.half()
             for ekey, order in orders.items():
