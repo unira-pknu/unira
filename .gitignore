@@ -1,12 +1,9 @@
-# Runtime crawler data
-files/*
-FILES/*
-!files/pknu_main/
-files/pknu_main/*
-!files/pknu_main/_state/
-files/pknu_main/_state/*
-!files/pknu_main/_state/pknu_notice.json
-!files/pknu_main/_state/pknu_student_life.json
+# Runtime crawler data: files/ holds only collected files. The crawl state (what was
+# already read) lives in state/ and is committed so the GitHub Actions crawls continue
+# from the last run; its backups (*.bak, below) and lock files stay local.
+files/
+FILES/
+state/**/*.lock
 output/
 outputs/
 preprocessed/

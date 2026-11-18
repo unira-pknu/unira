@@ -69,6 +69,27 @@ class CrawlerStorageTests(unittest.TestCase):
         self.assertTrue(self.paths.state.exists())
         self.assertEqual("seven", state["items"]["7"]["slug"])
 
+    def test_state_lives_outside_files(self) -> None:
+        root = self.root.resolve()
+        self.assertEqual(root / "state" / "pknu_notice.json", self.paths.state)
+        self.assertEqual(root / "state" / "rule.json", get_dataset_paths(self.root, "rule").state)
+        ce = get_dataset_paths(self.root, "ce")
+        self.assertEqual(root.joinpath("state", *ce.root.relative_to(root / "files").parts[:-1], "ce.json"), ce.state)
+        for paths in (self.paths, ce):
+            self.assertFalse(paths.state.is_relative_to(root / "files"))
+
+    def test_state_left_under_files_is_copied_to_state_dir(self) -> None:
+        for dataset in ("ce", "pknu_notice"):
+            paths = get_dataset_paths(self.root, dataset)
+            paths.legacy_state.parent.mkdir(parents=True, exist_ok=True)
+            save_state_atomic(paths.legacy_state, {"items": {"a": {"slug": "a"}}}, dataset)
+            state, origin = load_state_with_migration(paths)
+            self.assertEqual({"a"}, set(state["items"]))
+            self.assertEqual(f"migrated:{paths.legacy_state}", origin)
+            self.assertTrue(paths.state.exists())
+            self.assertTrue(paths.legacy_state.exists())  # source is kept
+            self.assertEqual("current", load_state_with_migration(paths)[1])
+
     def test_parallel_state_commits_preserve_other_workers_changes(self) -> None:
         initial = empty_state("pknu_notice")
         initial["items"] = {key: {"slug": key} for key in ("old", "changed")}

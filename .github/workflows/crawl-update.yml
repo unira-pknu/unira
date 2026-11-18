@@ -61,15 +61,10 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          # Department state lives under the registry storage_path
-          # (files/department/<college>/<department>/<dataset>/state.json), so find it
-          # instead of hardcoding one path.
-          { find files/department -name state.json 2>/dev/null || true; printf '%s\n' files/rule/state.json files/pknu_main/_state/pknu_notice.json files/pknu_main/_state/pknu_student_life.json; } |
-          while IFS= read -r state_path; do
-            if [ -f "$state_path" ]; then
-              git add -f -- "$state_path"
-            fi
-          done
+          # All crawl state lives in state/ (department files follow the registry
+          # storage_path, e.g. state/department/<college>/<department>/<dataset>.json).
+          # Backups and lock files there are git-ignored.
+          git add -- state
           git diff --cached --quiet && exit 0
           git commit -m "chore(crawler): update crawl state [skip ci]"
           # A PR merged during the run makes a plain push fail; on 2026-11-14 and 11-16

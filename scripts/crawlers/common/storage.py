@@ -49,6 +49,9 @@ class DatasetPaths:
     files: Path
     deleted: Path
     runs: Path
+    # Where the state lived before it moved out of files/ into state/. Read once
+    # and copied to `state` when `state` does not exist yet (load_state_with_migration).
+    legacy_state: Path | None = None
 
     def category_json(self, category: str) -> Path:
         return self.json / safe_component(category, "category")
@@ -158,6 +161,20 @@ def iter_dataset_roots(project_root: Path):
                 yield root
 
 
+def state_root(project_root: Path) -> Path:
+    """Crawl state (what was already read) lives outside files/, which holds only
+    collected data. These small JSON files are committed so the GitHub Actions
+    crawls continue from the last run."""
+    return project_root.resolve() / "state"
+
+
+def state_file_for(project_root: Path, dataset_root: Path) -> Path:
+    """files/department/<college>/<dept>/ce -> state/department/<college>/<dept>/ce.json,
+    files/rule -> state/rule.json."""
+    relative = dataset_root.resolve().relative_to(project_root.resolve() / "files")
+    return state_root(project_root).joinpath(*relative.parts[:-1], f"{relative.parts[-1]}.json")
+
+
 def get_dataset_paths(
     project_root: Path, dataset: str, *, group: str | None = None,
     storage_path: Iterable[str] | None = None,
@@ -170,9 +187,10 @@ def get_dataset_paths(
     output = root / "output"
     return DatasetPaths(
         project_root=project_root.resolve(), dataset=dataset_name, root=root,
-        state=root / "state.json", output=output, json=output / "json",
+        state=state_file_for(project_root, root), output=output, json=output / "json",
         html=output / "html", files=output / "files",
         deleted=output / "deleted", runs=output / "runs",
+        legacy_state=root / "state.json",
     )
 
 
@@ -260,6 +278,14 @@ def save_state_atomic(path: Path, state: dict[str, Any], dataset: str) -> Path:
     return path
 
 
+def _with_previous_location(paths: DatasetPaths, legacy_paths: Iterable[Path]) -> list[Path]:
+    """The pre-state/ location (and its backup) comes before older legacy files."""
+    previous = []
+    if paths.legacy_state is not None:
+        previous = [paths.legacy_state, paths.legacy_state.with_suffix(paths.legacy_state.suffix + ".bak")]
+    return [*previous, *(path for path in legacy_paths if path not in previous)]
+
+
 def load_state_with_migration(
     paths: DatasetPaths,
     *,
@@ -278,7 +304,7 @@ def load_state_with_migration(
                     pass
             raise current_error
 
-    for legacy_path in legacy_paths:
+    for legacy_path in _with_previous_location(paths, legacy_paths):
         if not legacy_path.exists():
             continue
         state = _read_state(legacy_path, paths.dataset, legacy_kind)
@@ -328,7 +354,7 @@ def state_migration_plan(paths: DatasetPaths, legacy_paths: Iterable[Path]) -> l
     actions: list[dict[str, str]] = []
     if paths.state.exists():
         return [{"action": "skip", "reason": "target_exists", "target": str(paths.state)}]
-    for source in legacy_paths:
+    for source in _with_previous_location(paths, legacy_paths):
         if source.exists():
             actions.append({"action": "copy_state", "source": str(source), "target": str(paths.state)})
     if not actions:

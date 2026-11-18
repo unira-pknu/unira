@@ -27,7 +27,7 @@ def parse_args() -> argparse.Namespace:
         help="guide=/main/434, pages=형제 안내페이지, ebook=col_life, all=전부",
     )
     parser.add_argument("--full-resync", action="store_true", help="content_hash 무시하고 재수집")
-    parser.add_argument("--reset-state", action="store_true", help="files/pknu_main/_state/pknu_student_life.json 초기화")
+    parser.add_argument("--reset-state", action="store_true", help="state/pknu_student_life.json 초기화")
     parser.add_argument(
         "--limit",
         type=int,

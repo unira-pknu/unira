@@ -665,7 +665,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--reset-state",
         action="store_true",
-        help="files/pknu_main/_state/pknu_notice.json을 빈 공통 상태로 초기화",
+        help="state/pknu_notice.json을 빈 공통 상태로 초기화",
     )
     parser.add_argument(
         "--once",

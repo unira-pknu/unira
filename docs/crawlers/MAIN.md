@@ -281,7 +281,6 @@ files/pknu_main/
     교수동정/
     부경나우/
   _runs/                      # run results and collection manifests
-  _state/                     # incremental crawler state and backups
   _derived/<dataset>/
     preprocessed/             # RAG extraction and chunks
   _archive/<dataset>/         # retired, deleted and interrupted results

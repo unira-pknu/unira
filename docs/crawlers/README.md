@@ -318,7 +318,7 @@ Get-Content logs/crawlers/ce.log -Tail 20 -Wait
 | 메인 통합 보고서 | `files/pknu_main/_runs/main_run_report.json` |
 | 연구기관 전용 보고서 | `files/pknu_main/_runs/research_institutes_run_report.json` |
 | 학과·단과대학 | `files/department/<storage_path>/output/` |
-| 학과 증분 상태 | `files/department/<storage_path>/state.json` |
+| 학과 증분 상태 | `state/department/<storage_path>.json` (`files/`에는 수집 파일만 둠) |
 | 학칙·규정 | `files/rule/output/` |
 
 학과의 `<storage_path>`는 레지스트리에 지정된 단과대학/학부·학과/전공/데이터셋 경로입니다.

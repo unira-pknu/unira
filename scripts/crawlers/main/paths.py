@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 
-from scripts.crawlers.common.storage import DatasetPaths, safe_component
+from scripts.crawlers.common.storage import DatasetPaths, safe_component, state_root
 
 
 STUDENT_CATEGORIES = {
@@ -131,6 +131,7 @@ def get_main_dataset_paths(project_root: Path, dataset: str) -> MainDatasetPaths
     root = main_root(project_root)
     section = root / ("커뮤니티/공지사항" if dataset == "pknu_notice" else "대학생활")
     return MainDatasetPaths(project_root.resolve(), dataset, root,
-                            root / "_state" / f"{dataset}.json", section,
+                            state_root(project_root) / f"{dataset}.json", section,
                             section, section, section,
-                            root / "_archive" / dataset / "deleted", root / "_runs" / dataset)
+                            root / "_archive" / dataset / "deleted", root / "_runs" / dataset,
+                            legacy_state=root / "_state" / f"{dataset}.json")
