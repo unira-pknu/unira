@@ -9,7 +9,7 @@ import pytest
 from app import retrieval
 from app.embeddings import Embedder
 from app.retrieval import (_fetch_notice_chunks, _fetch_rpc_responses, _notice_chunk_rows,
-                           rescale_similarity, search)
+                           raw_min_similarity, rescale_similarity, search)
 
 RPC = "match_pknu_main_documents"
 
@@ -45,6 +45,14 @@ def test_rescale_maps_floor_to_zero_and_leaves_default_unchanged():
     assert rescale_similarity(None, 0.75) is None
 
 
+def test_ceiling_widens_packed_scores_and_caps_at_one():
+    assert rescale_similarity(0.8, 0.7, 0.9) == pytest.approx(0.5)
+    assert rescale_similarity(0.95, 0.7, 0.9) == 1.0
+    assert rescale_similarity(0.8, 0.0, 1.0) == 0.8
+    assert raw_min_similarity(0.3, 0.7, 0.9) == pytest.approx(0.76)
+    assert raw_min_similarity(0.3, 0.0, 1.0) == 0.3
+
+
 def _row(name, similarity):
     return {"id": "db-" + name, "source_id": "src-" + name, "chunk_id": 0, "chunk_index": 0,
             "title": "교류수학 안내", "url": "https://www.pknu.ac.kr/" + name,
@@ -70,12 +78,20 @@ def _run(rows, **options):
     return result, captured
 
 
+def test_ceiling_reaches_the_rpc_threshold_and_the_helpers():
+    rows = [_row("A", 0.86), _row("B", 0.80)]
+    _result, captured = _run(rows, vector_rpc_suffix="_e5", similarity_floor=0.7, similarity_ceiling=0.9)
+    assert captured["payload"]["min_similarity"] == pytest.approx(0.76)
+    assert captured["source"] == retrieval._VectorSource("_e5", 0.7, 0.9)
+    assert [r["similarity"] for r in rows] == pytest.approx([0.8, 0.5])
+
+
 def test_floor_raises_the_database_threshold_and_rescales_vector_rows():
     rows = [_row("A", 0.95), _row("B", 0.85)]
     result, captured = _run(rows, vector_rpc_suffix="_e5", similarity_floor=0.75)
     assert captured["payload"]["min_similarity"] == pytest.approx(0.75 + 0.3 * 0.25)
     assert captured["kwargs"]["vector_rpc_suffix"] == "_e5"
-    assert captured["source"] == retrieval._VectorSource("_e5", 0.75)
+    assert captured["source"] == retrieval._VectorSource("_e5", 0.75, 1.0)
     assert [r["similarity"] for r in rows] == pytest.approx([0.8, 0.4])
     assert retrieval._VECTOR_SOURCE.get() == retrieval._VectorSource()  # reset after the call
     assert [r["id"] for r in result] == ["db-A", "db-B"]

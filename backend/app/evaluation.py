@@ -15,7 +15,7 @@ from .retrieval_trace import candidate_key, source_identity
 # Explicitly exclude API keys, tokens, user identity and database credentials.
 SETTING_NAMES = (
     "openai_model", "openai_temperature", "openai_max_tokens", "openai_reasoning_effort", "embedding_model",
-    "expected_dimensions", "embedding_query_prefix", "vector_rpc_suffix", "embedding_similarity_floor",
+    "expected_dimensions", "embedding_query_prefix", "vector_rpc_suffix", "embedding_similarity_floor", "embedding_similarity_ceiling",
     "rpc_names", "rag_top_k", "rag_first_stage_k",
     "rag_min_similarity", "rag_max_chunks_per_url", "rag_max_lexical_chunks_per_url",
     "rag_priority_weight", "rag_dataset_priority_weight", "rag_source_kind_weight",

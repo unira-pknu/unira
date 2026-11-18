@@ -16,7 +16,7 @@
 | 설정 | `D:\unira-backend\backend\.env` (`EMBEDDING_DEVICE=cuda`, `RERANKER_DEVICE=cuda`) |
 | 실행 스크립트 | `run_backend.ps1`, `run_ngrok.ps1` — 꺼지면 10초 뒤 다시 켜는 무한 반복 |
 | 로그 | `D:\unira-backend\logs\backend_날짜.log`·`ngrok_날짜.log` — 하루 한 파일, 30일 지난 파일은 자동 삭제(`write_daily_log.ps1`, 원본 `backend/deploy/`) |
-| 자동 시작 | 작업 스케줄러 `unira-backend`, `unira-ngrok` (부팅 시, 관리자 권한) |
+| 자동 시작 | 작업 스케줄러 `unira-backend`, `unira-ngrok` (부팅 시, 관리자 권한), `unira-backfill-e5` (4시간마다, 아래 "e5 벡터 자동 채우기") |
 
 크롤링 작업 폴더(`D:\Github\campus-rag\campus-rag`)와는 별개다. 백엔드 반영 때 그 폴더와
 크롤링 창은 건드리지 않는다.
@@ -212,6 +212,26 @@ npm --prefix frontend run build
 현재 PowerShell 세션의 PATH 앞에 해당 폴더를 추가합니다.
 
 검색 품질 변경 파일의 운영 복사, DB 변경, Vercel 배포, 로그인한 관리자의 실제 다운로드는 수행하지 않았습니다.
+
+## e5 벡터 자동 채우기
+
+매일 수집으로 새로 들어오거나 바뀐 조각은 e5 벡터(`<family>_chunks_e5`, 마이그레이션 021)가 비어 있다.
+GitHub Actions에는 GPU가 없어 수집 작업에서 계산하지 않고, 이 서버가 4시간마다 채운다.
+
+- 스크립트: `backend/deploy/run_backfill_e5.ps1` → `scripts/vectorization/backfill_e5.py`
+- 채울 것이 없으면 모델을 불러오지 않고 끝난다. 앞 실행이 아직 돌면(첫 전체 채우기는 몇 시간) 그냥 끝난다.
+- 로그: `D:\unira-backend\logs\backfill_e5_날짜.log`
+
+등록 (**관리자** PowerShell, 한 번만). `write_daily_log.ps1`이 `D:\unira-backend`에 있어야 한다.
+
+```powershell
+schtasks /Create /TN unira-backfill-e5 /SC HOURLY /MO 4 /ST 00:30 /RU SYSTEM /RL HIGHEST /F `
+  /TR "powershell -NoProfile -ExecutionPolicy Bypass -File D:\unira-backend\backend\deploy\run_backfill_e5.ps1"
+schtasks /Query /TN unira-backfill-e5          # 다음 실행 시각 확인
+schtasks /Run /TN unira-backfill-e5            # 지금 한 번 돌려 보기
+```
+
+남은 개수만 보기: `.\backend\.venv\Scripts\python.exe -m scripts.vectorization.backfill_e5 --count-only`
 
 ## 되돌리기 (학교 서버가 멈췄을 때)
 

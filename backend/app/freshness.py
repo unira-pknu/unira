@@ -59,7 +59,12 @@ _QUERY_RELATIVE_YEAR_TERM_RE = re.compile(r"(재작년|작년|지난\s*해)\s*(?
 _QUERY_RELATIVE_TERM_RE = re.compile(r"(지난|다음)\s*학기")
 _THIS_TERM_RE = re.compile(r"이번\s*학기|금학기")
 _GRADUATE_QUERY_TERMS = ("대학원", "석사", "박사")
-_SCHEDULE_QUERY_RE = re.compile(r"언제|기간|일정|마감|날짜|며칠|몇\s*일|까지|개강|종강|시작")
+# Opening hours change too (방학 중, 시험기간, 리모델링): "도서관 운영 시간" was
+# answered from a 2023-10 department repost while 2024-12 hours existed (2026-11-18).
+_SCHEDULE_QUERY_RE = re.compile(
+    r"언제|기간|일정|마감|날짜|며칠|몇\s*일|까지|개강|종강|시작"
+    r"|(?:운영|이용|개방|개관|영업|열람)\s*시간|몇\s*시"
+)
 
 
 def is_schedule_query(query_text: Optional[str]) -> bool:
