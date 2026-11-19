@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "dataset": "civil",
-  "updated_at": "2026-11-16T07:52:54+09:00",
+  "updated_at": "2026-11-19T09:28:15+09:00",
   "items": {
     "http://civil.pknu.ac.kr/civil/5329": {
       "source_id": "http://civil.pknu.ac.kr/civil/5329",
@@ -18,12 +18,34 @@
       "source_id": "http://civil.pknu.ac.kr/civil/5344",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-11-16T07:52:24+09:00",
+      "last_seen_at": "2026-11-19T09:20:27+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 214,
+      "last_no": 215,
       "name": "취업게시판",
-      "updated_at": "2026-11-16T07:52:24+09:00"
+      "updated_at": "2026-11-19T09:20:27+09:00"
+    },
+    "http://civil.pknu.ac.kr/civil/5345": {
+      "source_id": "http://civil.pknu.ac.kr/civil/5345",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-19T09:24:37+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 1249,
+      "name": "학부 공지사항",
+      "updated_at": "2026-11-19T09:24:37+09:00"
+    },
+    "http://civil.pknu.ac.kr/civil/5372": {
+      "source_id": "http://civil.pknu.ac.kr/civil/5372",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-19T09:27:59+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 440,
+      "name": "대학원 공지사항",
+      "updated_at": "2026-11-19T09:27:59+09:00"
     }
   }
 }

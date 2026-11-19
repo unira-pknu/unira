@@ -1,18 +1,18 @@
 {
   "schema_version": "1.0",
   "dataset": "envatm",
-  "updated_at": "2026-11-16T08:22:16+09:00",
+  "updated_at": "2026-11-19T10:30:11+09:00",
   "items": {
     "https://envatm.pknu.ac.kr/envatm/2268": {
       "source_id": "https://envatm.pknu.ac.kr/envatm/2268",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-11-13T10:06:02+09:00",
+      "last_seen_at": "2026-11-19T10:26:27+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 101,
+      "last_no": 102,
       "name": "공지사항",
-      "updated_at": "2026-11-13T10:06:02+09:00"
+      "updated_at": "2026-11-19T10:26:27+09:00"
     },
     "https://envatm.pknu.ac.kr/envatm/2270": {
       "source_id": "https://envatm.pknu.ac.kr/envatm/2270",

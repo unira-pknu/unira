@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "dataset": "bigdata",
-  "updated_at": "2026-11-16T07:44:50+09:00",
+  "updated_at": "2026-11-19T09:12:12+09:00",
   "items": {
     "https://icms.pknu.ac.kr/bigdata/629": {
       "source_id": "https://icms.pknu.ac.kr/bigdata/629",
@@ -40,34 +40,34 @@
       "source_id": "https://icms.pknu.ac.kr/bigdata/599",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-11-16T07:42:57+09:00",
+      "last_seen_at": "2026-11-19T09:09:41+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 529,
+      "last_no": 532,
       "name": "공지사항(학부)",
-      "updated_at": "2026-11-16T07:42:57+09:00"
+      "updated_at": "2026-11-19T09:09:41+09:00"
     },
     "https://icms.pknu.ac.kr/bigdata/631": {
       "source_id": "https://icms.pknu.ac.kr/bigdata/631",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-11-16T07:43:38+09:00",
+      "last_seen_at": "2026-11-19T09:10:27+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 100,
+      "last_no": 101,
       "name": "공지사항(대학원)",
-      "updated_at": "2026-11-16T07:43:38+09:00"
+      "updated_at": "2026-11-19T09:10:27+09:00"
     },
     "https://icms.pknu.ac.kr/bigdata/601": {
       "source_id": "https://icms.pknu.ac.kr/bigdata/601",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-11-13T08:28:26+09:00",
+      "last_seen_at": "2026-11-19T09:11:51+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 40,
+      "last_no": 42,
       "name": "전공소식",
-      "updated_at": "2026-11-13T08:28:26+09:00"
+      "updated_at": "2026-11-19T09:11:51+09:00"
     }
   }
 }
