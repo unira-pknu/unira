@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "dataset": "dba",
-  "updated_at": "2026-11-17T11:12:11+09:00",
+  "updated_at": "2026-11-20T09:59:49+09:00",
   "items": {
     "http://dba.pknu.ac.kr/dba/3812": {
       "source_id": "http://dba.pknu.ac.kr/dba/3812",
@@ -18,12 +18,12 @@
       "source_id": "http://dba.pknu.ac.kr/dba/1235",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-11-17T11:10:51+09:00",
+      "last_seen_at": "2026-11-20T09:58:33+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 1854,
+      "last_no": 1856,
       "name": "공지사항",
-      "updated_at": "2026-11-17T11:10:51+09:00"
+      "updated_at": "2026-11-20T09:58:33+09:00"
     },
     "http://dba.pknu.ac.kr/dba/1237": {
       "source_id": "http://dba.pknu.ac.kr/dba/1237",

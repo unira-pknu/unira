@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "dataset": "ecoeng",
-  "updated_at": "2026-11-17T11:24:46+09:00",
+  "updated_at": "2026-11-20T10:13:26+09:00",
   "items": {
     "http://ecoeng.pknu.ac.kr/ecoeng/5664": {
       "source_id": "http://ecoeng.pknu.ac.kr/ecoeng/5664",
@@ -29,12 +29,12 @@
       "source_id": "http://ecoeng.pknu.ac.kr/ecoeng/5666",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-11-11T01:12:58+09:00",
+      "last_seen_at": "2026-11-20T10:07:43+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 38,
+      "last_no": 39,
       "name": "취업정보",
-      "updated_at": "2026-11-11T01:12:58+09:00"
+      "updated_at": "2026-11-20T10:07:43+09:00"
     }
   }
 }
