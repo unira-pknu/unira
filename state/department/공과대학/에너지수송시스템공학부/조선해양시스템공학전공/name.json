@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "dataset": "name",
-  "updated_at": "2026-11-20T13:10:20+09:00",
+  "updated_at": "2026-11-21T11:31:28+09:00",
   "items": {
     "https://name.pknu.ac.kr/name/2500": {
       "source_id": "https://name.pknu.ac.kr/name/2500",
@@ -62,12 +62,12 @@
       "source_id": "https://name.pknu.ac.kr/name/6276",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-11-17T15:13:23+09:00",
+      "last_seen_at": "2026-11-21T11:30:55+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 773,
+      "last_no": 774,
       "name": "학사 공지사항",
-      "updated_at": "2026-11-17T15:13:23+09:00"
+      "updated_at": "2026-11-21T11:30:55+09:00"
     }
   }
 }

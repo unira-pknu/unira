@@ -1,18 +1,18 @@
 {
   "schema_version": "1.0",
   "dataset": "bme",
-  "updated_at": "2026-11-20T09:41:22+09:00",
+  "updated_at": "2026-11-21T08:59:37+09:00",
   "items": {
     "http://bme.pknu.ac.kr/bme/7236": {
       "source_id": "http://bme.pknu.ac.kr/bme/7236",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-11-10T22:31:51+09:00",
+      "last_seen_at": "2026-11-21T08:56:18+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 89,
+      "last_no": 90,
       "name": "취업게시판",
-      "updated_at": "2026-11-10T22:31:51+09:00"
+      "updated_at": "2026-11-21T08:56:18+09:00"
     },
     "http://bme.pknu.ac.kr/bme/7237": {
       "source_id": "http://bme.pknu.ac.kr/bme/7237",

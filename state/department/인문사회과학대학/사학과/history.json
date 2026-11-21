@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "dataset": "history",
-  "updated_at": "2026-11-20T11:11:07+09:00",
+  "updated_at": "2026-11-21T10:03:58+09:00",
   "items": {
     "http://history.pknu.ac.kr/history/3893": {
       "source_id": "http://history.pknu.ac.kr/history/3893",
@@ -18,12 +18,12 @@
       "source_id": "http://history.pknu.ac.kr/history/3895",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-11-20T11:03:50+09:00",
+      "last_seen_at": "2026-11-21T09:59:39+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 7015,
+      "last_no": 7019,
       "name": "장학안내",
-      "updated_at": "2026-11-20T11:03:50+09:00"
+      "updated_at": "2026-11-21T09:59:39+09:00"
     },
     "http://history.pknu.ac.kr/history/3913": {
       "source_id": "http://history.pknu.ac.kr/history/3913",

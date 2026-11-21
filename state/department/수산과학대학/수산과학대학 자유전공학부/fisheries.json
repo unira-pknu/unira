@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "dataset": "fisheries",
-  "updated_at": "2026-11-20T10:58:09+09:00",
+  "updated_at": "2026-11-21T09:56:02+09:00",
   "items": {
     "http://fisheries.pknu.ac.kr/fisheries/7204": {
       "source_id": "http://fisheries.pknu.ac.kr/fisheries/7204",
