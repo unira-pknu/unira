@@ -22,6 +22,7 @@ from scripts.vectorization import verify_recovery_search
 from scripts.vectorization import publish_recovery
 from scripts.recovery import cli as recovery_cli
 from scripts.recovery import common as recovery_common
+from scripts.recovery import recent as recent_recovery
 from scripts.artifact_paths import resolve_artifact_path, reference_path
 
 
@@ -30,6 +31,101 @@ class TransientFailure(RuntimeError):
 
 
 class RecoveryControlTests(unittest.TestCase):
+    def test_recent_partition_keeps_primary_and_supplement_on_one_worker(self):
+        tasks = [
+            {"key": "primary_ee", "phase": "primary", "dataset": "ee", "output_files": ["a"]},
+            {"key": "primary_a", "phase": "primary", "dataset": "a", "output_files": ["b", "c"]},
+            {"key": "supplement_a", "phase": "supplement", "dataset": "a", "output_files": ["d"]},
+        ]
+        groups = recent_recovery.partition(tasks, 2)
+        self.assertEqual(groups[0][0]["key"], "primary_ee")
+        owners = {task["key"]: number for number, group in enumerate(groups) for task in group}
+        self.assertEqual(len(owners), len(tasks))
+        self.assertEqual(owners["primary_a"], owners["supplement_a"])
+        for invalid in (0, 5):
+            with self.assertRaises(ValueError):
+                recent_recovery.partition(tasks, invalid)
+
+    def test_recent_committed_offset_requires_the_same_complete_index(self):
+        self.assertEqual(recent_recovery.checkpoint_offset({"index_sha256": "old", "committed_records": 90}, "new", 10), 0)
+        self.assertEqual(recent_recovery.checkpoint_offset({"index_sha256": "same", "committed_records": 4}, "same", 10), 4)
+        for invalid in (-1, 11, True, "4"):
+            with self.assertRaises(ValueError):
+                recent_recovery.checkpoint_offset({"index_sha256": "same", "committed_records": invalid}, "same", 10)
+
+    def test_recent_index_does_not_include_unselected_existing_vectors(self):
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            selected = root / "preprocessed/dept/selected.json"
+            output = root / "vectorized/_/dept"
+            output.mkdir(parents=True)
+            (output / "unselected.json").write_text('{"records":[{"id":"foreign"}]}', encoding="utf-8")
+            embedder = SimpleNamespace(name="same-model", dimensions=384)
+            with patch.object(recent_recovery, "ROOT", root), patch(
+                "scripts.vectorization.vectorization.current_payload", return_value={"records": [{"id": "selected"}]}
+            ) as payload:
+                recent_recovery.scoped_index([selected], root / "preprocessed/dept", output, embedder, "dept")
+            self.assertEqual([json.loads(line)["id"] for line in (output / "index.jsonl").read_text(encoding="utf-8").splitlines()], ["selected"])
+            self.assertEqual(payload.call_count, 1)
+            self.assertTrue((output / "unselected.json").exists())
+
+    def test_recent_zip_alias_requires_identical_records_metadata_and_original_bytes(self):
+        import hashlib
+        import zipfile
+        from copy import deepcopy
+
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            original = root / "files/source.zip"
+            original.parent.mkdir()
+            body = b"official collected member"
+            with zipfile.ZipFile(original, "w") as archive:
+                archive.writestr("guide.docx", body)
+            archive_before = original.read_bytes()
+            input_root = root / "preprocessed/dept"
+            canonical = input_root / "files/zip/source/guide.docx.json"
+            legacy = canonical.with_name("guide.json")
+            source = "files/source.zip!/guide.docx"
+            metadata = {"source_path": source, "doc_title": "Official guide",
+                        "preprocessed_path": canonical.relative_to(root).as_posix(),
+                        "previous_preprocessed_path": legacy.relative_to(root).as_posix(),
+                        "previous_source_path": source, "archive_path_policy_version": 2,
+                        "archive_member_ext": ".docx", "archive_member_sha256": hashlib.sha256(body).hexdigest()}
+            record = {"id": "stable", "source_slug": "guide", "chunk_index": 0,
+                      "text": "Verified answer", "embedding": [1.0], "metadata": metadata}
+            old = deepcopy(record)
+            old["metadata"] = {"source_path": source, "doc_title": "Official guide",
+                               "preprocessed_path": legacy.relative_to(root).as_posix()}
+            payloads = {canonical: {"records": [record]}, legacy: {"records": [old]}}
+            def payload(path, *args):
+                return payloads[path]
+            with patch.object(recent_recovery, "ROOT", root), patch(
+                "scripts.vectorization.vectorization.current_payload", side_effect=payload
+            ):
+                kept, aliases = recent_recovery.archive_alias_selection(
+                    [legacy, canonical], input_root, root / "vectorized/_/dept", None)
+                self.assertEqual(kept, [canonical])
+                self.assertEqual(aliases[0]["duplicate_records"], 1)
+                old["embedding"] = [1.0 + 1e-8]
+                kept, _ = recent_recovery.archive_alias_selection([legacy, canonical], input_root, root / "vectorized/_/dept", None)
+                self.assertEqual(kept, [canonical])
+                old["embedding"] = [0.95]
+                with self.assertRaisesRegex(ValueError, "conflicting"):
+                    recent_recovery.archive_alias_selection([canonical, legacy], input_root, root / "vectorized/_/dept", None)
+                old["embedding"] = record["embedding"][:]
+                old["text"] = "Conflicting answer"
+                with self.assertRaisesRegex(ValueError, "conflicting"):
+                    recent_recovery.archive_alias_selection([canonical, legacy], input_root, root / "vectorized/_/dept", None)
+                old["text"] = record["text"]
+                old["metadata"]["doc_title"] = "Different eligibility"
+                with self.assertRaisesRegex(ValueError, "conflicting"):
+                    recent_recovery.archive_alias_selection([canonical, legacy], input_root, root / "vectorized/_/dept", None)
+                old["metadata"]["doc_title"] = metadata["doc_title"]
+                metadata["archive_member_sha256"] = "0" * 64
+                with self.assertRaisesRegex(ValueError, "original member changed"):
+                    recent_recovery.archive_alias_selection([canonical, legacy], input_root, root / "vectorized/_/dept", None)
+            self.assertEqual(original.read_bytes(), archive_before)
+
     def test_quality_audit_separates_condition_indicators_from_universal_missing_fields(self):
         summary = quality_audit.ScopeSummary()
         summary.add("rag", "a", "ce", 0, "2021학년도 이전 입학생의 학과별 졸업 기준", {"department_id": "ce"})

@@ -29,6 +29,9 @@ class Task:
 
 
 TASKS = {
+    "recent": Task("scripts.recovery.recent", ("prepare", "resume"), "prepare",
+                   ("source_run", *LoadOptions.__dataclass_fields__),
+                   policy="recent-ingestion-parallel-resume-v1"),
     "zip": Task("scripts.preprocessing.repair_archive_collisions",
                 ("prepare", "stage", "vectorize", "preflight", "resume", "apply", "verify", "publish"),
                 "prepare", ("after_receipt",), policy=2),
@@ -98,7 +101,7 @@ def options_for(task, explicit):
     if task == "excel":
         if values["workers"] not in (1, 2) or not 1 <= values["chunk_batch_size"] <= 512:
             raise ValueError("Excel requires --workers 1..2 and --chunk-batch-size 1..512")
-    elif task == "missing":
+    elif task in {"missing", "recent"}:
         LoadOptions(**{k: values[k] for k in LoadOptions.__dataclass_fields__})
     for key in ("expected_count", "max_ocr_pages", "cases_per_family"):
         if values[key] < 1:
@@ -179,6 +182,10 @@ def missing_remaining(run):
 
 def dispatch(task, phase, module, run, a):
     """Domain algorithms stay independent; orchestration and options live here."""
+    if task == "recent":
+        if phase == "prepare":
+            return module.prepare(run, a.source_run, a.workers)
+        return module.resume(run, LoadOptions(**{k: getattr(a, k) for k in LoadOptions.__dataclass_fields__}))
     if task == "missing":
         if phase == "search":
             verifier = importlib.import_module("scripts.vectorization.verify_recovery_search")

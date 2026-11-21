@@ -32,6 +32,7 @@
 | `quality` | 깨진 문자/PDF 추출 품질을 원본과 비교 | `scan probe stage` | `--expected-chunks`, `--expected-pdfs`, `--pdf-source-id`, `--ocr`, `--retry-errors`, `--max-ocr-pages` |
 | `sources` | 동일 원본·본문이 확인된 중복 출처 검토 | `scan baseline apply verify` | `--expected-db-only`, `--expected-groups`, `--after-receipt`, `--backend-root` |
 | `missing` | 본문·벡터는 있지만 DB에 없는 출처만 선별 적재 | `prepare load priorities verify search`, 또는 `resume` | 아래 배치 옵션, `--backend-root`, `--cases-per-family` |
+| `recent` | 실패한 최근 재수집 적재의 미완료 데이터셋과 ZIP·구조화 추가 자료 재개 | `prepare`, 또는 `resume` | `--source-run`, 아래 배치 옵션 |
 
 모든 작업은 `status`도 지원합니다. `--phase stage vectorize`처럼 여러 단계를 지정하면 표시된 순서로 실행하고
 첫 실패에서 중단합니다. `resume`과 `status`는 다른 단계와 함께 지정하지 않습니다.
@@ -42,6 +43,23 @@
 검사하므로 같은 폴더를 다른 작업에 재사용할 수 없습니다. 기존 정책·체크포인트도 인식합니다. 이미 생성한 계획은
 덮어쓰지 않고 다음 단계에서 재사용합니다. 새로운 스캔/비교가 필요하면 새 작업 폴더를 선택합니다.
 `excel`은 이미 만들어진 `targets.json`·격리 벡터가 필요하며, 전체 Excel 재전처리를 시작하는 명령이 아닙니다.
+
+최근 재수집 적재를 재개할 때는 실패한 작업 폴더를 `--source-run`으로 지정해 완료 영수증과 전처리 선택 목록을 보존합니다.
+`recent`는 완료한 데이터셋을 건너뛰며 같은 데이터셋의 본 적재·추가 자료를 같은 작업자에 배정합니다.
+벡터화 작업자는 최대 4개이며 DB 동시 쓰기는 2개로 제한합니다. DB 커밋 뒤 배치 체크포인트를 저장하고,
+같은 인덱스 해시일 때만 그 위치부터 재개합니다. 쿼리 시간 초과·잠금 충돌은 작은 배치로 나눠 재시도합니다.
+추가 자료는 데이터셋의 본 적재 이후 처리하며, 모두 검증한 후 검색 우선순위를 갱신합니다. 수집·OCR은 실행하지 않습니다.
+주 적재 영수증은 기존 `vectorized/_/ingestion.json`, 추가 적재는 `vectorized/z/ingestion.json`에 반영합니다.
+ZIP의 구형 `문서.json`과 신형 `문서.docx.json`이 같은 식별자를 공유하면, 명시된 이전 경로 연결과
+원본 ZIP 멤버의 SHA-256, 본문·식별자·의미 메타데이터·벡터의 동일성을 확인한 경우에만 신형 표현을
+인덱스에 한 번 넣습니다. 벡터는 1e-7 이하의 반올림 차이만 허용하며, 다른 충돌은 계속 중단합니다.
+구형 파일과 수집 원본은 보존하고, 제외한 별칭과 중복 청크 수는 인덱스 manifest에 기록합니다.
+
+```powershell
+$run = "var/recovery/recent_resume_new"
+.\.venv\Scripts\python.exe -m scripts.recovery --task recent --phase prepare --run $run --source-run var/recovery/recent_ingest_20261118_191220 --workers 4
+.\.venv\Scripts\python.exe -m scripts.recovery --task recent --phase resume --run $run --workers 4 --chunk-batch-size 64 --statement-timeout-seconds 600 --max-batch-retries 8
+```
 
 잠금 파일은 기존 명령과 공유합니다. 기존 배치가 같은 작업을 실행 중이면 거부합니다. 서로 다른 작업의 DB·공용 파일
 반영에는 기존 `--after-receipt` 가드와 스냅샷·해시 검증이 그대로 적용됩니다. 기존 적재 대기 상태에서는
