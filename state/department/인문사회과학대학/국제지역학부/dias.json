@@ -1,29 +1,29 @@
 {
   "schema_version": "1.0",
   "dataset": "dias",
-  "updated_at": "2026-11-19T09:56:39+09:00",
+  "updated_at": "2026-11-22T08:24:49+09:00",
   "items": {
     "http://dias.pknu.ac.kr/dias/3995": {
       "source_id": "http://dias.pknu.ac.kr/dias/3995",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-11-12T12:34:14+09:00",
+      "last_seen_at": "2026-11-22T08:21:45+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 33,
+      "last_no": 34,
       "name": "취업정보 게시판",
-      "updated_at": "2026-11-12T12:34:14+09:00"
+      "updated_at": "2026-11-22T08:21:45+09:00"
     },
     "http://dias.pknu.ac.kr/dias/3996": {
       "source_id": "http://dias.pknu.ac.kr/dias/3996",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-11-16T07:57:05+09:00",
+      "last_seen_at": "2026-11-22T08:22:19+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 387,
+      "last_no": 388,
       "name": "공지사항",
-      "updated_at": "2026-11-16T07:57:05+09:00"
+      "updated_at": "2026-11-22T08:22:19+09:00"
     },
     "http://dias.pknu.ac.kr/dias/3999": {
       "source_id": "http://dias.pknu.ac.kr/dias/3999",
