@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "dataset": "materials",
+  "updated_at": "2026-11-23T10:35:50+09:00",
+  "items": {
+    "http://materials.pknu.ac.kr/materials/1059": {
+      "source_id": "http://materials.pknu.ac.kr/materials/1059",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-23T10:26:02+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 215,
+      "name": "공지사항",
+      "updated_at": "2026-11-23T10:26:02+09:00"
+    },
+    "http://materials.pknu.ac.kr/materials/1060": {
+      "source_id": "http://materials.pknu.ac.kr/materials/1060",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-23T10:28:54+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 217,
+      "name": "취업/장학 정보게시판",
+      "updated_at": "2026-11-23T10:28:54+09:00"
+    },
+    "http://materials.pknu.ac.kr/materials/1296": {
+      "source_id": "http://materials.pknu.ac.kr/materials/1296",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-23T10:35:25+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 74,
+      "name": "전공 소식",
+      "updated_at": "2026-11-23T10:35:25+09:00"
+    },
+    "http://materials.pknu.ac.kr/materials/1061": {
+      "source_id": "http://materials.pknu.ac.kr/materials/1061",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-23T10:35:38+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 4,
+      "name": "양식 모음",
+      "updated_at": "2026-11-23T10:35:38+09:00"
+    }
+  }
+}
