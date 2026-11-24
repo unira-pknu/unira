@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.deps import get_state
-from app.query_plan import QuestionPlan, SearchTask
+from app.query_plan import QuestionPlan, SearchTask, target_for
 from app.rate_limit import enforce_ask_rate_limit
 from app.retrieval import search
 from app.retrieval_trace import RetrievalTrace, candidate_key, source_identity
@@ -146,7 +146,7 @@ def api_client():
 
 
 def test_api_evaluation_connects_trace_identity_prompt_and_answer_citations():
-    plan = QuestionPlan(tasks=[SearchTask(text="교류수학 신청 안내")])
+    plan = QuestionPlan(tasks=[SearchTask(text="교류수학 신청 안내", target=target_for("교류수학 신청 안내"))])
     requested = []
 
     def find(state, query, task, *, capture_trace=False):

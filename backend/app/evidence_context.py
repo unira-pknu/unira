@@ -5,9 +5,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 import logging
 import re
-from typing import Callable
+from typing import Callable, Iterable
 
 from .excerpts import _score, _search_terms
+from .faculty import faculty_card
+from .query_transform import normalize_search_terms
 
 logger = logging.getLogger(__name__)
 
@@ -106,7 +108,8 @@ def _units(content: str, target: int) -> list[_Unit]:
     return result
 
 
-def select_evidence(content: str, *, question: str, target_chars: int, metadata: dict | None = None) -> str:
+def select_evidence(content: str, *, question: str, target_chars: int, metadata: dict | None = None,
+                    faculty_parts: Iterable[str] | None = None) -> str:
     """Select original passages; never summarise or invent missing table cells.
 
     target_chars is a soft target. Protected units can grow to 4000 chars
@@ -115,6 +118,10 @@ def select_evidence(content: str, *, question: str, target_chars: int, metadata:
     if target_chars <= 0 or not content:
         return ""
     hard_limit = max(target_chars, PROTECTED_BLOCK_MAX_CHARS)
+    card = faculty_card(question, metadata or {}, faculty_parts if faculty_parts is not None else (content,),
+                        max_chars=hard_limit)
+    if card:
+        return card
     table = (metadata or {}).get("structured_table") or {}
     if table.get("kind") == "spreadsheet":
         # Ingestion already repeats sheet/row identity and column labels on
@@ -134,13 +141,20 @@ def select_evidence(content: str, *, question: str, target_chars: int, metadata:
         content = re.sub(r"(?m)^문서제목:[^\n]*(?:\n(?:분류|세부분류|파일명|첨부명):[^\n]*)*\n본문:[ \t]*", "", content)
         if len(content) <= target_chars:
             return content
+    # A short submission checklist is one evidence unit. Picking just its
+    # first/last matching sentences hid recommendation letters, transcripts
+    # and conditional language-certificate rows in the middle of a real PDF.
+    if (len(content) <= hard_limit
+            and re.search(r"(?:제출|구비)\s*서류", question)
+            and re.search(r"(?:제출|구비)\s*서류\s*(?:일람표|목록|안내|체크리스트)", content[:160])):
+        return content
     units = _units(content, target_chars)
     if not units:
         return ""
-    terms = _search_terms(question)
+    terms = _search_terms(normalize_search_terms(question))
     terms.update(term for term in ("신청", "제출", "서류", "예외", "기간", "조건", "자격", "등록", "학점", "장학")
                  if term in question)
-    scores = [_score(unit.text, terms) for unit in units]
+    scores = [_score(normalize_search_terms(unit.text), terms) for unit in units]
     ranked = sorted(range(len(units)), key=lambda i: (-scores[i], i))
     best = ranked[0]
     chosen: set[int] = set()

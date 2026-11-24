@@ -36,6 +36,7 @@ from typing import Dict, List
 
 from openai import OpenAI
 
+from .openai_params import completion_options
 from .query_plan import QuestionPlan, finish_plan, rule_plan
 from .course_identity import is_course_list
 
@@ -117,10 +118,9 @@ def plan_question(
                 {"role": "system", "content": _SYSTEM_PROMPT},
                 {"role": "user", "content": user_prompt},
             ],
-            temperature=0.0,
-            max_tokens=450,
             timeout=timeout,
             response_format={"type": "json_object"},
+            **completion_options(model, temperature=0.0, max_tokens=450),
         )
         raw = (response.choices[0].message.content or "").strip()
         parsed = json.loads(raw)

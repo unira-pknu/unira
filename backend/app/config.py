@@ -27,8 +27,14 @@ class Settings(BaseSettings):
     openai_api_key: str
     openai_model: str = "gpt-4o-mini"
     openai_timeout_seconds: float = 30.0
+    # Ignored by reasoning models (gpt-5*/gpt-6*), which only accept the default.
     openai_temperature: float = 0.1
+    # Visible-answer budget. Reasoning models get extra room for hidden
+    # reasoning tokens (app/openai_params.py).
     openai_max_tokens: int = 700
+    # Reasoning models only: low | medium | high (gpt-6-luna rejects "minimal").
+    # Empty string leaves it to the model default.
+    openai_reasoning_effort: str = "low"
 
     # Embedding (dimension MUST match rag_chunks.embedding column type)
     embedding_model: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"

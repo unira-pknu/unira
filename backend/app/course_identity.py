@@ -3,18 +3,19 @@ from __future__ import annotations
 
 import re
 
-INSTRUCTOR = re.compile(r"(?<![가-힣])([가-힣]{2,4})\s*교수(?:님)?(?=이|가|의|께서|은|는|도|\s|[,.?!]|$)")
+INSTRUCTOR = re.compile(r"(?<![가-힣])([가-힣]{2,4})(?:[ \t]+(?:전임|명예|퇴임|겸임|초빙|객원|석좌|부|조))?\s*교수(?:님)?(?=이|가|의|께서|은|는|도|\s|[,.?!]|$)")
+_NON_NAMES = {"담당", "어떤", "무슨", "해당", "전임", "명예", "퇴임", "겸임", "초빙", "객원", "석좌"}
 COURSES = re.compile(r"강의명|과목명|강좌명|담당\s*과목|(?:강의|수업|강좌|과목).{0,12}(?:목록|리스트|전체|모두)|(?:진행|가르치|담당|수업).{0,15}(?:강의|과목|강좌)|(?:어떤|무슨)\s*(?:강의|과목|수업)")
 LEVELS = ("일반대학원", "산업대학원", "교육대학원", "경영대학원", "글로벌정책대학원", "수산해양대학원", "특수대학원", "전문대학원", "대학원", "학부")
 
 
 def instructor_name(text: str) -> str | None:
     match = INSTRUCTOR.search(text)
-    return match[1] if match and match[1] not in {"담당", "어떤", "무슨", "해당"} else None
+    return match[1] if match and match[1] not in _NON_NAMES else None
 
 
 def instructor_names(text: str) -> set[str]:
-    return {m[1] for m in INSTRUCTOR.finditer(text) if m[1] not in {"담당", "어떤", "무슨", "해당"}}
+    return {m[1] for m in INSTRUCTOR.finditer(text) if m[1] not in _NON_NAMES}
 
 
 def course_level(text: str) -> str | None:

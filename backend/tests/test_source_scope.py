@@ -12,6 +12,39 @@ def test_pknu_host_does_not_make_jeju_exchange_rules_general():
     assert scope_reason(row, task("제주대학교 교류수학 공결 신청 방법")) is None
 
 
+def test_named_foreign_program_notice_can_describe_its_graduate_audience():
+    from app.query_transform import transform_query
+    question = "2025년 일본 도쿄해양대 프로그램의 신청 대상과 제출 서류"
+    rewritten = transform_query(question)
+    assert "도쿄해양대" in rewritten and "동경해양대학" in rewritten
+    assert transform_query(rewritten) == rewritten
+    row = {"title": "동경해양대학2026년도4월 석사과정 OQEANOUS Plus CP 석사생 모집 안내",
+           "content": "모집 대상은 석사과정 지원자입니다.", "metadata": {"applicable_school": "동경해양대학"}}
+    assert scope_reason(row, task(question)) is None
+    assert checked_rows([row], task(question))[0]["metadata"]["request_document_lookup"] is True
+    assert scope_reason(row, task("학부생인 제가 도쿄해양대 프로그램에 지원할 수 있나요?")) is not None
+    assert scope_reason(row, task("교환학생 신청 대상과 제출 서류")) is not None
+
+
+def test_naming_the_home_university_does_not_disable_audience_guards():
+    row = {"title": "부경대학교 대학원 장학 프로그램 공고"}
+    assert scope_reason(row, task("부경대학교 장학 프로그램 신청 대상")) == "restricted_audience"
+
+
+def test_a_partial_institution_name_does_not_disable_audience_guards():
+    row = {"title": "동경해양대학2026년도 석사과정 모집 안내"}
+    assert scope_reason(row, task("해양대 프로그램 신청 대상")) == "restricted_audience"
+
+
+def test_capstone_event_support_is_not_the_general_student_application():
+    row = {"title": "2026학년도 2학기 캡스톤디자인 성과발표회 지원사업 신청 안내",
+           "content": "지원대상: 캡스톤디자인 교과목 운영 학부(과). 신청서를 공문 제출"}
+    assert scope_reason(row, task("캡스톤디자인 신청 방법")) == "different_program_context"
+    assert scope_reason(row, task("캡스톤디자인 성과발표회 지원사업 신청 방법")) is None
+    general = {"title": "캡스톤디자인 운영 안내", "content": "신청팀은 경진대회에 참가해야 합니다."}
+    assert scope_reason(general, task("캡스톤디자인 신청 방법")) is None
+
+
 def test_international_freshman_dormitory_notice_is_not_general():
     row = {"title": "2026학년도 외국인 특별전형 신·편입학 합격자 안내", "content": "기숙사 신청과 결핵증명서"}
     assert scope_reason(row, task("기숙사 신청 자격")) == "restricted_audience"

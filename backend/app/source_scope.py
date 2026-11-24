@@ -7,6 +7,7 @@ from urllib.parse import urlparse
 
 from . import department_focus as departments
 from .query_plan import AUDIENCES, PROGRAM_CONTEXTS, SCHOOL_ALIASES, SearchTask, department_catalog
+from .query_transform import named_document_request
 
 
 def source_department(row: dict) -> str | None:
@@ -33,6 +34,7 @@ def scope_reason(row: dict, task: SearchTask) -> str | None:
     m = row.get("metadata") or {}
     title = str(m.get("doc_title") or row.get("title") or "")
     content = str(row.get("content") or "")
+    document_lookup = named_document_request(task.text, title)
     target = task.target
     table = m.get("structured_table") or {}
     table_rows = table.get("rows") or []
@@ -60,7 +62,7 @@ def scope_reason(row: dict, task: SearchTask) -> str | None:
             pass
     if task.conditions.kind == "search":
         for context, pattern in PROGRAM_CONTEXTS.items():
-            if context not in target.contexts and re.search(pattern, title):
+            if not document_lookup and context not in target.contexts and re.search(pattern, title):
                 return "different_program_context"
         syllabus = row.get("_syllabus") or m.get("source_dataset") == "pknu_syllabus" or m.get("rpc_name") == "match_pknu_syllabus_documents"
         if (syllabus and not row.get("_syllabus")
@@ -79,7 +81,7 @@ def scope_reason(row: dict, task: SearchTask) -> str | None:
     exchange = re.search(r"타\s*대학\s*\(([^)]+)\)", title)
     if exchange:
         school = SCHOOL_ALIASES.get(exchange[1], exchange[1]).removeprefix("국립")
-    if school and school != target.school:
+    if school and school != target.school and not document_lookup:
         if not (exchange and re.search(r"교류|교환|타\s*대학", task.text)):
             return "different_school"
     # Publishing a document on pknu.ac.kr does not make another school's rules applicable.
@@ -114,7 +116,7 @@ def scope_reason(row: dict, task: SearchTask) -> str | None:
             return "restricted_student_section"
     for audience in ("외국인", "대학원", "신입생", "편입생"):
         if any(w in heading.lower() for w in AUDIENCES[audience]):
-            if not catalogue and audience not in target.audiences:
+            if not catalogue and not document_lookup and audience not in target.audiences:
                 # '신·편입생' is one combined population; either explicit type suffices.
                 if audience in {"신입생", "편입생"} and set(target.audiences) & {"신입생", "편입생"}:
                     continue
@@ -158,5 +160,8 @@ def checked_rows(rows: list[dict], task: SearchTask) -> list[dict]:
         m["request_query"] = task.text
         # This label travels with the evidence into generation; URL alone is not scope.
         m["applicability_note"] = "공통 규정과 특정 대상의 예외를 구분하고, 신청자격을 이수조건으로 대체하지 마세요. 학번·학년·개인 자격을 확인하지 못했으면 해당 학생에게 적용된다고 확정하지 마세요."
+        if named_document_request(task.text, str(m.get("doc_title") or row.get("title") or "")):
+            m["request_document_lookup"] = True
+            m["applicability_note"] += " 특정 기관의 공고 조회입니다. 공고의 모집 대상·조건을 설명하되 사용자가 그 자격을 충족한다고 확정하지 마세요."
         kept.append({**row, "metadata": m})
     return kept

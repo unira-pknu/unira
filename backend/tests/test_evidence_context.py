@@ -69,6 +69,66 @@ def test_spreadsheet_keeps_row_column_binding_past_target():
     assert "교과목명[A]: 자료구조" in shown and "기말고사 40%" in shown
 
 
+def test_short_submission_checklist_keeps_middle_documents_and_qualifying_notes():
+    body = ("제출서류 일람표\n지원서와 지원이유서를 제출합니다. " + "작성 안내입니다. " * 25
+            + "\n추천서: 소속 대학의 서명과 직인이 필요합니다.\n성적증명서: 영문으로 제출합니다."
+            + "\n외국어능력증명서: 영어 및 일본어 성적 항목이 표기되어 있습니다."
+            + "\n재학증명서 및 졸업예정증명서: 영문 원본을 확인합니다.")
+    shown = select_evidence(body, question="신청 대상과 제출 서류", target_chars=100)
+    assert "추천서: 소속 대학의 서명과 직인" in shown
+    assert "성적증명서: 영문" in shown and "졸업예정증명서" in shown
+    assert shown == body
+
+
+def test_reranker_sees_the_late_boarding_passage_instead_of_a_long_document_prefix():
+    from app.reranking import _row_text
+    row = {"title": "대학생활 안내", "content": "시설 소개입니다.\n" * 200
+           + "## 셔틀버스 이용\n출발 기준점은 공학1관 앞과 용당 셔틀버스 정류장입니다. 주말·공휴일에는 운행하지 않습니다."}
+    excerpt = _row_text(row, max_chars=500, question="셔틀버스 출발 기준점과 주말 운행")
+    assert "공학1관 앞" in excerpt and "주말·공휴일" in excerpt
+    assert len(excerpt) <= 500
+
+
+def test_shuttle_spelling_selects_same_evidence_without_rewriting_source():
+    content = "일반 안내입니다.\n" * 40 + "셔틀 버스 안내\n셔틀 버스는 공학1관 앞에서 출발합니다."
+    a = select_evidence(content, question="셔틀버스 출발", target_chars=90)
+    b = select_evidence(content, question="셔틀 버스 출발", target_chars=90)
+    assert a == b
+    assert "셔틀 버스는 공학1관 앞에서 출발합니다." in a
+
+
+def test_faculty_card_rejoins_overlapping_chunks_and_excludes_other_people():
+    body = ("다른 교수 명단과 소개 " * 80 + "상세보기 "
+            "홍길동 명예교수 이메일 : gildong@example.test 전화번호 : -- 연구분야 : 건축구조 상세보기 "
+            "김철수 교수 이메일 : chulsoo@example.test 연구분야 : 도시설계 상세보기")
+    boundary = body.index(".test", body.index("홍길동"))
+    first = "문서제목: 교수진\n본문: " + body[:boundary]
+    second = "문서제목: 교수진\n본문: " + body[boundary - 60:]
+    row = {"content": first + "\n" + second, "metadata": {"doc_title": "교수진 및 교직원"},
+           "_context_chunks": [{"content": first}, {"content": second}]}
+
+    shown = _source_content(row, 80, "홍길동 명예교수 연구분야를 알려줘")
+
+    assert "홍길동 명예교수" in shown and "건축구조" in shown
+    assert "gildong@example.test" in shown
+    assert "김철수" not in shown and "도시설계" not in shown
+
+
+def test_faculty_research_skips_a_truncated_entry_created_by_repeated_overlap():
+    overlap = ("건축설계, 주거건축, 한국전통건축문화 상세보기 "
+               "홍길동 명예교수 이메일 : gildong@example.")
+    first = "문서제목: 교수진\n본문: " + "이전 항목 " * 30 + overlap
+    second = "문서제목: 교수진\n본문: " + overlap + " " + overlap + "test 전화번호 : -- 연구분야 : 건축구조 상세보기"
+    row = {"content": first + "\n" + second, "metadata": {"doc_title": "교수진"},
+           "_context_chunks": [{"content": first}, {"content": second}]}
+
+    shown = _source_content(row, 80, "홍길동 교수 연구 분야가 뭐예요?")
+
+    assert "연구분야 : 건축구조" in shown
+    assert "gildong@example.test" in shown
+    assert "건축설계" not in shown
+
+
 def test_zero_budget_and_unbroken_ocr_have_bounded_outputs():
     body = "학교안내" * 2000 + " 복학 제출서류는 전역증 사본입니다."
     assert select_evidence(body, question="복학", target_chars=0) == ""

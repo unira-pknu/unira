@@ -11,14 +11,24 @@ from typing import Any, Dict, Iterator, List, Optional, Tuple
 
 from openai import OpenAI
 
+from .openai_params import completion_options
 from .evidence_context import select_evidence
 from .freshness import current_term_label, today_kst
 from .grounding import miscited_numbers, unsupported_numbers
+from .answer_scope import scope_fallback, scope_problems
 
 logger = logging.getLogger(__name__)
 
 PROMPTS_DIR = Path(__file__).resolve().parent.parent / "prompts"
 _NUMBER_CHECK_FALLBACK = "관련 정보를 찾을 수 없습니다."
+
+
+class CompletionLimitReached(RuntimeError):
+    """An interrupted output is not a statement that evidence is absent."""
+
+
+def _limit_retry_messages(messages: List[Dict[str, str]]) -> List[Dict[str, str]]:
+    return messages + [{"role": "user", "content": "응답이 출력 한도로 끝났습니다. 원래 질문에 대해 근거에서 확인한 내용만 간결하고 완결된 문장으로 다시 답하세요."}]
 
 
 def load_system_prompt() -> str:
@@ -57,7 +67,9 @@ def _source_content(row: Dict[str, Any], max_chars_per_chunk: int, question: str
         return _truncate(content, 4000)
     metadata = row.get("metadata") or {}
     anchor = " ".join(part for part in (question, metadata.get("request_query")) if part)
-    return select_evidence(content, question=anchor, target_chars=max_chars_per_chunk, metadata=metadata)
+    parts = row.get("_context_chunks") or []
+    return select_evidence(content, question=anchor, target_chars=max_chars_per_chunk, metadata=metadata,
+                           faculty_parts=(part["content"] for part in parts) if parts else None)
 
 
 def _format_source_block(rows: List[Dict[str, Any]], max_chars_per_chunk: int, question: str = "") -> str:
@@ -93,6 +105,14 @@ def _format_source_block(rows: List[Dict[str, Any]], max_chars_per_chunk: int, q
         if posted:
             lines.append(f"게시일: {posted}")
         lines.append(f"URL: {str(uri).strip() or 'URL 없음'}")
+        publisher = metadata.get("department_name") or metadata.get("department_id")
+        if publisher:
+            lines.append(f"게시·수집 학과: {publisher} (게시 학과가 적용 대상 전체를 뜻하지는 않음)")
+        target = metadata.get("validated_target") or {}
+        scope = {key: target[key] for key in ("department", "admission_year", "grade", "audiences", "contexts")
+                 if target.get(key)}
+        if scope:
+            lines.append("질문 대상(검색 조건, 적용 확인 아님): " + json.dumps(scope, ensure_ascii=False))
         if metadata.get("source_link_kind") == "syllabus_search_page":
             lines.append("링크 종류: 공식 강의계획서 조회 화면 (개별 PDF 직링크 아님)")
             lines.append("적용 범위: 제목에 적힌 학기·학수번호·분반의 강좌에만 적용. 빈 표 셀은 0이나 선수과목 없음으로 추정하지 않음.")
@@ -153,6 +173,9 @@ def build_user_message(
     today = as_of or today_kst()
     requested_format = next((r.get("metadata", {}).get("request_response_format") for r in rows if r.get("metadata", {}).get("request_response_format")), None)
     format_note = f"\n- 요청한 출력 형식: {requested_format}. 이 형식을 지키세요." if requested_format else ""
+    document_note = ("\n- 특정 기관 공고를 찾는 요청입니다. 연도만 제시된 질문을 입학연도로 단정하지 말고, "
+                     "확인된 게시일과 모집 대상 입학 시점을 함께 밝히세요. 공고의 대상과 사용자의 개인 자격을 구분하세요.") if any(
+                         (row.get("metadata") or {}).get("request_document_lookup") for row in rows) else ""
     request_metadata = (rows[0].get("metadata") or {}) if rows else {}
     coverage = request_metadata.get("request_coverage") or []
     comparison = request_metadata.get("comparison_targets") or []
@@ -184,11 +207,17 @@ def build_user_message(
         "- 일부 세부 정보가 없다는 이유로 답변 전체를 포기하지 말고, 확인되지 않는 부분만 명확히 구분하세요.\n"
         "- 질문의 핵심에 답할 근거가 참고 자료에 전혀 없을 때만 \"관련 정보를 찾을 수 없습니다.\"라고만 답하세요.\n"
         "- 특정 학과·학생 유형·예외 상황의 조건을 전체 학생의 일반 규정으로 확대하지 마세요. 신청 자격과 이수 조건을 구분하세요.\n"
+        "- 학과나 입학연도가 없는 졸업요건 질문에는 그 조건에 따라 기준이 달라짐을 먼저 밝히고 필요한 조건을 물으세요. "
+        "특정 학과의 수치를 제시한다면 그 학과의 예시임을 수치와 같은 문장에 쓰세요.\n"
+        "- 입학연도(학번)는 게시·개정연도나 현재 학년과 다릅니다. 질문의 전공·입학연도에 적용되는 표의 행과 조건이 "
+        "직접 확인될 때만 해당 학점을 제시하세요. 다른 학번의 학점을 먼저 답한 뒤 확인이 필요하다고 덧붙이지 마세요.\n"
         "- 생략 표시가 있는 구간은 문서 전체가 아닙니다. 표는 제목·열 제목·동일 행의 값을 함께 읽고, 생략된 행·빈 셀·잘린 조건을 추정하지 마세요.\n"
         "- 미확인 요청이 있으면 다른 자료로 대신 답하지 말고 필요한 조건을 짧게 확인하세요.\n"
-        "- 일정·기간·금액은 오늘 날짜 기준 가장 최신 학기 자료를 우선하세요. 인용한 자료가 지난 학기·연도의 것이면 "
-        "그 학기·연도를 밝히고, 이번 학기 일정은 최신 공지를 확인해야 한다고 덧붙이세요."
-        + format_note
+        "- 일정·기간·금액·운행 조건은 질문에서 지정한 시점에 적용되는 근거를 사용하세요. 시점이 지정되지 않으면 최신 적용 자료를 우선하세요. "
+        "과거 일정이나 운행 조건을 답할 때는 근거에서 확인한 적용 학기·연도를 같은 항목에 밝히고, 현재 적용 여부가 확인되지 않으면 명시하세요. "
+        "오늘보다 이전에 끝난 신청 기간을 인용할 때는 이미 종료된 과거 일정이라고 명시하세요. "
+        "게시일만으로 현재 접수 중이라고 판단하거나, 과거 기간을 현재 신청 가능한 기간처럼 안내하지 마세요."
+        + format_note + document_note
     )
 
 
@@ -238,8 +267,14 @@ def generate_answer(
         max_chars_per_chunk,
         len(chat_history or []),
     )
-    answer = _complete(openai_client, model, messages, temperature, max_tokens, timeout)
-    problems = _number_problems(answer, rows, max_chars_per_chunk, question=question)
+    try:
+        answer = _complete(openai_client, model, messages, temperature, max_tokens, timeout)
+    except CompletionLimitReached:
+        # This consumes the same single repair pass as evidence correction.
+        answer = _complete(openai_client, model, _limit_retry_messages(messages), temperature, max_tokens, timeout,
+                           budget_multiplier=2)
+        return _validated_revision(answer, rows, max_chars_per_chunk, question=question)
+    problems = _answer_problems(answer, rows, max_chars_per_chunk, question=question)
     if not problems:
         return answer
     revised = _complete(openai_client, model, _retry_messages(messages, answer, problems), temperature, max_tokens, timeout)
@@ -273,11 +308,20 @@ def stream_answer(
         len(chat_history or []),
     )
     parts: List[str] = []
-    for delta in _stream_complete(openai_client, model, messages, temperature, max_tokens, timeout):
-        parts.append(delta)
-        yield "token", delta
+    try:
+        for delta in _stream_complete(openai_client, model, messages, temperature, max_tokens, timeout):
+            parts.append(delta)
+            yield "token", delta
+    except CompletionLimitReached:
+        yield "revising", ""
+        answer = _complete(openai_client, model, _limit_retry_messages(messages), temperature, max_tokens, timeout,
+                           budget_multiplier=2)
+        answer = _validated_revision(answer, rows, max_chars_per_chunk, question=question)
+        yield "replace", answer
+        yield "final", answer
+        return
     answer = "".join(parts).strip()
-    problems = _number_problems(answer, rows, max_chars_per_chunk, question=question)
+    problems = _answer_problems(answer, rows, max_chars_per_chunk, question=question)
     if problems:
         yield "revising", ""
         answer = _complete(openai_client, model, _retry_messages(messages, answer, problems), temperature, max_tokens, timeout)
@@ -288,10 +332,20 @@ def stream_answer(
 
 def _validated_revision(answer: str, rows: List[Dict[str, Any]], max_chars_per_chunk: int, *, question: str = "") -> str:
     """Allow one rewrite, but never return a revision that still fails the check."""
+    visible = [{**row, "content": _source_content(row, max_chars_per_chunk, question)} for row in rows]
+    if scope_problems(answer, visible, question, today=today_kst()):
+        logger.warning("generation: revised answer failed scope check; returning unresolved-condition reply")
+        return scope_fallback(question)
     if _number_problems(answer, rows, max_chars_per_chunk, question=question):
         logger.warning("generation: revised answer failed number check; returning fallback")
         return _NUMBER_CHECK_FALLBACK
     return answer
+
+
+def _answer_problems(answer: str, rows: List[Dict[str, Any]], max_chars_per_chunk: int, *, question: str = "") -> List[str]:
+    visible = [{**row, "content": _source_content(row, max_chars_per_chunk, question)} for row in rows]
+    return (_number_problems(answer, rows, max_chars_per_chunk, question=question)
+            + scope_problems(answer, visible, question, today=today_kst()))
 
 
 def _number_problems(answer: str, rows: List[Dict[str, Any]], max_chars_per_chunk: int, *, question: str = "") -> List[str]:
@@ -363,14 +417,18 @@ def _complete(
     temperature: float,
     max_tokens: int,
     timeout: float,
+    *,
+    budget_multiplier: int = 1,
 ) -> str:
     started = time.perf_counter()
+    options = completion_options(model, temperature=temperature, max_tokens=max_tokens)
+    budget_key = "max_completion_tokens" if "max_completion_tokens" in options else "max_tokens"
+    options[budget_key] *= budget_multiplier
     response = openai_client.chat.completions.create(
         model=model,
         messages=messages,
-        temperature=temperature,
-        max_tokens=max_tokens,
         timeout=timeout,
+        **options,
     )
     elapsed_ms = (time.perf_counter() - started) * 1000
     usage = getattr(response, "usage", None)
@@ -385,7 +443,13 @@ def _complete(
         completion_tokens,
         total_tokens,
     )
-    return (response.choices[0].message.content or "").strip()
+    choice = response.choices[0]
+    if getattr(choice, "finish_reason", None) == "length":
+        raise CompletionLimitReached("model output reached its token limit")
+    answer = (choice.message.content or "").strip()
+    if not answer:
+        raise RuntimeError("model returned an empty answer")
+    return answer
 
 
 def _stream_complete(
@@ -400,20 +464,31 @@ def _stream_complete(
     stream = openai_client.chat.completions.create(
         model=model,
         messages=messages,
-        temperature=temperature,
-        max_tokens=max_tokens,
         timeout=timeout,
         stream=True,
+        **completion_options(model, temperature=temperature, max_tokens=max_tokens),
     )
     first_token_ms = None
-    for chunk in stream:
-        if not chunk.choices:
-            continue
-        delta = chunk.choices[0].delta.content
-        if delta:
-            if first_token_ms is None:
-                first_token_ms = (time.perf_counter() - started) * 1000
-            yield delta
+    has_text = False
+    try:
+        for chunk in stream:
+            if not chunk.choices:
+                continue
+            choice = chunk.choices[0]
+            delta = choice.delta.content
+            if delta:
+                has_text = has_text or bool(delta.strip())
+                if first_token_ms is None:
+                    first_token_ms = (time.perf_counter() - started) * 1000
+                yield delta
+            if getattr(choice, "finish_reason", None) == "length":
+                raise CompletionLimitReached("model stream reached its token limit")
+    finally:
+        close = getattr(stream, "close", None)
+        if callable(close):
+            close()
+    if not has_text:
+        raise RuntimeError("model returned an empty answer stream")
     logger.info(
         "generation: stream done model=%s first_token_ms=%s latency_ms=%.1f",
         model,

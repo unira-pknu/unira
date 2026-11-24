@@ -137,7 +137,7 @@ def notice_number(url: str) -> int:
     return int(match.group(1)) if match else 0
 
 
-def rank_notices(term_rows: Dict[str, List[Dict[str, object]]]) -> List[str]:
+def rank_notices(term_rows: Dict[str, List[Dict[str, object]]], *, published_year: int | None = None) -> List[str]:
     """URLs of the best-matching notices, best first, at most ANCHOR_NOTICES.
 
     `term_rows` maps each term to the source rows (needing "url" and
@@ -149,6 +149,7 @@ def rank_notices(term_rows: Dict[str, List[Dict[str, object]]]) -> List[str]:
     title_by_url: Dict[str, str] = {}
     term_by_url: Dict[str, int] = {}
     weights: Dict[str, float] = {}
+    matching_year_urls: set[str] = set()
     for term, rows in term_rows.items():
         urls = {str(row.get("url") or "") for row in rows if row.get("url")}
         if not urls or len(urls) > MAX_TERM_DF or len(rows) >= TERM_FETCH_LIMIT:
@@ -159,6 +160,8 @@ def rank_notices(term_rows: Dict[str, List[Dict[str, object]]]) -> List[str]:
                 url = str(row["url"])
                 title_by_url[url] = str(row.get("title") or "")
                 term_by_url[url] = max(term_by_url.get(url, -1), _row_term(row))
+                if published_year is not None and any(str(row.get(key) or "").startswith(f"{published_year}-") for key in ("published_at", "date")):
+                    matching_year_urls.add(url)
     if not weights:
         return []
 
@@ -171,7 +174,8 @@ def rank_notices(term_rows: Dict[str, List[Dict[str, object]]]) -> List[str]:
     # Among those, the newest term wins: a question naming a recurring notice
     # ("정효택 장학금", 29 posts since 2021) means this term's post.
     ranked = sorted(
-        (url for url, score in scores.items() if score >= best * 0.5),
+        (url for url, score in scores.items() if score >= best * 0.5
+         and (not matching_year_urls or url in matching_year_urls)),
         key=lambda url: (term_by_url[url], scores[url], notice_number(url)),
         reverse=True,
     )

@@ -14,6 +14,17 @@ File numbers are unique: 000 is read-only inspection, 001-015 are historical cha
 
 Each RPC also has a `_lexical` variant. Department sources have `department_id` and `department_name` (required), plus `college_name`, `department_homepage` and `department_majors`. These attributes are exposed in search metadata; `metadata_filter={"department_id":"ce"}` limits department search. Existing category/subcategory fields remain.
 
+`021_lexical_late_hydration.sql` updates only the five lexical RPC families (two- and three-argument signatures).
+It ranks IDs/scores with the existing per-source cap before loading full text/metadata, and avoids copying full
+source metadata into the scoped source-ID bitmap. Source-only filters retain chunk-override semantics;
+other metadata filters retain the merged-JSON check. It preserves rows, vectors, indexes, grants and timeouts.
+Queries are parsed once, and parameterized dynamic SQL uses actual query/filter values instead of the
+cached SQL-function plan. `ts_rank_cd`, vector fusion and cross-encoder reranking are preserved.
+In unfiltered searches, active-source checks occur after the
+per-source window (but before the final limit), avoiding repeated source lookups for one long document.
+Apply it as one transaction after 020; do not replay older schema migrations. Pair it with the backend's
+specific graduation-credit/deferral query variants so broad words do not match tens of thousands of chunks.
+
 `018_split_dataset_tables.sql` is a one-time maintenance migration for a DB with 016/017 applied. It locks ingestion tables, copies sources/chunks with unchanged IDs and embeddings, checks exact copied values and total row counts, deletes the moved originals, backfills department attributes from the registry snapshot, retires empty `pknu_student_life_*` tables and builds destination search indexes. The large department/rule HNSW indexes are reused. Everything commits atomically; errors roll back the migration. It never changes auth/chat tables or local `files/` data.
 
 Routing uses original `metadata.source_dataset`, including attachments where `is_notice=false`. Original `ingestion_dataset` stays unchanged to preserve stable upsert keys. Future loads use the live department registry and the same routing. Keep an operational backup and run this migration with ingestion stopped. New tables retain RLS and grant backend `service_role` access; browser policies are not added.

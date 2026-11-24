@@ -27,6 +27,7 @@ from .freshness import (
     seed_slots,
 )
 from . import department_focus, title_anchor
+from .query_transform import named_document_request
 from .reranking import normalize_scores
 from .search_status import SearchResults, SearchUnavailable
 from .retrieval_trace import RetrievalTrace
@@ -86,6 +87,8 @@ QUERY_TERM_GROUPS = {
     "전과": ("전과", "전부", "전공변경"),
     "전공": ("전공", "전공제도"),
     "졸업": ("졸업", "졸업요건", "학위수여", "졸업작품", "졸업논문", "졸업사정"),
+    "졸업유예": ("학사학위취득유예", "졸업유예", "학위취득유예", "학사학위 취득유예"),
+    "셔틀버스": ("셔틀버스", "셔틀 버스", "셔틀버스이용"),
     "학점": ("학점", "소요학점", "이수학점"),
     "수강신청": ("수강신청", "수강 신청"),
     "휴학": ("휴학",),
@@ -288,7 +291,11 @@ def _lexical_synthetic_similarity(rank_index: int, min_similarity: float) -> flo
 # form to detect that a question is "about" that concept at all. Only the
 # lexical OR-query builder below excludes them, since it's the one place a
 # single overly-common token turns into a near-full-table scan.
-LEXICAL_EXCLUDED_VARIANTS = {"졸업", "전공", "컴퓨터공학과", "컴퓨터공학부", "인공지능공학부"}
+LEXICAL_EXCLUDED_VARIANTS = {"졸업", "전공", "학점", "컴퓨터공학과", "컴퓨터공학부", "인공지능공학부"}
+# GIN must read/recheck every row containing both 졸업 and 학점 for a phrase
+# query. Use precise compound lexemes here; the vector channel still covers
+# spaced table headings, and remains independent of this lexical query.
+GRADUATION_CREDIT_VARIANTS = ("졸업소요학점", "졸업학점")
 
 # Filler words that carry no retrieval signal but frequently show up in
 # natural Korean questions. websearch_to_tsquery ANDs every remaining word
@@ -395,6 +402,32 @@ def _lexical_query_text(
         for term, variants in query_terms
         if not any(term != other and term in other for other, _ in query_terms)
     ]
+    keys = {term for term, _ in query_terms}
+    if "컴공학과" in keys and re.search(r"연락처|전화번호|사무실", query_text or ""):
+        # Department letterheads repeat across course/notice attachments.
+        # Use a supported websearch AND-of-two-phrases per OR branch; bare
+        # parentheses are not boolean grouping in websearch_to_tsquery.
+        offices = ("학부사무실", "학과사무실", "사무실")
+        names = ("컴퓨터·인공지능공학부", "컴퓨터인공지능공학부", "컴퓨터공학과", "컴퓨터공학부")
+        return " OR ".join(f'"{name}" "{office}"' for name in names for office in offices)
+    if "졸업유예" not in keys and "졸업" in keys and ("학점" in keys or re.search(r"졸업\s*요건", query_text or "")):
+        # Bare 학점 matched 62,394 notice chunks after the latest ingestion;
+        # ranking alone exceeded 12s. Search the requested graduation concept,
+        # not every credit-bearing course or a department's repeated letterhead.
+        specific_terms = [(term, variants) for term, variants in specific_terms
+                          if term not in {"졸업", "학점", "전공", "컴공학과"}]
+        variants = GRADUATION_CREDIT_VARIANTS if "학점" in keys else (*GRADUATION_CREDIT_VARIANTS, "졸업요건", "졸업 요건")
+        specific_terms.append(("졸업학점", variants))
+    if "휴학" in keys and re.search(r"신청|제출|기간|마감", query_text or ""):
+        specific_terms = [(term, variants) for term, variants in specific_terms if term != "휴학"]
+        specific_terms.append(("휴학신청", ("휴학신청", "휴학원")))
+    if keys == {"수강신청"} and re.search(r"본[ \t]*수강[ \t]*신청", query_text or ""):
+        if (term := query_term(query_text)) is not None:
+            # Limit the lexical scan to the requested registration stage and
+            # semester. Even the bare compound 본수강신청 can hit the DB timeout.
+            year, offset = divmod(term, 2)
+            semester = offset + 1
+            return f'본수강신청 "{year}학년도 {semester}학기" OR 본수강신청 "{year} {semester}학기"'
     if not specific_terms:
         return _lexical_fallback_query(query_text or "") or _normalize_text(query_text or "")
     parts: list[str] = []
@@ -1307,7 +1340,16 @@ def _title_anchor_chunks(
     for (term, _source), rows in zip(jobs, results):
         term_rows[term].extend(rows)
 
-    urls = title_anchor.rank_notices(term_rows)
+    requested_year = re.search(r"(?<!\d)(20\d{2})\s*년", query_text or "")
+    # Event/course years are not publication years (e.g. a CES 2025 call
+    # posted in 2024). Prefer posting years only for explicit posting lookups
+    # or a named institution's document request.
+    if requested_year and not re.search(r"게시|올라온|공지된|공고된", query_text or "") and not any(
+        named_document_request(query_text or "", str(row.get("title") or ""))
+        for rows in term_rows.values() for row in rows
+    ):
+        requested_year = None
+    urls = title_anchor.rank_notices(term_rows, published_year=int(requested_year[1]) if requested_year else None)
     if not urls:
         return []
     source_ids: Dict[str, List[str]] = {}
@@ -1453,7 +1495,8 @@ def _term_title_chunks(
                 for row in rows:
                     titles.setdefault(row["id"], row)
         if not graduate_asked:
-            titles = {key: row for key, row in titles.items() if "대학원" not in str(row.get("title") or "")}
+            titles = {key: row for key, row in titles.items() if "대학원" not in str(row.get("title") or "")
+                      or named_document_request(query_text or "", str(row.get("title") or ""))}
         if not titles:
             continue
 

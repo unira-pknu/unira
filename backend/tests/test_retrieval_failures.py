@@ -113,6 +113,12 @@ def test_healthy_dual_channel_hits_still_deduplicate():
     assert not result[0].get("_lexical_only")
 
 
+def test_precise_credit_keywords_do_not_discard_a_vector_hit_with_spaced_table_labels():
+    row = {**hit(), "title": "졸업요건", "content": "졸업 소요 학점은 소속 학과와 입학연도별 기준으로 확인합니다. " + CONTENT}
+    result = run_search({RPC: ok([row]), RPC + "_lexical": ok()}, query_text="졸업하려면 총 몇 학점인가요?")
+    assert [r["id"] for r in result] == [row["id"]]
+
+
 @pytest.mark.parametrize("invalid", [None, {}, [42]])
 def test_malformed_response_is_a_channel_failure_and_does_not_drop_its_companion(invalid):
     client = SimpleNamespace(rpc=lambda name, payload: SimpleNamespace(
@@ -211,7 +217,8 @@ def test_failed_subquery_preserves_other_subquery_and_marks_unknown_request():
     def find(state, query, task):
         if "휴학" in query:
             raise SearchUnavailable(channels())
-        return SearchResults([hit()], channels=channels(False))
+        evidence = {**hit(), "title": "장학 신청 안내", "content": CONTENT.replace("교류수학", "장학")}
+        return SearchResults([evidence], channels=channels(False))
 
     with patch("app.routers.ask._search_one", side_effect=find):
         rows, sources = _retrieve(state=api_state(), user_id="test", question="휴학과 장학 신청 안내",
