@@ -115,6 +115,49 @@ class ReadConnectionTests(unittest.TestCase):
         self.assertEqual(3, len(write.copied))
 
 
+class DeletedChunkTests(unittest.TestCase):
+    """A loader deleting a chunk mid-round must not stop the run."""
+
+    def conn_failing(self, times):
+        from psycopg import errors
+
+        conn = FakeConn([(f"id{i}", "h", "본문") for i in range(3)])
+        conn.rollbacks, failures = 0, [times]
+        plain_cursor = conn.cursor
+
+        def cursor(name=None):
+            cur = plain_cursor(name)
+            plain_execute = cur.execute
+
+            def execute(sql, params=None):
+                plain_execute(sql, params)
+                if sql.startswith("insert into") and failures[0]:
+                    failures[0] -= 1
+                    raise errors.ForeignKeyViolation("chunk deleted")
+            cur.execute = execute
+            return cur
+
+        def rollback():
+            conn.rollbacks += 1
+            conn.copied.clear()  # the stage table empties on rollback
+        conn.cursor, conn.rollback = cursor, rollback
+        return conn
+
+    def test_round_is_retried_after_a_deleted_chunk(self):
+        conn = self.conn_failing(1)
+        self.assertEqual(3, backfill.fill_family(conn, "rag", encode, round_size=3, total=3))
+        self.assertEqual(1, conn.rollbacks)
+        self.assertEqual(3, len(conn.copied))  # the retry staged the whole round again
+
+    def test_gives_up_after_repeated_failures(self):
+        from psycopg import errors
+
+        conn = self.conn_failing(backfill.WRITE_ATTEMPTS)
+        with self.assertRaises(errors.ForeignKeyViolation):
+            backfill.fill_family(conn, "rag", encode, round_size=3, total=3)
+        self.assertEqual(backfill.WRITE_ATTEMPTS, conn.rollbacks)
+
+
 class RunTests(unittest.TestCase):
     def test_second_run_does_not_get_the_lock(self):
         import tempfile

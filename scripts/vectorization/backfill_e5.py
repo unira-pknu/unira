@@ -115,6 +115,39 @@ def acquire_run_lock(path: Path):
     return handle
 
 
+WRITE_ATTEMPTS = 3
+
+
+def write_round(conn, family: str, rows, vectors) -> None:
+    """Stage one round and merge it, committing on `conn`.
+
+    The merge joins the chunk table, but a loader can still delete a chunk after
+    the join saw it and before the foreign key check, so a round may fail with
+    ForeignKeyViolation while a crawl runs. The rollback empties the stage; the
+    retry's join no longer sees the deleted chunk."""
+    from psycopg import errors
+
+    for attempt in range(1, WRITE_ATTEMPTS + 1):
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "create temporary table if not exists e5_stage "
+                    "(id text, content_hash text, embedding extensions.halfvec(768)) on commit delete rows"
+                )
+                with cur.copy("copy e5_stage (id, content_hash, embedding) from stdin") as copy:
+                    for (chunk_id, content_hash, _content), vector in zip(rows, vectors):
+                        copy.write_row((chunk_id, content_hash, halfvec_literal(vector)))
+                cur.execute(merge_sql(family))
+            conn.commit()
+            return
+        except errors.ForeignKeyViolation:
+            conn.rollback()
+            if attempt == WRITE_ATTEMPTS:
+                raise
+            log.warning("%s: a chunk was deleted during the write, retrying the round (%d/%d)",
+                        family, attempt, WRITE_ATTEMPTS)
+
+
 def fill_family(conn, family: str, encode: Encoder, *, round_size: int, limit: int | None = None,
                 total: int | None = None, read_conn=None) -> int:
     """Embed this family's pending chunks; returns how many were written.
@@ -142,16 +175,7 @@ def fill_family(conn, family: str, encode: Encoder, *, round_size: int, limit: i
             break
         vectors = encode(passage_texts([row[2] for row in rows]))
         validate_vectors(vectors, len(rows), E5_DIMENSIONS)
-        with conn.cursor() as cur:
-            cur.execute(
-                "create temporary table if not exists e5_stage "
-                "(id text, content_hash text, embedding extensions.halfvec(768)) on commit delete rows"
-            )
-            with cur.copy("copy e5_stage (id, content_hash, embedding) from stdin") as copy:
-                for (chunk_id, content_hash, _content), vector in zip(rows, vectors):
-                    copy.write_row((chunk_id, content_hash, halfvec_literal(vector)))
-            cur.execute(merge_sql(family))
-        conn.commit()
+        write_round(conn, family, rows, vectors)
         written += len(rows)
         elapsed = time.perf_counter() - started
         rate = written / elapsed if elapsed else 0.0
