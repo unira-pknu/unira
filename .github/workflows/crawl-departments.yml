@@ -67,6 +67,8 @@ jobs:
         timeout-minutes: 330
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          # One .hwp conversion took 2.5 hours (2026-11-19); skip such a file instead.
+          HWP_EXTRACT_TIMEOUT_SECONDS: "600"
         run: >-
           python scripts/vectorization/preprocessing_pipeline_recent.py
           --department-shard "${{ steps.shard.outputs.value }}/3"
