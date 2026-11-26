@@ -1,18 +1,18 @@
 {
   "schema_version": "1.0",
   "dataset": "ce",
-  "updated_at": "2026-11-24T18:27:02+09:00",
+  "updated_at": "2026-11-26T15:21:50+09:00",
   "items": {
     "https://ce.pknu.ac.kr/ce/1814": {
       "source_id": "https://ce.pknu.ac.kr/ce/1814",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-11-18T14:13:11+09:00",
+      "last_seen_at": "2026-11-26T15:20:39+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 2182,
+      "last_no": 2184,
       "name": "학부공지",
-      "updated_at": "2026-11-18T14:13:11+09:00"
+      "updated_at": "2026-11-26T15:20:39+09:00"
     },
     "https://ce.pknu.ac.kr/ce/1815": {
       "source_id": "https://ce.pknu.ac.kr/ce/1815",
