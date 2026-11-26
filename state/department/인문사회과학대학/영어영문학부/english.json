@@ -1,18 +1,18 @@
 {
   "schema_version": "1.0",
   "dataset": "english",
-  "updated_at": "2026-11-21T09:38:10+09:00",
+  "updated_at": "2026-11-26T11:40:54+09:00",
   "items": {
     "http://english.pknu.ac.kr/english/3936": {
       "source_id": "http://english.pknu.ac.kr/english/3936",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-11-21T09:35:22+09:00",
+      "last_seen_at": "2026-11-26T11:38:00+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 1407,
+      "last_no": 1409,
       "name": "학부",
-      "updated_at": "2026-11-21T09:35:22+09:00"
+      "updated_at": "2026-11-26T11:38:00+09:00"
     },
     "http://english.pknu.ac.kr/english/3937": {
       "source_id": "http://english.pknu.ac.kr/english/3937",
@@ -51,12 +51,12 @@
       "source_id": "http://english.pknu.ac.kr/english/3852",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-11-20T10:27:39+09:00",
+      "last_seen_at": "2026-11-26T11:38:20+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 427,
+      "last_no": 430,
       "name": "채용공고",
-      "updated_at": "2026-11-20T10:27:39+09:00"
+      "updated_at": "2026-11-26T11:38:20+09:00"
     },
     "http://english.pknu.ac.kr/english/3853": {
       "source_id": "http://english.pknu.ac.kr/english/3853",

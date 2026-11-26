@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "dataset": "dba",
-  "updated_at": "2026-11-21T09:15:52+09:00",
+  "updated_at": "2026-11-26T11:14:02+09:00",
   "items": {
     "http://dba.pknu.ac.kr/dba/3812": {
       "source_id": "http://dba.pknu.ac.kr/dba/3812",
@@ -18,12 +18,12 @@
       "source_id": "http://dba.pknu.ac.kr/dba/1235",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-11-20T09:58:33+09:00",
+      "last_seen_at": "2026-11-26T11:11:53+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 1856,
+      "last_no": 1865,
       "name": "공지사항",
-      "updated_at": "2026-11-20T09:58:33+09:00"
+      "updated_at": "2026-11-26T11:11:53+09:00"
     },
     "http://dba.pknu.ac.kr/dba/1237": {
       "source_id": "http://dba.pknu.ac.kr/dba/1237",
@@ -51,23 +51,23 @@
       "source_id": "http://dba.pknu.ac.kr/dba/1238",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-11-11T00:00:19+09:00",
+      "last_seen_at": "2026-11-26T11:12:39+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 134,
+      "last_no": 135,
       "name": "장학 안내",
-      "updated_at": "2026-11-11T00:00:19+09:00"
+      "updated_at": "2026-11-26T11:12:39+09:00"
     },
     "http://dba.pknu.ac.kr/dba/1244": {
       "source_id": "http://dba.pknu.ac.kr/dba/1244",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-11-11T00:02:12+09:00",
+      "last_seen_at": "2026-11-26T11:13:10+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 576,
+      "last_no": 584,
       "name": "취업 정보",
-      "updated_at": "2026-11-11T00:02:12+09:00"
+      "updated_at": "2026-11-26T11:13:10+09:00"
     },
     "http://dba.pknu.ac.kr/dba/7924": {
       "source_id": "http://dba.pknu.ac.kr/dba/7924",

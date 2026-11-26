@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "dataset": "bme",
-  "updated_at": "2026-11-21T08:59:37+09:00",
+  "updated_at": "2026-11-26T10:54:01+09:00",
   "items": {
     "http://bme.pknu.ac.kr/bme/7236": {
       "source_id": "http://bme.pknu.ac.kr/bme/7236",
@@ -18,12 +18,12 @@
       "source_id": "http://bme.pknu.ac.kr/bme/7237",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-11-10T22:35:40+09:00",
+      "last_seen_at": "2026-11-26T10:50:38+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 672,
+      "last_no": 674,
       "name": "공지사항",
-      "updated_at": "2026-11-10T22:35:40+09:00"
+      "updated_at": "2026-11-26T10:50:38+09:00"
     }
   }
 }

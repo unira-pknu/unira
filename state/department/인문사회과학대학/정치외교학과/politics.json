@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "dataset": "politics",
-  "updated_at": "2026-11-21T13:23:25+09:00",
+  "updated_at": "2026-11-26T14:06:47+09:00",
   "items": {
     "http://politics.pknu.ac.kr/politics/8669": {
       "source_id": "http://politics.pknu.ac.kr/politics/8669",
@@ -18,12 +18,12 @@
       "source_id": "http://politics.pknu.ac.kr/politics/3781",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-11-21T13:07:31+09:00",
+      "last_seen_at": "2026-11-26T14:02:51+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 675,
+      "last_no": 676,
       "name": "학부 공지사항",
-      "updated_at": "2026-11-21T13:07:31+09:00"
+      "updated_at": "2026-11-26T14:02:51+09:00"
     },
     "http://politics.pknu.ac.kr/politics/3785": {
       "source_id": "http://politics.pknu.ac.kr/politics/3785",

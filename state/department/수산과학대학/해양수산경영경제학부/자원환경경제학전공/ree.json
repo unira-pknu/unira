@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "dataset": "ree",
+  "updated_at": "2026-11-26T14:16:06+09:00",
+  "items": {
+    "https://ree.pknu.ac.kr/ree/2824": {
+      "source_id": "https://ree.pknu.ac.kr/ree/2824",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-26T14:12:13+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 104,
+      "name": "학부",
+      "updated_at": "2026-11-26T14:12:13+09:00"
+    },
+    "https://ree.pknu.ac.kr/ree/2825": {
+      "source_id": "https://ree.pknu.ac.kr/ree/2825",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-26T14:15:49+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 65,
+      "name": "취업/모집",
+      "updated_at": "2026-11-26T14:15:49+09:00"
+    }
+  }
+}

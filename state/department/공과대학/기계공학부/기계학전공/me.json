@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "dataset": "me",
-  "updated_at": "2026-11-21T11:18:35+09:00",
+  "updated_at": "2026-11-26T13:28:41+09:00",
   "items": {
     "http://me.pknu.ac.kr/me/1274": {
       "source_id": "http://me.pknu.ac.kr/me/1274",
@@ -18,23 +18,23 @@
       "source_id": "http://me.pknu.ac.kr/me/1290",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-11-17T14:24:59+09:00",
+      "last_seen_at": "2026-11-26T13:25:20+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 1199,
+      "last_no": 1200,
       "name": "학과 공지사항",
-      "updated_at": "2026-11-17T14:24:59+09:00"
+      "updated_at": "2026-11-26T13:25:20+09:00"
     },
     "http://me.pknu.ac.kr/me/1291": {
       "source_id": "http://me.pknu.ac.kr/me/1291",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-11-17T14:32:35+09:00",
+      "last_seen_at": "2026-11-26T13:25:28+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 121,
+      "last_no": 122,
       "name": "장학 공지사항",
-      "updated_at": "2026-11-17T14:32:35+09:00"
+      "updated_at": "2026-11-26T13:25:28+09:00"
     },
     "http://me.pknu.ac.kr/me/1292": {
       "source_id": "http://me.pknu.ac.kr/me/1292",

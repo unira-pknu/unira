@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "dataset": "pknulaw",
-  "updated_at": "2026-11-21T12:31:44+09:00",
+  "updated_at": "2026-11-26T14:00:08+09:00",
   "items": {
     "http://pknulaw.pknu.ac.kr/pknulaw/3805": {
       "source_id": "http://pknulaw.pknu.ac.kr/pknulaw/3805",
@@ -18,23 +18,23 @@
       "source_id": "http://pknulaw.pknu.ac.kr/pknulaw/3807",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-11-21T11:46:16+09:00",
+      "last_seen_at": "2026-11-26T13:55:13+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 40,
+      "last_no": 41,
       "name": "학술대회 일정",
-      "updated_at": "2026-11-21T11:46:16+09:00"
+      "updated_at": "2026-11-26T13:55:13+09:00"
     },
     "http://pknulaw.pknu.ac.kr/pknulaw/3808": {
       "source_id": "http://pknulaw.pknu.ac.kr/pknulaw/3808",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-11-21T11:47:42+09:00",
+      "last_seen_at": "2026-11-26T13:55:18+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 47,
+      "last_no": 48,
       "name": "세미나",
-      "updated_at": "2026-11-21T11:47:42+09:00"
+      "updated_at": "2026-11-26T13:55:18+09:00"
     },
     "http://pknulaw.pknu.ac.kr/pknulaw/3809": {
       "source_id": "http://pknulaw.pknu.ac.kr/pknulaw/3809",
@@ -51,12 +51,12 @@
       "source_id": "http://pknulaw.pknu.ac.kr/pknulaw/3764",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-11-21T11:53:16+09:00",
+      "last_seen_at": "2026-11-26T13:55:25+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 146,
+      "last_no": 147,
       "name": "교수동정",
-      "updated_at": "2026-11-21T11:53:16+09:00"
+      "updated_at": "2026-11-26T13:55:25+09:00"
     },
     "http://pknulaw.pknu.ac.kr/pknulaw/6238": {
       "source_id": "http://pknulaw.pknu.ac.kr/pknulaw/6238",
@@ -128,12 +128,12 @@
       "source_id": "http://pknulaw.pknu.ac.kr/pknulaw/3921",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-11-21T12:15:02+09:00",
+      "last_seen_at": "2026-11-26T13:58:51+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 42,
+      "last_no": 43,
       "name": "장학공지사항",
-      "updated_at": "2026-11-21T12:15:02+09:00"
+      "updated_at": "2026-11-26T13:58:51+09:00"
     },
     "http://pknulaw.pknu.ac.kr/pknulaw/6247": {
       "source_id": "http://pknulaw.pknu.ac.kr/pknulaw/6247",
