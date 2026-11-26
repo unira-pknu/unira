@@ -19,7 +19,9 @@ from .eval_ask import _read_jsonl
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_HOLDOUTS = [PROJECT_ROOT / "eval" / "cases" / f"{name}.jsonl"
-                    for name in ("smoke", "regression", "challenge")]
+                    for name in ("smoke", "regression", "challenge",
+                                 "full_scope_20261124", "full_scope_20261125_fresh100",
+                                 "full_scope_20261125_novel100")]
 
 
 def source_key(value: str) -> str:

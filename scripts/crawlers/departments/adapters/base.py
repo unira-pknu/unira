@@ -16,6 +16,24 @@ class DepartmentCMSAdapter(ABC):
     # numbers may use last_no for incremental filtering.
     uses_numeric_post_order: bool = False
 
+    def select_body_root(self, soup: BeautifulSoup, *, page_url: str = "",
+                         base_url: str = "", detail: bool = False):
+        from scripts.crawlers.common.body_images import select_body_root
+        return select_body_root(soup)
+
+    def static_detail_links(self, soup: BeautifulSoup, *, page_url: str) -> list[dict[str, Any]]:
+        return []
+
+    def is_profile_detail_url(self, url: str) -> bool:
+        return False
+
+    def profile_target_allowed(self, target: str, requested_url: str) -> bool:
+        return False
+
+    def parse_profile(self, soup: BeautifulSoup, *, fallback_title: str,
+                      page_url: str, base_url: str, site_prefix: str) -> dict[str, Any] | None:
+        return None
+
     @abstractmethod
     def discover_menus(self, html: str, base_url: str) -> list[dict[str, str]]: ...
 

@@ -85,21 +85,14 @@ PGPASSWORD=<password>
 PGSSLMODE=require
 ```
 
-Supabase 데이터베이스 스키마는 `supabase/migrations/` 디렉터리의 SQL 파일로 관리합니다.
+Supabase 데이터베이스 스키마는 [`supabase/migrations/`](../../supabase/migrations/README.md)의
+번호별 SQL 이력으로 관리합니다. 현재는 `018`에서 분리한 다섯 sources/chunks 테이블 계열을
+사용하며, 저장소의 최신 어휘 검색 RPC는 `022`에 있습니다.
 
-```text
-supabase/migrations/001_create_rag_documents.sql
-supabase/migrations/002_split_rag_documents.sql
-```
-
-Supabase Dashboard에서 SQL을 실행하는 방법은 다음과 같습니다.
-
-1. Supabase 프로젝트 Dashboard에 접속합니다.
-2. 왼쪽 메뉴에서 `SQL Editor`를 선택합니다.
-3. `supabase/migrations/001_create_rag_documents.sql` 파일 내용을 붙여넣고 실행합니다.
-4. 이어서 `supabase/migrations/002_split_rag_documents.sql` 파일 내용을 붙여넣고 실행합니다.
-
-현재 적재 스크립트는 `rag_sources`, `rag_chunks` 테이블을 사용하므로 `002_split_rag_documents.sql`까지 적용되어 있어야 합니다.
+기존 DB에서는 전체 폴더나 `001`/`002`를 다시 실행하지 마세요. 데이터 삭제·이동과 폐기된
+테이블 정의도 이력에 포함되어 있습니다. 적용 상태에 맞는 순서는
+[실행 안내](../../supabase/migrations/README.md#cleanup-and-replay-policy)를 따릅니다.
+파일 중복 정리만 반영할 때는 DB에 실행할 SQL이 없습니다.
 
 ## 코드 실행 방법
 

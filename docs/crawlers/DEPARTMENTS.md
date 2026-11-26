@@ -134,6 +134,8 @@ py -3.12 -m venv .venv
 특히 영어영문학부의 `.e_sbCont #sub`, `#stance` 계열과 기존 선택자로 본문을 확인하지 못한 페이지는
 파서 보완 및 실제 저장 결과 확인이 필요합니다. 교수진 등록은 메뉴에 있는 목록·구분 페이지 범위이며,
 목록의 모든 교수 상세 프로필을 자동으로 따라가도록 바꾼 것은 아닙니다.
+이 문단은 메뉴 등록 시점의 기록입니다. HTML 영역·이미지·교수 상세 프로필의 후속 보완은
+아래 **2026-11-18 본문·이미지·교수 상세 프로필 처리**를 참고하세요.
 
 ### 원본 공백으로 비활성 등록한 메뉴
 
@@ -187,6 +189,156 @@ $registry = Get-Content scripts/crawlers/departments/registry.json -Raw -Encodin
 
 `--no-download-files`를 제거하면 첨부파일·본문 이미지도 다운로드합니다.
 활성으로 등록한 새 section은 기존 학과 전체 실행과 `--all`에 자동 포함되며, 증분 상태 초기화는 필요하지 않습니다.
+
+## 2026-11-18 본문·이미지·교수 상세 프로필 처리
+
+등록된 핵심 메뉴의 본문과 이미지가 같은 영역에서 추출되도록 어댑터에
+`select_body_root`를 추가했습니다. 저장된 HTML과 공개 페이지에서 확인한 구조를 기준으로 보완했습니다.
+
+| 구조 | 보완 내용 |
+| --- | --- |
+| 숫자 메뉴 CMS | 영어영문학부의 `.e_sbCont #sub`, `#stance`를 일반 레이아웃보다 먼저 선택. 기존 학과별 `.a_bdCont`·`.c_bdCont` 선택 규칙 유지 |
+| 정보융합대학 PHP 교수진 | 교수 사진이 있는 `.container`를 본문으로 선택. 헤더·푸터와 다른 전공 선택 탭을 본문 텍스트에서 제외 |
+| 공간정보 PHP | `.page_con`을 바깥 `#container`보다 먼저 선택. 표의 행·열 구분과 첨부·참조 링크 보존 |
+| query 메뉴·게시판 | `.sub-content`, `.page-cont`, `.editor-data-box`, `.boardContents` 등 각 파서의 본문 영역을 이미지 수집에도 적용 |
+
+크롤러는 선택한 본문 안의 이미지 원본을 기존 SHA-256 저장 방식으로 보존합니다.
+이미지에 더 큰 원본으로 가는 링크가 있으면 원본을 대상으로 삼고, 표시용 이미지 URL도
+`metadata.body_images[].display_url`에 남깁니다. 지연 로딩 이미지도 같은 본문에서 확인합니다.
+제목만 있고 본문이 이미지인 페이지는 `IMAGE_ONLY_REQUIRES_OCR` 경고와 `partial_success`로 기록합니다.
+이미지 원본 보존은 이미지 속 텍스트 추출 완료를 뜻하지 않습니다.
+
+기존 이미지 OCR 전처리도 저장 HTML에서 같은 어댑터의 본문 영역을 사용합니다.
+이전 원본을 재사용할 때 이미지 수뿐 아니라 순서와 URL을 대조하며, OCR 전에는 파일 해시를 확인합니다.
+원본 크롤링 JSON·HTML·상태 파일은 OCR 전처리에서 수정하지 않습니다.
+메인 홈페이지의 본문 이미지 OCR 제외 정책은 유지합니다.
+
+### 교수 상세 프로필
+
+`교수진` 카테고리의 숫자 메뉴 CMS 정적 페이지에서는 같은 메뉴의
+`?action=view&no=...` 또는 `?action=view&profile=...` 링크를 한 단계 따라갑니다.
+물리학과의 `.tch_list` 목록과 `.tch_in`·`.a_tch_name` 상세 구조처럼 확인된 형식을 지원합니다.
+프로필에서는 교수 이름을 제목으로 사용하고, 연락처·학력·경력·연구분야 등의 본문과 표를 저장합니다.
+목록의 탭 이동 버튼은 제거하되 HTML 안에 있는 상세 탭 본문은 유지합니다.
+
+상세 문서는 기존 정적 문서 ID·저장 방식을 사용하며, 이미 등록된 상세 URL은 그 URL을 유지합니다.
+`metadata.profile_list_url`에 목록 출처를, 목록 문서의 `metadata.faculty_profiles`에는 각 링크의
+`collected`·`failed`·`already_collected`·`not_attempted` 상태를 기록합니다.
+한 실행 안에서 같은 URL을 중복 요청하지 않습니다.
+상세 요청이 다른 메뉴·다른 교수·외부 호스트로 이동하면 다음 요청 전에 차단합니다.
+같은 메뉴와 교수 ID를 유지하는 `icms.pknu.ac.kr` 연결은 허용합니다.
+상세 요청에 목록이나 로그인 화면이 반환되면 기존 상세 문서를 덮어쓰지 않고 실패를 기록합니다.
+
+목록당 최대 100개 상세 링크를 처리하며, `--max-items`에는 목록과 상세 문서가 함께 포함됩니다.
+제한으로 방문하지 못한 링크는 `PROFILE_DETAILS_LIMITED` 경고와 사유를 남깁니다.
+`--no-download-files`는 상세 문서의 첨부·이미지에도 적용됩니다.
+외부 연구실 홈페이지, JavaScript로만 여는 프로필, 다른 교수진 메뉴·전공 탭, 외부 iframe 본문은
+자동으로 따라가지 않습니다. iframe·동영상 주소는 참조로 보존합니다.
+
+### 검증 및 사용자 실행
+
+이 보완에서는 코드·회귀 테스트를 추가하고 `git diff --check`를 확인했습니다.
+테스트·재크롤링·OCR·DB 작업은 실행하지 않았습니다. 기존 병렬 수집과 같은 데이터셋을
+중복 실행하지 않도록 해당 작업이 끝난 뒤 프로젝트 루트에서 실행하세요.
+
+후속 2026-11-18 사용자 요청으로 설정 검증과 전체 회귀 테스트를 실행했습니다.
+설정 검증은 `valid`, 회귀 테스트는 515개 통과입니다. 새 함수 인자와 응답 URL을 반영하지 못한
+기존 테스트 대역 3곳을 수정한 뒤 다시 확인했습니다. 카탈로그 대조의 홈페이지 없음·링크 허브·접근 거부
+3건은 기존 예외로 남아 있습니다. 실제 물리학과 교수 목록·상세 3건의 샘플 수집도 오류 없이 확인했고,
+기존 실행과 겹치지 않는 범위별 재수집 및 종료 후 누락 대조를 시작했습니다. 별도 전처리·OCR·DB 작업은 실행하지 않았습니다.
+
+```powershell
+# 구성 검증과 전체 회귀 테스트
+.\.venv\Scripts\python.exe -X utf8 -m scripts.crawlers.departments.cli validate
+.\.venv\Scripts\python.exe -X utf8 -m unittest discover -s scripts/tests -t . -p "test_*.py"
+
+# 교수 목록과 상세 2개까지: 원본 파일 다운로드를 생략한 소량 확인
+.\.venv\Scripts\python.exe -u -X utf8 -m scripts.crawlers.departments.engine --dataset physics --section menu_303 --once --max-items 3 --no-download-files
+
+# 서로 다른 HTML 본문 영역 확인
+.\.venv\Scripts\python.exe -u -X utf8 -m scripts.crawlers.departments.engine --dataset english --section menu_3826 --once --no-download-files
+.\.venv\Scripts\python.exe -u -X utf8 -m scripts.crawlers.departments.engine --dataset itc --section html_html_03_01_php_category_1 --once --no-download-files
+
+# 이미지 원본도 보존하여 재수집
+.\.venv\Scripts\python.exe -u -X utf8 -m scripts.crawlers.departments.engine --dataset geoinfo --section php_03specialty_02_php --once
+
+# 이미지 전용 문서의 OCR 소량 확인: Tesseract와 kor+eng 언어 데이터 필요
+.\.venv\Scripts\python.exe -X utf8 -m scripts.preprocessing.preprocess_body_images --dataset geoinfo --limit 3
+```
+
+샘플을 확인한 뒤 교수 목록 명령에서 `--max-items`·`--no-download-files`를 제거하면
+등록된 같은 메뉴의 상세 프로필과 원본 파일을 수집합니다.
+혼합 본문에 포함된 이미지도 OCR 대상으로 선택하려면 전처리 명령에 `--all-body-images`를 추가합니다.
+OCR 결과는 `preprocessed/<dataset>/body_images/`에서 검토하며, 자동으로 RAG 본문에 합치지 않습니다.
+기존 저장 결과는 코드 수정만으로 갱신되지 않습니다.
+
+### 정적 본문 추출 실패 75개 후속 보완
+
+2026-11-18 `scope_retry_20261118_030524/manifest.json`의
+`completion_audit.remaining_static_gaps` 75개에 대해 **저장된 원본 HTML을 로컬에서 대조**했습니다.
+이번 보완에서 학교 홈페이지에 추가 요청을 보내거나 기존 수집 결과를 갱신하지 않았습니다.
+
+| 저장 HTML에서 확인한 원인 | 대상 수 | 코드 보완 또는 남은 조치 |
+| --- | ---: | --- |
+| `.d_sbCont` 본문 누락 | 37 | 사회복지·정치외교·전기·산업경영·평생교육 등 d 템플릿 본문 선택 추가 |
+| `.b_bdCont` 교수진 본문 누락 | 5 | 냉동공조·수산과학대학 자유전공·학부대학 교수진의 본문과 상세 링크 탐색에 적용 |
+| 전용 본문 클래스 없이 `#sub > .container`에 내용 배치 | 29 | 기존 검증된 7개 호스트에서만 대체 선택. 중첩 `#sub`의 바깥 사이드바 래퍼를 제외 |
+| `gic / menu_8917` 가이드북 언어 링크 | 1 | 제목 태그 안의 실제 링크를 빈 제목으로 오판하지 않도록 보완. 목적지는 참조로 보존 |
+| `geoinfo / php_01about_05_php` 학과소개 동영상 | 1 | 빈 `iframe#youtubeFrame`에 넣는 YouTube 영상 ID와 할당 구문을 저장 HTML에서 식별해 출처 보존 |
+| `chinese / menu_4287` 중국학과 인스타 | 1 | 저장 응답은 Instagram 화면. 학교 HTML 선택자 보완으로 게시물 본문을 복구할 수 없음 |
+| `microbiology / menu_518` 산업대학원 공지사항 | 1 | 저장 응답은 공과대학 `ERROR` 페이지. 실제 목적지·원본 오류 확인이 필요 |
+
+위 73개는 **보완 코드가 다루는 구조의 수**이며, 재수집 성공 건수가 아닙니다.
+이미지로만 구성된 교육과정·졸업요건 등은 `image_only`로 분류해 원본 이미지를 수집하고,
+OCR 전까지 `partial_success`로 유지합니다. 가이드북은 언어별 링크, 동영상은 영상 URL을
+보존하는 것이며 전자책 전체 내용이나 영상 자막을 추출한 것으로 간주하지 않습니다.
+동영상 처리는 확인된 `geoinfo.pknu.ac.kr`의 요소 바인딩·리터럴 ID·주소 할당만 인식합니다.
+JavaScript 실행이나 YouTube 추가 요청은 하지 않습니다.
+
+텍스트·본문 이미지·교수 상세 링크 탐색은 같은 선택자를 사용합니다.
+기존 `#sbCont`, 영어영문학부·`#stance`, 검증된 `.a_bdCont`·`.c_bdCont` 선택 우선순위는 유지합니다.
+본문이 비어 있으면 메뉴나 푸터를 대신 수집해 성공으로 바꾸지 않습니다.
+새 템플릿의 표·숨김 탭 본문·이미지 전용 상태·교수 링크 범위·가이드북 링크·영상 출처의
+회귀 테스트를 기존 테스트 모듈에 추가했습니다. 이번 수정 후 테스트와 재크롤링은 실행하지 않았습니다.
+앞 절의 515개 통과 기록은 이번 후속 보완 이전 결과입니다.
+
+프로젝트 루트에서 사용자가 실행할 검증 명령입니다.
+
+```powershell
+# 변경한 두 파서의 회귀 테스트
+.\.venv\Scripts\python.exe -X utf8 -m unittest scripts.tests.departments.test_numeric_cms scripts.tests.departments.test_php_adapters
+
+# 공유 본문 처리 변경에 대한 전체 회귀 테스트
+.\.venv\Scripts\python.exe -X utf8 -m unittest discover -s scripts/tests -t . -p "test_*.py"
+
+# 대표 구조 소량 재수집: d 템플릿, b 템플릿 교수진, 본문 클래스 없는 교육과정
+.\.venv\Scripts\python.exe -u -X utf8 -m scripts.crawlers.departments.engine --dataset lifelong --section menu_4029 --once
+.\.venv\Scripts\python.exe -u -X utf8 -m scripts.crawlers.departments.engine --dataset ref --section menu_1757 --once --max-items 3
+.\.venv\Scripts\python.exe -u -X utf8 -m scripts.crawlers.departments.engine --dataset semiconductor --section menu_5514 --once
+```
+
+테스트와 대표 결과를 확인한 뒤, 같은 데이터셋의 기존 크롤러가 종료된 상태에서 다음 명령으로
+기존 실패 목록 중 보완 대상 73개 section을 재수집할 수 있습니다.
+교수진 section은 해당 목록의 상세 프로필도 수집하며, 이미지·첨부도 다운로드합니다.
+상태 초기화는 필요하지 않습니다. 원본 오류·외부 화면 2개는 이 명령에서 제외합니다.
+
+```powershell
+$staticGapManifest = Get-Content -LiteralPath 'files/department/_runs/scope_retry_20261118_030524/manifest.json' -Raw -Encoding UTF8 | ConvertFrom-Json
+$staticGapTargets = $staticGapManifest.completion_audit.remaining_static_gaps | Where-Object {
+    -not (($_.dataset -eq 'chinese' -and $_.section -eq 'menu_4287') -or
+          ($_.dataset -eq 'microbiology' -and $_.section -eq 'menu_518'))
+}
+foreach ($staticGap in $staticGapTargets) {
+    & .\.venv\Scripts\python.exe -u -X utf8 -m scripts.crawlers.departments.engine --dataset $staticGap.dataset --section $staticGap.section --once
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warning "확인 필요: $($staticGap.dataset) / $($staticGap.section) (exit=$LASTEXITCODE)"
+    }
+}
+```
+
+재수집 후 각 section의 새 JSON·실행 보고서에서 본문·이미지 저장 여부와 `content_state`를 확인해야 합니다.
+기존 manifest의 75개 목록은 과거 점검 기록이므로 코드 수정·재수집으로 자동 갱신되지 않습니다.
+OCR·전처리·DB 반영은 별도 단계이며 이번 작업에서는 실행하지 않았습니다.
 
 ## 일부 학과의 본문 영역 선택
 

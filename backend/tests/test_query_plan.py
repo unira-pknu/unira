@@ -1,10 +1,11 @@
 """Regression cases from the manual 100-question review, including follow-ups."""
 import json
 from types import SimpleNamespace
+from unittest.mock import Mock
 
 import pytest
 
-from app.query_plan import finish_plan, rule_plan
+from app.query_plan import finish_plan, rule_plan, target_for
 from app.query_rewrite import plan_question
 from app.query_transform import transform_query
 
@@ -19,6 +20,15 @@ def test_unresolved_subject_never_calls_model_or_retrieval(question):
     plan = plan_question(openai_client=None, model="test", question=question, chat_history=[])
     assert plan.route == "clarification" and plan.missing_fields == ["subject"]
     assert plan.clarification.endswith("?") and not plan.queries
+
+
+def test_regular_tuition_fields_use_one_scoped_query_without_model_rewrite():
+    question = "2025학년도 1학기 학부 공학계열 신입생 정규 등록금의 수업료와 총액은 얼마예요?"
+    client = Mock()
+    plan = plan_question(openai_client=client, model="test", question=question, chat_history=[])
+    assert plan.queries == [question]
+    assert len(plan.tasks) == 1
+    client.chat.completions.create.assert_not_called()
 
 
 def test_unique_user_referent_resolves_but_multiple_referents_do_not():
@@ -44,6 +54,19 @@ def test_roster_reference_to_an_explicit_department_page_does_not_need_clarifica
     assert plan.route == "search"
     assert plan.queries == [question]
     assert plan.tasks[0].target.department_id == "econ"
+
+
+def test_public_faculty_contact_preserves_the_name_and_department_identity():
+    assert target_for("물리학과 김서현 교수님에게 연락할 이메일").instructor == "김서현"
+    assert target_for("기계공학전공 진수영 교수님의 랩 이름").department_id == "me"
+    assert target_for("스마트모빌리티 교수진").department_id == "smartmobility"
+    assert target_for("전공주임으로 취임한 교수는 누구인가요?").instructor is None
+
+
+def test_private_evaluation_submission_and_portal_navigation_are_distinct():
+    plan = rule_plan("제가 이번 학기에 강의평가를 제출했는지 확인해줘.")
+    assert plan.route == "refused" and "학교 포털" in plan.clarification
+    assert rule_plan("강의평가 제출했는지 포털에서 어떻게 확인해요?").route == "search"
 
 
 @pytest.mark.parametrize("question", ["그 교수님 이메일 주소 알려줘.", "그분 연구실 위치가 어디인지 알려주세요."])

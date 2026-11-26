@@ -167,6 +167,19 @@ def is_safe_archive_member(name: str) -> bool:
     return True
 
 
+def archive_output_relative_path(archive_file: Path, input_root: Path) -> Path:
+    """Keep archive identity while avoiding trailing dots/spaces in directories."""
+    relative = archive_file.resolve().relative_to(input_root.resolve())
+    stem = relative.with_suffix("")
+    safe_name = stem.name.rstrip(" .")
+    if safe_name == stem.name:
+        return stem
+    # A plain trim would alias sample.zip and sample .zip. The original relative
+    # filename keeps these distinct; member provenance still uses the raw path.
+    suffix = hashlib.sha256(relative.as_posix().encode("utf-8")).hexdigest()[:12]
+    return stem.with_name((safe_name or "archive")[:48] + "__" + suffix)
+
+
 def archive_member_output_path(
     archive_file: Path,
     input_root: Path,
@@ -178,9 +191,8 @@ def archive_member_output_path(
     """Keep the complete member name: dir/guide.pdf -> dir/guide.pdf.json."""
     if not is_safe_archive_member(member_name):
         raise ValueError(f"Unsafe archive member: {member_name!r}")
-    archive_rel = archive_file.resolve().relative_to(input_root.resolve())
     member_rel = PurePosixPath(member_name.replace("\\", "/"))
-    archive_stem_rel = archive_rel.with_suffix("")
+    archive_stem_rel = archive_output_relative_path(archive_file, input_root)
     if layout == "flat":
         target = output_root / archive_stem_rel / Path(*member_rel.parts)
         return target.with_name(target.name + ".json")
@@ -192,8 +204,15 @@ def archive_member_output_path(
 
 def legacy_archive_member_output_path(archive_file, input_root, output_root, member_name, *, layout="by_ext"):
     """Old, lossy location; use for identity migration only, never new writes."""
-    target = archive_member_output_path(archive_file, input_root, output_root, member_name, layout=layout)
-    return target.with_name(target.name[:-5]).with_suffix(".json")
+    if not is_safe_archive_member(member_name):
+        raise ValueError(f"Unsafe archive member: {member_name!r}")
+    relative = archive_file.resolve().relative_to(input_root.resolve()).with_suffix("")
+    member = Path(*PurePosixPath(member_name.replace("\\", "/")).parts)
+    if layout == "flat":
+        return (output_root / relative / member).with_suffix(".json")
+    if layout == "by_ext":
+        return (output_root / "zip" / relative / member).with_suffix(".json")
+    raise ValueError(f"unsupported layout: {layout}")
 
 
 def validate_archive_member_targets(names: list[str]) -> None:
@@ -314,6 +333,9 @@ def load_attachment_index(output_json_root: Path, project_root: Path) -> dict[st
 def extract_crawled_json_provenance(path: Path) -> dict:
     try:
         payload = json.loads(path.read_text(encoding="utf-8-sig"))
+        from scripts.preprocessing.main_structured import normalize_structured_main
+        if isinstance(payload, dict):
+            payload = normalize_structured_main(payload)
         doc = read_document(
             payload, dataset=infer_dataset_from_path(path), project_root=PROJECT_ROOT
         )
@@ -353,6 +375,9 @@ def extract_crawled_json_provenance(path: Path) -> dict:
         "source_site": doc.get("source_site", ""),
         "crawl": doc.get("crawl", {}),
         "attachments": attachments,
+        **{key: doc.get("metadata", {})[key] for key in
+           ("document_kind", "academic_year", "semester", "source_review_status", "data_source_url")
+           if key in doc.get("metadata", {})},
     }
 
 
@@ -742,6 +767,11 @@ def save_preprocessed_archive_member(
     original_name = str(archive_provenance.get("archive_member_original_name") or member_name).replace("\\", "/")
     source_aliases = {member_source, f"{archive_rel}!/{original_name}"}
     candidates = [out_path, legacy_archive_member_output_path(archive_file, input_root, output_root, member_name, layout=layout)]
+    raw_stem = archive_file.resolve().relative_to(input_root.resolve()).with_suffix("")
+    if raw_stem != archive_output_relative_path(archive_file, input_root):
+        old_base = output_root / "zip" if layout == "by_ext" else output_root
+        old_member = old_base / raw_stem / Path(*PurePosixPath(member_name.replace("\\", "/")).parts)
+        candidates.append(old_member.with_name(old_member.name + ".json"))
     if original_name != member_name and is_safe_archive_member(original_name):
         candidates.extend([
             archive_member_output_path(archive_file, input_root, output_root, original_name, layout=layout),

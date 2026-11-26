@@ -9,6 +9,7 @@ from urllib.parse import parse_qs, urlencode, urljoin, urlsplit, urlunsplit
 from bs4 import BeautifulSoup
 
 from .base import DepartmentCMSAdapter
+from .numeric_cms import extract_body_content, _empty_content_info
 
 
 _NAVIGATION_NAMES = {"HOME", "SITEMAP", "LOGIN", "LOGOUT", "사이트맵", "이메일무단수집금지"}
@@ -27,6 +28,16 @@ class QueryMcodeAdapter(DepartmentCMSAdapter):
     """URL-pattern adapter; no dataset name or host is hard-coded."""
 
     name = "query_mcode"
+    version = "1.1"
+
+    def select_body_root(self, soup, *, page_url="", base_url="", detail=False):
+        if detail:
+            return soup.select_one(".boardReadBody .boardContents")
+        for selector in ("#contents.page-cont", ".page-cont", "#contents", "main", "#container-wrap"):
+            root = soup.select_one(selector)
+            if root is not None:
+                return root
+        return None
 
     def discover_menus(self, html: str, base_url: str) -> list[dict[str, str]]:
         soup, base = BeautifulSoup(html, "lxml"), urlsplit(base_url)
@@ -142,14 +153,9 @@ class QueryMcodeAdapter(DepartmentCMSAdapter):
         page_url: str = "", base_url: str = "", site_prefix: str = "",
     ) -> dict[str, Any]:
         title = soup.select_one("#contents h1, #contents h2, .page-title, .subTitle")
-        content = soup.select_one("#contents.page-cont, #contents, .page-cont, #container-wrap, main")
-        if content:
-            clean = BeautifulSoup(str(content), "lxml")
-            for selector in ("nav", ".breadcrumb", ".location", ".share", "script", "style"):
-                for element in clean.select(selector):
-                    element.decompose()
-            body = re.sub(r"\s+", " ", clean.get_text(" ", strip=True)).strip()
-        else:
-            body = ""
+        content = self.select_body_root(soup, page_url=page_url, base_url=base_url)
+        body = extract_body_content(content, prefer_detail_body=False)
+        attachments = self.parse_attachments(content, page_url=page_url, base_url=base_url, site_prefix=site_prefix)
         return {"title": title.get_text(" ", strip=True) if title else fallback_title,
-                "content": body, "attachments": []}
+                "content": body, "attachments": attachments,
+                **_empty_content_info(content, body, attachments)}

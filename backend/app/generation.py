@@ -12,7 +12,8 @@ from typing import Any, Dict, Iterator, List, Optional, Tuple
 from openai import OpenAI
 
 from .openai_params import completion_options
-from .evidence_context import select_evidence
+from .evidence_context import PROTECTED_BLOCK_MAX_CHARS, select_evidence
+from .faculty import profile_homepage
 from .freshness import current_term_label, today_kst
 from .grounding import miscited_numbers, unsupported_numbers
 from .answer_scope import scope_fallback, scope_problems
@@ -63,9 +64,13 @@ def _source_content(row: Dict[str, Any], max_chars_per_chunk: int, question: str
     # Syllabus retrieval already selected an evidence window inside an exact
     # offering. A generic 500-character cutoff can remove the table values.
     content = str(row.get("content") or "")
-    if row.get("_syllabus"):
-        return _truncate(content, 4000)
     metadata = row.get("metadata") or {}
+    if row.get("_syllabus") or metadata.get("reviewed_campus_source"):
+        return _truncate(content, 4000)
+    if row.get("_faculty_profile") and len(content) <= PROTECTED_BLOCK_MAX_CHARS:
+        return content
+    if not metadata.get("doc_title") and row.get("title"):
+        metadata = {**metadata, "doc_title": row["title"]}
     anchor = " ".join(part for part in (question, metadata.get("request_query")) if part)
     parts = row.get("_context_chunks") or []
     return select_evidence(content, question=anchor, target_chars=max_chars_per_chunk, metadata=metadata,
@@ -104,7 +109,18 @@ def _format_source_block(rows: List[Dict[str, Any]], max_chars_per_chunk: int, q
         lines.append(f"제목: {str(title).strip() or '제목 없음'}")
         if posted:
             lines.append(f"게시일: {posted}")
+        if (metadata.get("rpc_name") == "match_pknu_notice_documents"
+                or (metadata.get("reviewed_campus_source") and metadata.get("source_dataset") == "pknu_notice")):
+            lines.append("게시 범위: 대학 대표 홈페이지 공지")
+        if metadata.get("reviewed_campus_source"):
+            lines.append("근거 확인: 수집한 공식 원문에서 검토한 발췌")
+            if attachment := metadata.get("attachment_name"):
+                lines.append(f"첨부 파일: {attachment}")
+            if member := metadata.get("archive_member_original_name"):
+                lines.append(f"압축 파일 내 열람 문서: {member}")
         lines.append(f"URL: {str(uri).strip() or 'URL 없음'}")
+        if homepage := profile_homepage(row, question, content):
+            lines.append(f"공개 프로필 홈페이지: {homepage}")
         publisher = metadata.get("department_name") or metadata.get("department_id")
         if publisher:
             lines.append(f"게시·수집 학과: {publisher} (게시 학과가 적용 대상 전체를 뜻하지는 않음)")

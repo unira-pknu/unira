@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "dataset": "ce",
-  "updated_at": "2026-11-02T12:31:27+09:00",
+  "updated_at": "2026-11-18T05:53:57+09:00",
   "items": {
     "https://ce.pknu.ac.kr/ce/1814": {
       "source_id": "https://ce.pknu.ac.kr/ce/1814",
@@ -18,12 +18,12 @@
       "source_id": "https://ce.pknu.ac.kr/ce/1815",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-10-28T12:12:46+09:00",
+      "last_seen_at": "2026-11-18T04:45:38+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 662,
+      "last_no": 664,
       "name": "대학원공지",
-      "updated_at": "2026-10-28T12:12:46+09:00"
+      "updated_at": "2026-11-18T04:45:38+09:00"
     },
     "https://ce.pknu.ac.kr/ce/2425": {
       "source_id": "https://ce.pknu.ac.kr/ce/2425",
@@ -57,6 +57,17 @@
       "last_seen_at": null,
       "miss_count": 0,
       "status": "active"
+    },
+    "https://ce.pknu.ac.kr/ce/1813": {
+      "source_id": "https://ce.pknu.ac.kr/ce/1813",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-18T05:52:26+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 1644,
+      "name": "진로·취업 공지사항",
+      "updated_at": "2026-11-18T05:52:26+09:00"
     }
   }
 }

@@ -8,6 +8,7 @@ import re
 from typing import Callable, Iterable
 
 from .excerpts import _score, _search_terms
+from .document_focus import article_passage, history_passage, meal_facility, meal_passage, tuition_passage, tuition_row_key
 from .faculty import faculty_card
 from .query_transform import normalize_search_terms
 
@@ -26,6 +27,7 @@ CHUNK_TABLES = {
 _QUALIFIER = re.compile(r"다만|단[,，\s]|예외|제외|제출|구비|첨부|유의|주의|불가|미만|이상|이하|초과")
 _SEPARATOR = re.compile(r"^\s*\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?\s*$")
 _HEADING = re.compile(r"^(?:#{1,6}\s|제\s*\d+\s*[조장절]|[①-⑳]|\d+[.)]\s)|[:：]$")
+_ARTICLE_BOUNDARY = re.compile(r"\s+(?=제\s*\d+\s*조(?:의\s*\d+)?\s*\()")
 _GAP = "\n[… 중간 생략 …]\n"
 _COLUMN_LABELS = frozenset({
     "구분", "유형", "대상", "항목", "학과", "학년", "학기", "제출서류", "구비서류",
@@ -41,6 +43,9 @@ class _Unit:
 
 
 def _prose_units(line: str, target: int) -> list[_Unit]:
+    articles = _ARTICLE_BOUNDARY.split(line)
+    if len(articles) > 1:
+        return [unit for article in articles for unit in _prose_units(article, target)]
     if len(line) <= target:
         return [_Unit(line)]
     # Dates/decimals followed by digits are not sentence boundaries.
@@ -122,6 +127,25 @@ def select_evidence(content: str, *, question: str, target_chars: int, metadata:
                         max_chars=hard_limit)
     if card:
         return card
+    title = str((metadata or {}).get("doc_title") or "")
+    body = content.split("\n본문:", 1)[-1]
+    if title.endswith("등록금 조회 자료") and (key := tuition_row_key(question)):
+        # Never show a neighboring student's fee in place of the requested row.
+        return tuition_passage(body, key) or "(이 발췌에서는 질문의 학기·과정·계열·학생 구분에 해당하는 등록금 행을 확인하지 못했습니다.)"
+    if "식단표" in title and (facility := meal_facility(question)):
+        passage = meal_passage(body, facility)
+        if passage and len(passage) <= hard_limit:
+            return passage
+    if "연혁" in title or "역사" in title:
+        passage = history_passage(body, question, title)
+        if passage and len(passage) <= hard_limit:
+            return passage
+    if re.search(r"규정|세칙|지침|수칙|학칙", title):
+        passage = article_passage(body, question, title=title)
+        if passage:
+            if len(passage) <= hard_limit:
+                return passage
+            content = passage
     table = (metadata or {}).get("structured_table") or {}
     if table.get("kind") == "spreadsheet":
         # Ingestion already repeats sheet/row identity and column labels on

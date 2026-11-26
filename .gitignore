@@ -1,12 +1,5 @@
 # Runtime crawler data
-files/*
-FILES/*
-!files/pknu_main/
-files/pknu_main/*
-!files/pknu_main/_state/
-files/pknu_main/_state/*
-!files/pknu_main/_state/pknu_notice.json
-!files/pknu_main/_state/pknu_student_life.json
+/files/
 output/
 outputs/
 preprocessed/
@@ -64,3 +57,4 @@ CLAUDE.md
 # Local data files
 pknu_main_collection_inventory.csv
 MANUAL_100_QUESTIONS_REVIEW_2026-11-06.md
+/files

@@ -334,14 +334,14 @@ supabase/
   audit/       # read-only DB audit scripts
 ```
 
-Migration files:
+Migration files retain their original versions, including historical table/data transitions.
+See the [migration guide](../../supabase/migrations/README.md#cleanup-and-replay-policy) for
+the current definitions and execution policy; do not replay the directory on an existing database.
 
 ```text
-supabase/migrations/001_create_rag_documents.sql
-supabase/migrations/002_split_rag_documents.sql
-supabase/migrations/003_chat_history.sql
-supabase/migrations/004_create_rule_rag_tables.sql
-supabase/migrations/005_add_document_priority_columns.sql
+supabase/migrations/000_inspect_database.sql          # read-only inspection
+supabase/migrations/018_split_dataset_tables.sql      # one-time five-family transition
+supabase/migrations/022_bound_search_candidates.sql   # latest canonical lexical RPCs
 ```
 
 Audit scripts:

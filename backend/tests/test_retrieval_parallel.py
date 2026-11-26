@@ -4,9 +4,19 @@ import threading
 import time
 import unittest
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
-from app.retrieval import _fetch_rpc_responses, search, _title_anchor_chunks, _term_title_chunks, _cap_per_url, _dedupe_key, _explicit_attachment_candidates
+from app.retrieval import (
+    _cap_per_url,
+    _dedupe_key,
+    _explicit_attachment_candidates,
+    _fetch_rpc_responses,
+    _focused_document_chunks,
+    _term_title_chunks,
+    _title_anchor_chunks,
+    search,
+)
+from app.reviewed_campus_sources import source_rows
 
 
 class FakeClient:
@@ -32,6 +42,30 @@ class FakeClient:
 
 
 class FetchRpcResponsesTests(unittest.TestCase):
+    def test_reviewed_campus_source_reaches_answer_evidence_when_search_misses(self):
+        rpc_name = "match_pknu_main_documents"
+        empty = (SimpleNamespace(data=[]), 1, None)
+        with patch("app.retrieval._fetch_rpc_responses", return_value={rpc_name: empty, f"{rpc_name}_lexical": empty}):
+            result = search(None, rpc_names=[rpc_name], embedding=[1.0], top_k=2, first_stage_k=4,
+                            min_similarity=.3, query_text="부경대 교목 이름은 뭐예요?", capture_trace=True)
+        self.assertEqual([row["url"] for row in result], ["https://www.pknu.ac.kr/main/124"])
+        self.assertIn("곰솔", result[0]["content"])
+        self.assertIn("reviewed_campus_sources", {stage["stage"] for stage in result.trace["stages"]})
+
+    def test_reviewed_campus_source_respects_exam_date_and_institution(self):
+        october = source_rows("부경대 2026년 10월 모의 토익 응시료 알려줘")
+        self.assertEqual(len(october), 1)
+        self.assertIn("4,000원", october[0]["content"])
+        self.assertEqual(source_rows("부경대 2026년 11월 모의토익 응시료 알려줘"), [])
+        self.assertEqual(source_rows("부산대학교 교목은 뭐야?"), [])
+
+    def test_reviewed_exchange_evidence_preserves_the_in_scope_attachment(self):
+        rows = source_rows("인천대학교 2024학년도 여름 학점교류에서 학번은 어떻게 받나요?")
+        self.assertEqual(len(rows), 1)
+        self.assertIn("2024년 5월 27일", rows[0]["content"])
+        self.assertTrue(rows[0]["metadata"]["attachment_name"].endswith(".zip"))
+        self.assertEqual(source_rows("인천대 2024학년도 겨울 학점교류 학번 안내"), [])
+
     def test_full_attachment_name_selects_document_before_chunk_ranking(self):
         guide = {"source_id": "guide", "metadata": {"source_kind": "archive_member", "source_file": "2026학년도 연세대학교 국내교환학생 학사안내.pdf"}}
         form = {"source_id": "form", "metadata": {"source_kind": "archive_member", "source_file": "2026학년도 연세대학교 교류수학 추천자명단.hwp"}}
@@ -109,6 +143,62 @@ class FetchRpcResponsesTests(unittest.TestCase):
         self.assertEqual(result[0]["id"], "exact-document")
         self.assertLessEqual(len(considered), 6)
         self.assertTrue(any(r["id"].startswith("vector-") for r in considered))
+
+    def test_course_evaluation_guide_is_retrieved_when_hybrid_channels_miss_it(self):
+        lookup = Mock()
+        for method in ("select", "eq", "in_", "order", "limit"):
+            getattr(lookup, method).return_value = lookup
+        lookup.execute.return_value = SimpleNamespace(data=[{"id": "guide"}])
+        client = SimpleNamespace(table=Mock(return_value=lookup))
+        guide = {"id": "guide", "title": "강의평가", "url": "https://www.pknu.ac.kr/main/97"}
+        chunk = {
+            "id": "guide-0",
+            "source_id": "guide",
+            "chunk_index": 0,
+            "embedding": [1.0],
+            "content": ("본문: 강의평가 및 성적공시 안내. 국립 부경대학교 포털 앱에서 "
+                        "[종합정보서비스 → 강의평가]를 선택하세요. "
+                        "강의평가 기간에 수강 중인 과목을 확인하고 과목별 설문을 제출합니다."),
+        }
+        rpc_name = "match_pknu_main_documents"
+        empty = (SimpleNamespace(data=[]), 1, None)
+        with patch("app.retrieval._fetch_rpc_responses", return_value={rpc_name: empty, f"{rpc_name}_lexical": empty}), \
+                patch("app.retrieval._fetch_notice_chunks", return_value=([guide], [chunk])) as fetch_chunks:
+            result = search(client, rpc_names=[rpc_name], embedding=[1.0], top_k=2, first_stage_k=5,
+                            min_similarity=.3, query_text="부경대학교 포털 앱에서 강의평가 메뉴 위치",
+                            title_anchor=True)
+        client.table.assert_called_once_with("pknu_main_sources")
+        lookup.in_.assert_called_once_with("title", ["강의평가"])
+        fetch_chunks.assert_called_once_with(client, "pknu_main_sources", "pknu_main_chunks", ["guide"])
+        self.assertEqual([row["url"] for row in result], [guide["url"]])
+        self.assertIn("종합정보서비스 → 강의평가", result[0]["content"])
+
+    def test_named_faculty_relative_course_rule_lookup_does_not_require_a_search_candidate(self):
+        lookup = Mock()
+        for method in ("select", "eq", "ilike", "order", "limit"):
+            getattr(lookup, method).return_value = lookup
+        lookup.execute.return_value = SimpleNamespace(data=[{"id": "rule"}])
+        client = SimpleNamespace(table=Mock(return_value=lookup))
+        rule = {"id": "rule", "title": "교수-자녀 간 강의수강 및 성적평가 공정성 제고 관리 지침",
+                "url": "https://www.pknu.ac.kr/rule/bylawsAndGuidelineView.do?bbsId=2&no=702360"}
+        chunk = {"id": "rule-chunk", "source_id": "rule", "chunk_index": 1, "embedding": [1.0],
+                 "content": "본문: 제3조(수강신청 지도 등) 소속 학부장은 필수 교과목인 경우에도 타 분반을 선택하도록 지도한다."}
+        question = "교수·자녀 수강 공정성 지침에서 부모 강의가 필수과목일 때 지도 원칙은?"
+        with patch("app.retrieval._fetch_notice_chunks", return_value=([rule], [chunk])) as fetch_chunks:
+            rows = _focused_document_chunks(client, ["match_rule_documents"], [1.0], [], question, [], .3, .15, .1, {})
+        client.table.assert_called_once_with("rule_sources")
+        lookup.ilike.assert_called_once_with("title", "%교수%자녀%강의%수강%성적%평가%공정성%")
+        fetch_chunks.assert_called_once_with(client, "rule_sources", "rule_chunks", ["rule"])
+        self.assertEqual([row["id"] for row in rows], ["rule-chunk"])
+
+    def test_reviewed_fact_selection_keeps_the_original_scope(self):
+        self.assertEqual(len(source_rows("교수 자녀가 부모 강의를 듣는데 필수과목이면 다른 분반으로 가나요?")), 1)
+        self.assertEqual(source_rows("교수 자녀가 부모 강의를 듣는데 필수과목 분반이 없으면 사전 신고하나요?"), [])
+        self.assertEqual(len(source_rows("간호학과 김정수 교수 상세 프로필의 주연구분야")), 1)
+        self.assertEqual(source_rows("간호학과 김정수 교수진 목록에서 연구분야를 확인해줘"), [])
+        self.assertEqual(len(source_rows("2026학년도 2학기 학부 이학계열 신입생 정규 등록금")), 1)
+        self.assertEqual(source_rows("2026학년도 2학기 학부 이학계열 재학생 등록금 분납"), [])
+        self.assertEqual(source_rows("2026학년도 1학기 학부 이학계열 신입생 정규 등록금"), [])
 
     def test_department_scope_does_not_filter_out_common_rules(self):
         client = FakeClient()

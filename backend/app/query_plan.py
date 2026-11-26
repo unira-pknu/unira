@@ -11,7 +11,8 @@ from pydantic import BaseModel, Field
 
 from . import department_focus as departments
 from .freshness import current_term, query_term, says_this_term
-from .course_identity import instructor_name, instructor_names, course_level, is_course_list, resolve_course_question
+from .course_identity import PROFILE_REFERENCE, instructor_name, instructor_names, course_level, is_course_list, is_single_offering_question, resolve_course_question
+from .document_focus import tuition_row_key
 from .faculty import PERSON_FIELDS, PERSON_REFERENCE, PROFILE_FIELDS, ROSTER
 from .query_transform import normalize_search_terms
 
@@ -25,7 +26,7 @@ AUDIENCES = {"외국인": ("외국인", "유학생", "international student"), "
              "대학원": ("대학원", "석사", "박사"), "학부": ("학부생", "학부과정"),
              "신입생": ("신입생", "신입학"), "편입생": ("편입생", "편입학"),
              "재학생": ("재학생",), "휴학생": ("휴학생",)}
-PROGRAM_CONTEXTS = {"현장실습": r"현장실습|실습생", "교류프로그램": r"교류\s*수학|교류\s*프로그램|대학생\s*교류",
+PROGRAM_CONTEXTS = {"현장실습": r"현장실습|실습생|워털루\s*(?:형\s*)?코업", "교류프로그램": r"학점\s*교류|교류\s*수학|교류\s*프로그램|대학생\s*교류",
                     "교환학생": r"교환학생|교환\s*수학", "한국어연수": r"한국어\s*연수",
                     "대회참가": r"경진대회|경연대회|공모전", "성과발표회": r"성과\s*발표회",
                     "해외연수": r"해외\s*연수|어학\s*연수",
@@ -287,6 +288,12 @@ def rule_plan(question: str, history: list[dict] | None = None) -> QuestionPlan:
     plan.response_format = fmt[0] if fmt else None
     if re.search(r"(?:시스템\s*프롬프트|데이터베이스\s*비밀번호).{0,20}(?:출력|알려|공개)|출처에\s*없어도.{0,40}답", question):
         plan.route, plan.clarification = "refused", "비공개 정보나 근거 없는 내용을 제공할 수 없습니다."
+    elif (re.search(r"내가|제가|본인|(?<![가-힣])(?:내|제)\s", question)
+          and re.search(r"(?:강의|수업)\s*평가.{0,48}(?:제출|완료)\s*(?:했|여부|내역|기록)", question)
+          and re.search(r"확인해|조회해|봐\s*줘|알려", question)
+          and not re.search(r"어떻게|어디|방법|경로|메뉴", question)):
+        plan.route = "refused"
+        plan.clarification = "개인별 강의평가 제출 내역은 조회할 수 없습니다. 본인 계정으로 학교 포털에서 직접 확인해 주세요."
     elif _GENERIC_OFFICE.search(resolved) and not _explicit_departments(resolved) and not TOPICS.search(resolved):
         plan.route, plan.missing_fields = "clarification", ["department"]
         plan.clarification = "어느 학부·학과·전공 사무실의 연락처가 필요하신가요?"
@@ -307,7 +314,9 @@ def rule_plan(question: str, history: list[dict] | None = None) -> QuestionPlan:
 def finish_plan(plan: QuestionPlan, question: str, queries: list[str], payload: dict | None = None) -> QuestionPlan:
     if plan.route != "search":
         return plan
-    if is_course_list(plan.resolved_question):
+    if (is_course_list(plan.resolved_question) or is_single_offering_question(plan.resolved_question)
+            or tuition_row_key(plan.resolved_question)
+            or (PROFILE_REFERENCE.search(plan.resolved_question) and len(instructor_names(plan.resolved_question)) == 1)):
         # Exact catalogue lookups do not depend on a model's wording or omissions.
         queries = [plan.resolved_question]
         payload = None

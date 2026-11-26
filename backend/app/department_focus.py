@@ -70,6 +70,8 @@ ALIASES = {
     # This is routing identity, not proof of equal curricula across cohorts.
     "컴퓨터공학과": ("컴퓨터·인공지능공학부", "컴퓨터공학전공"),
     "컴퓨터공학부": ("컴퓨터·인공지능공학부", "컴퓨터공학전공"),
+    "기계공학전공": ("기계공학전공", "기계공학부"),
+    "스마트모빌리티": ("스마트모빌리티공학과",),
 }
 # A chunk naming at least this many other departments is a slice of a
 # per-department table.

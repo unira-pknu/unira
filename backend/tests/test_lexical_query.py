@@ -10,6 +10,17 @@ def lexical(question):
 
 
 class LexicalFallbackTests(unittest.TestCase):
+    def test_specific_topics_do_not_fan_out_to_common_terms(self):
+        for question, required, broad in (
+            ("포털 앱에서 강의평가 메뉴가 어디예요?", "강의평가", "포털"),
+            ("온라인 공개강좌 학점은 최대 몇 학점이야?", "공개강좌", "이수학점"),
+            ("학생생활관 외박 신청은 어디서 해?", "외박신청", "학생생활관"),
+        ):
+            with self.subTest(question=question):
+                query = lexical(question)
+                self.assertIn(required, query)
+                self.assertNotIn(broad, query.split(" OR "))
+
     def test_graduation_credits_do_not_search_all_credit_bearing_documents(self):
         for question in ("졸업하려면 총 몇 학점?", "2024학년도 입학생 컴공 졸업학점 기준", "컴퓨터·인공지능공학부 졸업요건"):
             with self.subTest(question=question):

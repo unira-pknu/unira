@@ -6,6 +6,8 @@
 Evaluation commands are in `eval/tools/` and run from the repository root with
 `python -m eval.tools.<command>`.
 
+[전체 범위 100문항 개선 기록](FULL_SCOPE_FEEDBACK_20261124.md)에 11월 24일 평가의 실패 유형, 수정 내역과 재평가 명령을 정리했습니다.
+
 ## 로컬 실제 검색·답변 평가
 
 `eval_local`은 `backend/.env`의 실제 임베딩·재순위화 모델, DB 검색, OpenAI 답변 생성을

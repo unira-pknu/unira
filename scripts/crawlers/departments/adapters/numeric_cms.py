@@ -226,14 +226,38 @@ def _embedded_media_links(content_el, page_url: str = "") -> list[dict[str, Any]
     return links
 
 
-def extract_body_content(content_el) -> str:
+def _label_faculty_tabs(document) -> bool:
+    labels: dict[str, set[str]] = {}
+    for link in document.select(".tch_tab a"):
+        handler = re.fullmatch(r"\s*fn_tab_ch\(\s*this\s*,\s*(\d+)\s*\)\s*;?\s*", link.get("onclick", ""))
+        fragment = re.fullmatch(r"#(tab\d+)", link.get("href", ""))
+        target = f"tab{handler[1]}" if handler else (fragment[1] if fragment else "")
+        if target and (label := _text(link)):
+            labels.setdefault(target, set()).add(label)
+
+    changed = False
+    for target, headings in labels.items():
+        panels = document.find_all(id=target)
+        if len(headings) != 1 or len(panels) != 1 or "tab" not in panels[0].get("class", []):
+            continue
+        panels[0].insert(0, f"\n{next(iter(headings))}:\n")
+        changed = True
+    return changed
+
+
+def extract_body_content(content_el, *, prefer_detail_body: bool = True, faculty_tab_labels: bool = False) -> str:
     if content_el is None:
         return ""
     copy = BeautifulSoup(str(content_el), "lxml")
-    for selector in ("script", "style", "#subTitle", ".c_bdvBtn", ".c_bdvNav", ".a_bdPaging", ".board-nav", ".btn-list"):
+    labeled_tabs = faculty_tab_labels and _label_faculty_tabs(copy)
+    for selector in ("script", "style", "noscript", "nav", "#subTitle",
+                     ".breadcrumb", ".location", ".e_sbtNav", ".a_sbtNav", ".b_sbtNav", ".d_sbtNav",
+                     ".b_subTitle", ".d_subTitle", ".sch_tab", ".tch_tab",
+                     ".c_bdvBtn", ".c_bdvNav", ".a_bdPaging", ".board-nav", ".btn-list"):
         for element in copy.select(selector):
-            element.decompose()
-    body = copy.select_one(".bdvEdit")
+            if element.parent is not None:
+                element.decompose()
+    body = copy.select_one(".bdvEdit") if prefer_detail_body else None
     if not body:
         for anchor in copy.select("a"):
             if anchor.get_text(strip=True).lower() in _NAV_TEXTS:
@@ -254,8 +278,9 @@ def extract_body_content(content_el) -> str:
     tables = root.select("table")
     for table in reversed(tables):
         table.replace_with("\n" + _table_text(table) + "\n")
-    text = root.get_text(" ", strip=not bool(tables))
-    if tables:
+    multiline = bool(tables) or labeled_tabs
+    text = root.get_text(" ", strip=not multiline)
+    if multiline:
         text = "\n".join(line.strip() for line in text.splitlines() if line.strip())
     text = _NAV_PHRASE_RE.sub("", text)
     text = re.sub(r"[ \t]{2,}", " ", text)
@@ -270,19 +295,64 @@ def _detail_content_root(soup, site_url: str):
 
 
 def _content_root(soup, site_url: str = ""):
+    # Some templates keep the complete guide outside the standard #sbCont.
+    for selector in (".e_sbCont #sub", "#stance"):
+        root = soup.select_one(selector)
+        if root is not None:
+            return root
     if urlparse(site_url).hostname in _A_BDCONT_FIRST_HOSTS:
         root = _detail_content_root(soup, site_url)
         if root is not None:
             return root
     # select_one with a comma-separated selector uses document order, not
     # selector priority. CE has an empty layout .container before #sbCont.
-    return soup.select_one("#sbCont") or select_content_container(soup)
+    for selector in ("#sbCont", ".b_bdCont", ".d_sbCont"):
+        root = soup.select_one(selector)
+        if root is not None:
+            return root
+    for selector in (".e_sbCont", ".page_con", "#contents", ".contents", "main", ".a_bdCont"):
+        root = soup.select_one(selector)
+        if root is not None:
+            return root
+    # Verified custom guides have no dedicated body class. Their #sub child
+    # contains the guide itself; an earlier header .container is only layout.
+    # Some templates repeat #sub around the sidebar and the actual body.
+    if urlparse(site_url).hostname in _A_BDCONT_FIRST_HOSTS:
+        for root in soup.select("#sub > .container"):
+            if root.select_one("#sub") is None:
+                return root
+    return select_content_container(soup)
+
+
+def _heading_has_reference(node) -> bool:
+    for anchor in node.select("a[href]"):
+        href = str(anchor.get("href") or "").strip()
+        if not _text(anchor) or not href or href.startswith("#"):
+            continue
+        try:
+            parsed = urlparse(href)
+        except ValueError:
+            continue
+        if parsed.scheme.lower() in {"", "http", "https"}:
+            return True
+    return False
 
 
 def _empty_content_info(root, text, attachments):
-    if text.strip():
+    # A heading above a diagram is not an extraction of the diagram's text.
+    meaningful = BeautifulSoup(str(root), "lxml") if root is not None else None
+    if meaningful is not None:
+        for node in meaningful.select("h1, h2, h3, h4, h5, h6"):
+            # E-book language links can be the entire guide, inside an h4.
+            # Keep their visible labels, but not plain headings or UI links.
+            if _heading_has_reference(node):
+                node.unwrap()
+            else:
+                node.decompose()
+    if text.strip() and (meaningful is None or extract_body_content(meaningful, prefer_detail_body=False).strip()):
         return {}
-    images = [str(img.get("src")) for img in root.select("img[src]")] if root else []
+    from scripts.crawlers.common.body_images import collect_body_images
+    images = [item["src"] for item in collect_body_images(root, root=root)] if root is not None else []
     return {"content_state": "attachment_only" if attachments else "image_only" if images else "empty",
             "content_images": [src for src in images if not src.lower().startswith('data:')]}
 
@@ -311,7 +381,75 @@ def _body_reference_links(content, page_url: str) -> list[dict[str, Any]]:
 class NumericCMSAdapter(DepartmentCMSAdapter):
     uses_numeric_post_order = True
     name = "numeric_cms"
-    version = "1.4"
+    version = "1.6"
+
+    def select_body_root(self, soup, *, page_url="", base_url="", detail=False):
+        if detail:
+            if urlparse(page_url).hostname in {"www.pknu.ac.kr", "pknujob.pknu.ac.kr"}:
+                return soup.select_one("div.bdvTxt")
+            wrapper = _detail_content_root(soup, base_url or page_url)
+            return (wrapper.select_one(".bdvEdit") or wrapper) if wrapper is not None else None
+        return _content_root(soup, base_url or page_url)
+
+    def is_profile_detail_url(self, url):
+        query = parse_qs(urlparse(url).query)
+        return (query.get("action") == ["view"]
+                and any(len(query.get(key, [])) == 1 and re.fullmatch(r"[A-Za-z0-9_-]+", query[key][0])
+                        for key in ("no", "profile")))
+
+    def profile_target_allowed(self, target, requested_url):
+        requested, actual = urlparse(requested_url), urlparse(target)
+        if actual.scheme not in {"http", "https"} or actual.username or actual.password:
+            return False
+        if actual.netloc.lower() not in {requested.netloc.lower(), "icms.pknu.ac.kr"}:
+            return False
+        if actual.path.rstrip("/") != requested.path.rstrip("/"):
+            return False
+        if not self.is_profile_detail_url(target):
+            return False
+        return parse_qs(actual.query) == parse_qs(requested.query)
+
+    def static_detail_links(self, soup, *, page_url):
+        if self.is_profile_detail_url(page_url):
+            return []
+        root = self.select_body_root(soup, page_url=page_url)
+        if root is None:
+            return []
+        page = urlparse(page_url)
+        found = {}
+        for anchor in root.select("a[href]"):
+            target = resolve_link(anchor["href"], page_url)
+            if not target or not self.is_profile_detail_url(target):
+                continue
+            parsed = urlparse(target)
+            if (parsed.path.rstrip("/") != page.path.rstrip("/")
+                    or parsed.netloc.lower() not in {page.netloc.lower(), "icms.pknu.ac.kr"}):
+                continue
+            card = anchor.find_parent(class_=re.compile(r"^(?:tch_list|professor-card|profile-card|faculty-card)$"))
+            if card is None and not re.search(r"상세|프로필|profile|detail", _text(anchor), re.I):
+                continue
+            # Retain the configured origin so discovered and registered profiles
+            # have the same document identity even when the CMS uses an alias.
+            query = parse_qs(parsed.query)
+            identity_key = "no" if query.get("no") else "profile"
+            identity = (identity_key, query[identity_key][0])
+            target = page._replace(query=urlencode({"action": "view", identity_key: identity[1]}), fragment="").geturl()
+            name = _text(card.select_one(".a_tch_name, h2, h3")) if card else ""
+            found.setdefault(identity, {"url": target, "label": name or _text(anchor),
+                                        "source": "faculty_profile", "followed": False})
+        return list(found.values())
+
+    def parse_profile(self, soup, *, fallback_title, page_url, base_url, site_prefix):
+        root = self.select_body_root(soup, page_url=page_url, base_url=base_url)
+        if root is None or root.select_one(".tch_in") is None:
+            return None
+        name = root.select_one(".a_tch_name")
+        if name is None or not _text(name):
+            return None
+        result = self.parse_static(soup, fallback_title=fallback_title, page_url=page_url,
+                                   base_url=base_url, site_prefix=site_prefix, faculty_tab_labels=True)
+        result["title"] = _text(name)
+        return result
 
     def discover_menus(self, html: str, base_url: str) -> list[dict[str, str]]:
         return numeric_menu_links(html, base_url)
@@ -336,7 +474,7 @@ class NumericCMSAdapter(DepartmentCMSAdapter):
         board_list = _has_board_table(soup)
         view_links = any("action=view" in str(a.get("href") or "").lower() for a in soup.select("a[href]"))
         is_board = board_list or bbs_id is not None
-        has_content = select_content_container(soup) is not None
+        has_content = _content_root(soup, page_url) is not None
         needs_adapter = board_list and bbs_id is None
         static_collection = view_links and not is_board
         warnings = (
@@ -461,15 +599,15 @@ class NumericCMSAdapter(DepartmentCMSAdapter):
 
     def parse_static(
         self, soup: BeautifulSoup, *, fallback_title: str,
-        page_url: str = "", base_url: str = "", site_prefix: str = "",
+        page_url: str = "", base_url: str = "", site_prefix: str = "", faculty_tab_labels: bool = False,
     ) -> dict[str, Any]:
         breadcrumb = soup.select(".a_sbtNav dd")
         title = breadcrumb[-1].get_text(strip=True) if breadcrumb else fallback_title
         title = title or _text(soup.select_one("title")) or fallback_title
         content = _content_root(soup, base_url or page_url)
-        text = extract_body_content(content)
+        text = extract_body_content(content, prefer_detail_body=False, faculty_tab_labels=faculty_tab_labels)
         attachments = self.parse_attachments(content, page_url=page_url, base_url=base_url, site_prefix=site_prefix)
-        references = _body_reference_links(content, page_url or base_url)
+        references = _embedded_media_links(content, page_url or base_url) + _body_reference_links(content, page_url or base_url)
         return {"title": title, "content": text, "attachments": attachments,
                 **({'reference_links': references} if references else {}),
                 **_empty_content_info(content, text, attachments)}

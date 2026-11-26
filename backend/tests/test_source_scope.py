@@ -1,4 +1,5 @@
 from app.query_plan import SearchTask, target_for, conditions_for, purpose_for
+from app.reviewed_campus_sources import source_rows
 from app.source_scope import checked_rows, scope_reason
 
 
@@ -10,6 +11,36 @@ def test_pknu_host_does_not_make_jeju_exchange_rules_general():
     row = {"title": "2023학년도 타 대학(제주대학교) 교류 수학 안내", "url": "https://www.pknu.ac.kr/main/95?no=1", "content": "공결은 제주대학교 교육혁신과로 신청"}
     assert scope_reason(row, task("공결 신청 방법")) is not None
     assert scope_reason(row, task("제주대학교 교류수학 공결 신청 방법")) is None
+
+
+def test_named_exchange_excludes_another_track_and_season():
+    question = task("2026년 하계 충남대학교 학점교류 학생 신청 마감")
+    separate = {"title": "2026학년도 충남대학교 하계 혁신융합대학사업 학점교류 안내"}
+    winter = {"title": "2026학년도 충남대학교 동계 학점교류 안내"}
+    matching = {"title": "2026학년도 충남대학교 하계 학점교류 안내"}
+    assert scope_reason(separate, question) == "different_exchange_track"
+    assert scope_reason(winter, question) == "different_exchange_season"
+    assert scope_reason(matching, question) is None
+
+
+def test_explicit_edition_and_meal_week_are_checked():
+    older = {"title": "도서관 운영세칙(개정2025.07.02.)"}
+    assert scope_reason(older, task("2026년 6월 도서관 운영세칙의 면제 조건")) == "different_document_year"
+    week = {"title": "교내 식당 주간 식단표: 9. 12.(월) ~ 9. 16.(금)", "metadata": {"published_at": "2022-09-08"}}
+    assert scope_reason(week, task("2022년 9월 13일 라일락 점심 메뉴")) is None
+    assert scope_reason(week, task("2022년 9월 19일 라일락 점심 메뉴")) == "different_meal_week"
+
+
+def test_course_evaluation_app_must_match_mobile_navigation():
+    old_notice = {"title": "2020학년도 2학기 강의평가 실시 안내",
+                  "content": "PC는 학사행정정보시스템, 모바일은 수강신청 앱으로 접속하세요."}
+    current_guide = {"title": "강의평가",
+                     "content": "포털 앱에서 종합정보서비스 → 강의평가를 선택하세요."}
+    question = task("폰으로 강의평가 하려면 부경대 포털 앱에서 어느 메뉴로 들어가요?")
+    assert scope_reason(old_notice, question) == "different_course_evaluation_app"
+    assert scope_reason(current_guide, question) is None
+    assert scope_reason(old_notice, task("2020학년도 2학기 강의평가 모바일 앱 메뉴는?")) is None
+    assert scope_reason(old_notice, task("PC에서 강의평가는 어디로 들어가요?")) is None
 
 
 def test_named_foreign_program_notice_can_describe_its_graduate_audience():
@@ -155,3 +186,18 @@ def test_spreadsheet_row_instructor_and_term_are_checked():
 def test_old_unstructured_spreadsheet_cannot_establish_professor_course_relation():
     row = {"title": "개설 교과목", "content": "유승호 수리학및실험", "metadata": {"source_ext": ".xlsx"}}
     assert scope_reason(row, task("유승호 교수님 소프트웨어공학 강의실")) == "unverified_spreadsheet_instructor"
+def test_reviewed_forms_keep_ordinary_audience_checks_for_personal_application():
+    text = "2026년 다문화·탈북학생 멘토링 멘토용 자기소개서는 최대 몇 글자까지 쓰나요?"
+    rows = source_rows(text)
+    assert len(rows) == 1
+    assert "300자" in rows[0]["content"]
+    assert scope_reason(rows[0], task(text)) is None
+    personal = text + " 제가 지원할 수 있나요?"
+    assert scope_reason(rows[0], task(personal)) == "restricted_audience"
+
+
+def test_credit_exchange_wording_keeps_the_matching_archived_guide():
+    text = "2024년 여름 인천대학교 계절학기 학점교류 학번은 언제 문자로 알려주나요?"
+    rows = source_rows(text)
+    assert len(checked_rows(rows, task(text))) == 1
+    assert rows[0]["metadata"]["archive_member_original_name"].endswith("안내문.hwp")

@@ -86,6 +86,31 @@ def instructor_db(extra_courses=0):
 
 
 class SyllabusTests(unittest.TestCase):
+    def test_explicit_code_and_section_are_independent_of_question_wording(self):
+        for question, purpose in (
+            ("2026-2 운영체제 103932-101의 학점-이론-실습 값이 뭐야?", "offering"),
+            ("2026년 2학기 운영체제 101분반(103932)은 기말고사 비중이 얼마야?", "assessment"),
+            ("2026-2 운영체제 103932 101분반은 중간고사가 몇 주 차야?", "weekly"),
+        ):
+            with self.subTest(question=question):
+                request = extract_request(question)
+                self.assertEqual((request.course_no, request.year, request.term, request.section),
+                                 ("103932", 2026, "2", "101"))
+                self.assertIn(purpose, request.purposes)
+                self.assertTrue(search_syllabus(DB(), request).rows)
+
+    def test_display_title_recovers_offering_identity_from_older_source_rows(self):
+        db = DB()
+        for source in db.sources:
+            variant = "kor" if "kor" in source["id"] else "eng"
+            source["title"] = f"2026-2 운영체제 (103932-101, {variant})"
+            source.pop("file_path")
+        request = extract_request("2026-2 운영체제 103932-101 과제와 출석 비율")
+        self.assertTrue(search_syllabus(db, request).rows)
+
+    def test_public_profile_course_fields_do_not_trigger_a_catalogue_lookup(self):
+        self.assertIsNone(extract_request("간호학과 조규영 교수님 공개 프로필에 적힌 담당 교과목은?"))
+
     def test_extracts_identity_without_question_purpose_words(self):
         request = extract_request("2026학년도 2학기 운영체제 101분반 평가 비율이 궁금해요.")
         self.assertEqual((request.course, request.year, request.term, request.section), ("운영체제", 2026, "2", "101"))

@@ -18,6 +18,18 @@ def _detail_url(board_url: str, item_id: str) -> str:
 class QueryViewLegacyAdapter(QueryViewDoAdapter):
     name = "query_view_legacy"
 
+    def select_body_root(self, soup, *, page_url="", base_url="", detail=False):
+        if not detail:
+            return super().select_body_root(soup, page_url=page_url, base_url=base_url)
+        body = soup.select_one(".board-view-wrap tbody")
+        if body is None:
+            return None
+        clean = BeautifulSoup(str(body), "lxml")
+        for row in list(clean.select("tr")):
+            if row.parent is not None and row.select_one("a.file-add"):
+                row.decompose()
+        return clean
+
     def analyze_section(self, *, name: str, page_url: str, html: str, final_url: str | None = None) -> dict[str, Any]:
         result = super().analyze_section(name=name, page_url=page_url, html=html, final_url=final_url)
         if result["status"] == "unsupported":

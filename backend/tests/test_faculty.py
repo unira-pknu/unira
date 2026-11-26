@@ -3,7 +3,8 @@
 from types import SimpleNamespace
 from unittest.mock import MagicMock, call
 
-from app.faculty import profile_chunks
+from app.faculty import profile_chunks, profile_homepage
+from app.generation import _source_content
 from app.query_plan import SearchTask, Target
 from app.routers.ask import _search_one
 
@@ -51,3 +52,21 @@ def test_professors_with_the_same_name_and_page_path_keep_separate_identities():
     client, queries = _client([_profile_source("first", 17), _profile_source("second", 18)])
     assert profile_chunks(client, department="physics", name="홍길동", question="홍길동 교수 학력", top_k=5) == []
     queries["rag_chunks"].execute.assert_not_called()
+
+
+def test_exact_faculty_profile_preserves_short_unlabelled_research_field():
+    source = _profile_source("profile", 17)
+    body = "홍길동 교수\n등록된 내용이 없습니다.\n응집물질물리학\n" + "주요 논문 2022 초전도 연구. " * 30
+    client, _ = _client([source], [{"id": "chunk", "content": body, "chunk_index": 0}])
+    question = "홍길동 교수의 연구 분야는 무엇인가요?"
+    rows = profile_chunks(client, department="physics", name="홍길동", question=question, top_k=5)
+    assert _source_content(rows[0], 300, question) == body
+
+
+def test_named_profile_homepage_requires_a_label_and_university_host():
+    row = _profile_source("profile", 17)
+    question = "홍길동 명예교수의 연구실 홈페이지 주소는?"
+    assert profile_homepage(row, question, "홈페이지: https://lab.pknu.ac.kr 약력") == "https://lab.pknu.ac.kr"
+    assert profile_homepage(row, question, "홈페이지: https://pknu.ac.kr.example.org") is None
+    assert profile_homepage(row, question, "연구자료 https://lab.pknu.ac.kr") is None
+    assert profile_homepage(row, "김영희 교수의 홈페이지 주소", "홈페이지: https://lab.pknu.ac.kr") is None

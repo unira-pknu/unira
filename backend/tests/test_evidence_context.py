@@ -5,11 +5,82 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from app import generation
+from app.document_focus import menu_titles
 from app.evidence_context import select_evidence, supplement_neighbors
 from app.evaluation import evidence_snapshot
 from app.generation import _format_source_block, _number_problems, _source_content, build_user_message
 from app.query_plan import QuestionPlan, SearchTask
 from app.schemas import Source
+
+
+def test_specific_public_menu_titles_are_scoped_to_the_question():
+    assert menu_titles("부산역에서 대연캠퍼스 갈 때 지하철 몇 번 출구야?") == ["대연캠퍼스"]
+    assert menu_titles("대학원 수료 상태인데 ISIC 발급돼요?") == ["국제학생증발급"]
+    assert "연혁" in menu_titles("응용수학과 입학정원", department=True)
+    assert menu_titles("오늘 날씨 어때요?") == []
+
+
+def test_course_evaluation_menu_lookup_matches_navigation_and_respects_dated_notices():
+    assert menu_titles("폰으로 강의평가 하려면 어디로 들어가요?") == ["강의평가"]
+    assert menu_titles("휴대폰에서 수업 평가 어디서 해요?") == ["강의평가"]
+    assert menu_titles("2020학년도 2학기 강의평가 앱 메뉴가 어디였어요?") == []
+    assert menu_titles("모바일 강의평가 마감은 언제예요?") == []
+    assert menu_titles("수강신청 앱에서 강의평가 하는 방법이 뭐였어?") == []
+
+
+def test_flattened_meal_table_uses_the_named_cafeteria_and_keeps_the_day_header():
+    content = ("본문: 대연캠퍼스 라일락과 다래락 안내 "
+               "라일락 구분 / Monday / Tuesday / 운영정보 9월 12일 / 9월 13일 중식 / 휴일 / 미역국 불고기 "
+               "다래락 구분 / Monday / Tuesday / 라면")
+    shown = select_evidence(content, question="9월 13일 미래관 라일락 점심 메뉴", target_chars=60,
+                            metadata={"doc_title": "교내 식당 주간 식단표"})
+    assert "9월 13일" in shown and "미역국 불고기" in shown
+    assert "다래락" not in shown
+
+
+def test_flattened_regulation_keeps_requested_article_with_its_text():
+    content = "제1조(목적) " + "행정 일반 안내입니다. " * 75 + "제2조(정의) 학생설계전공은 학생이 교육과정을 구성합니다."
+    shown = select_evidence(content, question="제2조 학생설계전공의 정의", target_chars=70)
+    assert "제2조(정의) 학생설계전공은 학생이 교육과정을 구성합니다." in shown
+
+
+def test_requested_article_keeps_definition_instead_of_later_mention():
+    content = ("제1조(목적) 교내 용어 지침이다. "
+               "제2조(정의) ‘장표’란 그래프와 표로 구성된 화면이다. "
+               "제5조(관리) 관리자는 전자 장표 관리를 담당한다.")
+    shown = select_evidence(content, question="용어 관리 지침 제2조에서 장표란 무엇인가요?", target_chars=20,
+                            metadata={"doc_title": "용어 관리 지침"})
+    assert shown == "제2조(정의) ‘장표’란 그래프와 표로 구성된 화면이다."
+
+
+def test_named_faculty_relative_rule_keeps_course_guidance_article():
+    content = ("제1조(목적) 수강 관리 지침이다. "
+               "제3조(수강신청 지도 등) 필수 교과목인 경우에도 타 분반을 선택하도록 지도한다. "
+               "제4조(사전신고) 분반이 없는 경우 사전 신고해야 한다.")
+    shown = select_evidence(content, question="교수·자녀 수강 공정성 지침에서 부모 강의가 필수과목이면?",
+                            target_chars=20, metadata={"doc_title": "교수-자녀 간 강의수강 및 성적평가 공정성 제고 관리 지침"})
+    assert shown == "제3조(수강신청 지도 등) 필수 교과목인 경우에도 타 분반을 선택하도록 지도한다."
+
+
+def test_history_passage_only_keeps_the_event_for_the_requested_date():
+    content = ("2025 2025. 9. 1. 이준혁 교수가 전공주임 취임 "
+               "2023 2023. 9. 1. 박지영 교수가 전공주임 취임 "
+               "2022 2022. 3. 1. 학부 신설")
+    shown = select_evidence(content, question="2023년 9월 전공주임은 누구였나요?", target_chars=24,
+                            metadata={"doc_title": "연혁"})
+    assert shown == "2023. 9. 1. 박지영 교수가 전공주임 취임"
+
+
+def test_tuition_passage_preserves_the_requested_cohort_in_the_same_row():
+    prefix = "정규 등록금: 2026학년도 2학기 / 학부 / 공학계열"
+    earlier = prefix + "(미래융합학부) / 학생구분 신입생. 입학금 0원, 수업료 1,000원, 총액 1,000원."
+    requested = prefix + " / 학생구분 신입생. 입학금 0원, 수업료 2,000원, 총액 2,000원. 공식 대조 상태: matched."
+    later = prefix + " / 학생구분 재학생. 입학금 0원, 수업료 3,000원, 총액 3,000원."
+    metadata = {"doc_title": "2026학년도 2학기 등록금 조회 자료"}
+    question = "2026학년도 2학기 학부 공학계열 신입생 등록금 총액은 얼마야?"
+    shown = select_evidence(" ".join((earlier, requested, later)), question=question, target_chars=20, metadata=metadata)
+    assert shown == requested
+    assert "3,000원" not in select_evidence(later, question=question, target_chars=20, metadata=metadata)
 
 
 def test_late_application_passage_keeps_exception_and_required_documents():

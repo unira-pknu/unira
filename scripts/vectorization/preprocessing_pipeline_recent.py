@@ -25,7 +25,7 @@ from scripts.preprocessing.preprocessing_pipeline import (  # noqa: E402
     run_pipeline,
     selected_datasets,
 )
-from scripts.preprocessing.file_preprocessing import ARCHIVE_EXTS, ensure_output_path  # noqa: E402
+from scripts.preprocessing.file_preprocessing import ARCHIVE_EXTS, ensure_output_path, archive_output_relative_path  # noqa: E402
 from scripts.vectorization.load_to_supabase import load as load_to_supabase  # noqa: E402
 from scripts.vectorization.vectorization import (  # noqa: E402
     DATASET_PATHS,
@@ -265,7 +265,7 @@ def collect_archive_outputs(
     input_root: Path,
     output_root: Path,
 ) -> list[Path]:
-    archive_rel = archive_file.resolve().relative_to(input_root.resolve()).with_suffix("")
+    archive_rel = archive_output_relative_path(archive_file, input_root)
     archive_output_root = output_root / "zip" / archive_rel
     if not archive_output_root.exists():
         return []

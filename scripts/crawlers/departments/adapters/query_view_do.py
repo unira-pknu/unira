@@ -9,6 +9,7 @@ from urllib.parse import parse_qs, urlencode, urljoin, urlsplit, urlunsplit
 from bs4 import BeautifulSoup
 
 from scripts.crawlers.departments.adapters.base import DepartmentCMSAdapter
+from scripts.crawlers.departments.adapters.numeric_cms import extract_body_content, _empty_content_info
 
 
 _EXCLUDED_NAMES = {"HOME", "SITEMAP", "LOGIN", "LOGOUT", "홈", "사이트맵", "로그인", "로그아웃"}
@@ -26,6 +27,16 @@ def _query_url(url: str, **values: str) -> str:
 
 class QueryViewDoAdapter(DepartmentCMSAdapter):
     name = "query_view_do"
+    version = "1.1"
+
+    def select_body_root(self, soup, *, page_url="", base_url="", detail=False):
+        if detail:
+            return soup.select_one(".editor-data-box")
+        for selector in (".sub-content", ".contents", "main", "#container-wrap"):
+            root = soup.select_one(selector)
+            if root is not None:
+                return root
+        return None
 
     def discover_menus(self, html: str, base_url: str) -> list[dict[str, str]]:
         soup = BeautifulSoup(html, "lxml")
@@ -160,6 +171,9 @@ class QueryViewDoAdapter(DepartmentCMSAdapter):
         page_url: str = "", base_url: str = "", site_prefix: str = "",
     ) -> dict[str, Any]:
         title = soup.select_one("h1, .page-title")
-        content = soup.select_one(".sub-content, main, #container-wrap, .contents")
+        content = self.select_body_root(soup, page_url=page_url, base_url=base_url)
+        text = extract_body_content(content, prefer_detail_body=False)
+        attachments = self.parse_attachments(content, page_url=page_url, base_url=base_url, site_prefix=site_prefix)
         return {"title": title.get_text(" ", strip=True) if title else fallback_title,
-                "content": content.get_text(" ", strip=True) if content else "", "attachments": []}
+                "content": text, "attachments": attachments,
+                **_empty_content_info(content, text, attachments)}

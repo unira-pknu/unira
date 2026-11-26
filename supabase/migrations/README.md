@@ -2,6 +2,38 @@
 
 File numbers are unique: 000 is read-only inspection, 001-015 are historical changes, 016-017 prepare the previous ingestion schema, and 018 establishes the five current table families. Preserve historical numbering. Do not blindly rerun the folder: historical scripts include table removal and permanent deletion of inactive sources. Do not replay 016/017 after 018: they describe the retired student-life tables and old RPC definitions.
 
+## Cleanup and replay policy
+
+This cleanup is a repository-only refactor. An existing database needs **no SQL to apply** for it.
+`017` and `018` use local templates for repeated RPC definitions, retaining their signatures, defaults,
+query bodies, function settings and table routing. The repeated transaction-local `search_path` in `017`
+is removed. Table/column DDL, constraints, indexes, triggers, policies, grants and data migration statements
+are unchanged. In `018`, both legacy student-life RPC names still read `pknu_main_*`.
+
+Keep each numbered file self-contained and retain its version. Definitions superseded by a later file
+are necessary for historical replay and are not instructions to rerun them on the current database.
+Do not delete versions, renumber files, or repair the migration ledger for this cleanup.
+
+| Files | Purpose / current use |
+|---|---|
+| `000` | Read-only inspection; does not apply schema changes |
+| `001`–`002`, `004`–`009`, `011`–`012` | Earlier RAG tables, indexes and RPC revisions; retain for historical replay |
+| `003`, `010`, `013`, `015` | Chat history, signup restriction and feedback; still needed independently of RAG RPC updates |
+| `014` | Permanent inactive-source deletion and VACUUM; maintenance history, never a normal setup prerequisite |
+| `016` | Previous four-family ingestion schema; prerequisite for the one-time `018` transition |
+| `017` | RPCs for the previous four families; `018` replaces all of them |
+| `018` | Five-family transition, semantic RPCs and legacy compatibility RPCs |
+| `019`–`021` | Intermediate lexical RPC revisions; `022` replaces both canonical overloads |
+| `022` | Latest canonical lexical RPC definitions and additional lookup indexes in this repository |
+
+For a **manual** transition from the four-family schema directly to the latest repository definitions,
+`016` → `018` → `022` avoids installing RPC bodies that are immediately replaced. This is not a fresh
+database bootstrap: earlier auth/chat setup and any necessary legacy data conversion must already be
+complete. If `018` is already applied, do not rerun `016` or `018`; only an independently reviewed,
+unapplied update such as `022` may be needed. If `022` is already applied, no replay is needed.
+When using a migration runner instead of manual SQL, preserve its normal numbered history and ledger;
+do not skip or mark versions as applied based on the manual shortcut.
+
 ## Current table families
 
 | Content | Sources | Chunks | Semantic RPC |
@@ -25,7 +57,16 @@ per-source window (but before the final limit), avoiding repeated source lookups
 Apply it as one transaction after 020; do not replay older schema migrations. Pair it with the backend's
 specific graduation-credit/deferral query variants so broad words do not match tens of thousands of chunks.
 
-`018_split_dataset_tables.sql` is a one-time maintenance migration for a DB with 016/017 applied. It locks ingestion tables, copies sources/chunks with unchanged IDs and embeddings, checks exact copied values and total row counts, deletes the moved originals, backfills department attributes from the registry snapshot, retires empty `pknu_student_life_*` tables and builds destination search indexes. The large department/rule HNSW indexes are reused. Everything commits atomically; errors roll back the migration. It never changes auth/chat tables or local `files/` data.
+`022_bound_search_candidates.sql` preserves the lexical RPC signatures and caps the pool scored for common
+terms. The per-source limit of three still applies to ranked candidates. A broad query can omit matches
+beyond the pool, so compare recall as well as latency on the same questions. It also adds active-source title
+indexes for substring and exact menu lookup, plus indexes for syllabus codes and faculty profile categories.
+Apply after 021 in a maintenance window. Building the indexes can block ingestion writes. Verify both overloads
+and the selective/very common-term cases on a representative database before rollout. The migration leaves
+rows, vectors, compute size and global timeout settings untouched. To restore the previous ranking functions,
+reapply 021. The added indexes can continue serving the exact lookups.
+
+`018_split_dataset_tables.sql` is a one-time maintenance migration for a DB with 016 applied; the RPC-only 017 is optional on the manual direct path. It locks ingestion tables, copies sources/chunks with unchanged IDs and embeddings, checks exact copied values and total row counts, deletes the moved originals, backfills department attributes from the registry snapshot, retires empty `pknu_student_life_*` tables and builds destination search indexes. The large department/rule HNSW indexes are reused. Everything commits atomically; errors roll back the migration. It never changes auth/chat tables or local `files/` data.
 
 Routing uses original `metadata.source_dataset`, including attachments where `is_notice=false`. Original `ingestion_dataset` stays unchanged to preserve stable upsert keys. Future loads use the live department registry and the same routing. Keep an operational backup and run this migration with ingestion stopped. New tables retain RLS and grant backend `service_role` access; browser policies are not added.
 
@@ -34,11 +75,15 @@ The two old student-life public RPC names temporarily query `pknu_main_*` for ex
 ## Execution order
 
 1. Run `000_inspect_database.sql` for read-only schema, index, RPC and RLS inspection.
-2. On a DB that has not yet applied 016/017, apply `016_prepare_dataset_ingestion.sql` then `017_update_search_functions.sql` as prerequisites.
+2. On a four-family DB that has not yet applied 016, apply `016_prepare_dataset_ingestion.sql`. For a manual transition directly to 018, the superseded RPC-only `017_update_search_functions.sql` is unnecessary.
 3. Apply `018_split_dataset_tables.sql` once to establish the five families, move existing data and build destination indexes. An already-migrated DB needs only the normal loader commands below.
 4. In a maintenance window, run `--prepare-bulk` once to remove existing named search indexes, if present.
 5. Load completed datasets with the COPY-based Python loader.
 6. After every ingestion terminal has finished, run `--finalize-indexes` once, then audit the result.
+
+These steps describe the historical schema/ingestion transition, not actions required by this cleanup.
+For the latest canonical lexical RPCs and lookup indexes, see `022` above; intermediate `019`–`021`
+are unnecessary on the manual direct path. Do not rerun migrations as part of normal ingestion.
 
 The schema script preserves existing rows and RLS policies. RLS is enabled for newly created tables only; browser access policies are not created automatically. Embeddings must have 384 dimensions.
 `016` does not remove indexes created by historical migrations. `--prepare-bulk` explicitly removes only the named HNSW, full-text GIN and metadata GIN indexes; rows, PK/UNIQUE and foreign keys remain. Search may be slow until finalization. `--finalize-indexes` uses standard CREATE INDEX and may block writes. Run index maintenance separately from ingestion terminals. Index statements use a connection-local 30-minute timeout (change with `--index-timeout-seconds`); lock acquisition is limited to 10 seconds. No global timeout is changed.

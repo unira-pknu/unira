@@ -32,6 +32,7 @@ METADATA_NAMES = (
     "request_coverage", "comparison_targets",
     "retrieval_incomplete", "unresolved_request",
     "catalog_table",
+    "reviewed_campus_source", "attachment_name", "attachment_url", "archive_member_original_name",
 )
 
 

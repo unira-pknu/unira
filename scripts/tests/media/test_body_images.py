@@ -12,6 +12,7 @@ from bs4 import BeautifulSoup
 
 from scripts.crawlers.common.body_images import collect_body_images, save_body_images, image_info
 from scripts.preprocessing.extractors.image_ocr import detect_grid, layout_blocks
+from scripts.preprocessing.preprocess_body_images import saved_image_candidates, matching_originals
 
 
 def png():
@@ -38,6 +39,37 @@ class BodyImageTests(unittest.TestCase):
 
     def test_no_body_does_not_collect_layout(self):
         self.assertEqual(collect_body_images(BeautifulSoup('<body><img src="a.png"></body>', 'lxml')), [])
+
+    def test_explicit_body_root_keeps_linked_original_and_excludes_page_chrome(self):
+        soup = BeautifulSoup('''<header><img src="header.jpg"></header>
+          <article class="page_con"><a href="../images/full.jpg"><img data-src="../images/small.jpg"></a>
+          <img src="second.png"><nav><img src="navigation.png"></nav></article>''', 'lxml')
+        images = collect_body_images(soup, root=soup.select_one('.page_con'))
+        self.assertEqual(['../images/full.jpg', 'second.png'], [image['src'] for image in images])
+        self.assertEqual('../images/small.jpg', images[0]['display_src'])
+        with tempfile.TemporaryDirectory() as temp:
+            records = save_body_images(images, session=object(), page_url='https://example.org/curriculum/page.php',
+                                       output_dir=Path(temp) / 'images', project_root=Path(temp), download=False)
+            self.assertEqual('https://example.org/images/full.jpg', records[0]['source_url'])
+            self.assertEqual('https://example.org/images/small.jpg', records[0]['display_url'])
+            self.assertEqual('not_attempted', records[0]['status'])
+            self.assertFalse((Path(temp) / 'images').exists())
+
+    def test_saved_department_html_uses_the_same_root_for_ocr_candidates(self):
+        soup = BeautifulSoup('<div class="container"><img src="header.png"></div>'
+                             '<article class="page_con"><img src="diagram.png"></article>', 'lxml')
+        candidates = saved_image_candidates(soup, {'url': 'http://geoinfo.pknu.ac.kr/03specialty/02.php', 'type': 'static_page'},
+                                            SimpleNamespace(adapter='legacy_php', base_url='http://geoinfo.pknu.ac.kr'))
+        self.assertEqual(['diagram.png'], [item['src'] for item in candidates])
+
+    def test_old_thumbnail_is_not_reused_for_a_different_original_with_the_same_count(self):
+        candidates = [{'order': 1, 'src': '/full.jpg', 'alt': ''}]
+        prior = [{'order': 1, 'source_url': 'https://example.org/preview.jpg', 'saved_path': 'images/a.jpg', 'sha256': 'a'}]
+        self.assertFalse(matching_originals(candidates, prior, 'https://example.org/page'))
+        prior[0]['source_url'] = 'https://example.org/full.jpg'
+        self.assertTrue(matching_originals(candidates, prior, 'https://example.org/page'))
+        prior[0]['saved_path'] = None
+        self.assertFalse(matching_originals(candidates, prior, 'https://example.org/page'))
 
     def test_inline_and_remote_share_original_hash(self):
         payload = png()
