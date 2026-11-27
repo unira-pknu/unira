@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0",
+  "dataset": "mae",
+  "updated_at": "2026-11-27T14:14:44+09:00",
+  "items": {
+    "http://mae.pknu.ac.kr/mae/2216": {
+      "source_id": "http://mae.pknu.ac.kr/mae/2216",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-27T14:07:36+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 99,
+      "name": "취업정보",
+      "updated_at": "2026-11-27T14:07:36+09:00"
+    },
+    "http://mae.pknu.ac.kr/mae/2217": {
+      "source_id": "http://mae.pknu.ac.kr/mae/2217",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-27T14:11:56+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 589,
+      "name": "공지사항",
+      "updated_at": "2026-11-27T14:11:56+09:00"
+    },
+    "http://mae.pknu.ac.kr/mae/2218": {
+      "source_id": "http://mae.pknu.ac.kr/mae/2218",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-27T14:14:16+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 20,
+      "name": "게시판",
+      "updated_at": "2026-11-27T14:14:16+09:00"
+    }
+  }
+}

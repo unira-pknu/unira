@@ -1,0 +1,95 @@
+{
+  "schema_version": "1.0",
+  "dataset": "ice",
+  "updated_at": "2026-11-27T12:27:28+09:00",
+  "items": {
+    "http://ice.pknu.ac.kr/pknuice/895": {
+      "source_id": "http://ice.pknu.ac.kr/pknuice/895",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-27T12:12:34+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 1302,
+      "name": "학부 공지사항",
+      "updated_at": "2026-11-27T12:12:34+09:00"
+    },
+    "http://ice.pknu.ac.kr/pknuice/841": {
+      "source_id": "http://ice.pknu.ac.kr/pknuice/841",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-27T12:13:53+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 3,
+      "name": "발전계획",
+      "updated_at": "2026-11-27T12:13:53+09:00"
+    },
+    "http://ice.pknu.ac.kr/pknuice/7728": {
+      "source_id": "http://ice.pknu.ac.kr/pknuice/7728",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-27T12:16:25+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 1,
+      "name": "다전공 교육과정",
+      "updated_at": "2026-11-27T12:16:25+09:00"
+    },
+    "http://ice.pknu.ac.kr/pknuice/3282": {
+      "source_id": "http://ice.pknu.ac.kr/pknuice/3282",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-27T12:16:58+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 8,
+      "name": "졸업요건",
+      "updated_at": "2026-11-27T12:16:58+09:00"
+    },
+    "http://ice.pknu.ac.kr/pknuice/1617": {
+      "source_id": "http://ice.pknu.ac.kr/pknuice/1617",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-27T12:19:31+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 34,
+      "name": "대학원 공지사항",
+      "updated_at": "2026-11-27T12:19:31+09:00"
+    },
+    "http://ice.pknu.ac.kr/pknuice/7662": {
+      "source_id": "http://ice.pknu.ac.kr/pknuice/7662",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-27T12:22:01+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 4,
+      "name": "SNS",
+      "updated_at": "2026-11-27T12:22:01+09:00"
+    },
+    "http://ice.pknu.ac.kr/pknuice/885": {
+      "source_id": "http://ice.pknu.ac.kr/pknuice/885",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-27T12:22:11+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 2,
+      "name": "취업정보",
+      "updated_at": "2026-11-27T12:22:11+09:00"
+    },
+    "http://ice.pknu.ac.kr/pknuice/7725": {
+      "source_id": "http://ice.pknu.ac.kr/pknuice/7725",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-27T12:27:09+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 177,
+      "name": "공학교육혁신센터",
+      "updated_at": "2026-11-27T12:27:09+09:00"
+    }
+  }
+}

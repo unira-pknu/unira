@@ -1,29 +1,29 @@
 {
   "schema_version": "1.0",
   "dataset": "engopen",
-  "updated_at": "2026-11-24T13:47:16+09:00",
+  "updated_at": "2026-11-27T11:24:26+09:00",
   "items": {
     "https://engopen.pknu.ac.kr/engopen/7117": {
       "source_id": "https://engopen.pknu.ac.kr/engopen/7117",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-11-22T08:38:03+09:00",
+      "last_seen_at": "2026-11-27T11:18:23+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 548,
+      "last_no": 551,
       "name": "공지사항",
-      "updated_at": "2026-11-22T08:38:03+09:00"
+      "updated_at": "2026-11-27T11:18:23+09:00"
     },
     "https://engopen.pknu.ac.kr/engopen/7118": {
       "source_id": "https://engopen.pknu.ac.kr/engopen/7118",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-11-13T09:31:20+09:00",
+      "last_seen_at": "2026-11-27T11:18:47+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 64,
+      "last_no": 65,
       "name": "자료실",
-      "updated_at": "2026-11-13T09:31:20+09:00"
+      "updated_at": "2026-11-27T11:18:47+09:00"
     },
     "https://engopen.pknu.ac.kr/engopen/7341": {
       "source_id": "https://engopen.pknu.ac.kr/engopen/7341",

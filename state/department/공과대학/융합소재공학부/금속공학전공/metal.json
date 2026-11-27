@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "dataset": "metal",
+  "updated_at": "2026-11-27T15:04:56+09:00",
+  "items": {
+    "http://metal.pknu.ac.kr/metal/2250": {
+      "source_id": "http://metal.pknu.ac.kr/metal/2250",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-27T15:02:08+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 59,
+      "name": "공지사항",
+      "updated_at": "2026-11-27T15:02:08+09:00"
+    },
+    "http://metal.pknu.ac.kr/metal/2252": {
+      "source_id": "http://metal.pknu.ac.kr/metal/2252",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-27T15:04:40+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 21,
+      "name": "취업 정보",
+      "updated_at": "2026-11-27T15:04:40+09:00"
+    }
+  }
+}

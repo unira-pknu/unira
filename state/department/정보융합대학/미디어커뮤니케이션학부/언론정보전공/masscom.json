@@ -1,0 +1,62 @@
+{
+  "schema_version": "1.0",
+  "dataset": "masscom",
+  "updated_at": "2026-11-27T14:36:19+09:00",
+  "items": {
+    "https://masscom.pknu.ac.kr/comm/4926": {
+      "source_id": "https://masscom.pknu.ac.kr/comm/4926",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-27T14:26:21+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 1239,
+      "name": "학부 공지사항",
+      "updated_at": "2026-11-27T14:26:21+09:00"
+    },
+    "https://masscom.pknu.ac.kr/comm/3128": {
+      "source_id": "https://masscom.pknu.ac.kr/comm/3128",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-27T14:29:56+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 156,
+      "name": "전공공지사항",
+      "updated_at": "2026-11-27T14:29:56+09:00"
+    },
+    "https://masscom.pknu.ac.kr/comm/3129": {
+      "source_id": "https://masscom.pknu.ac.kr/comm/3129",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-27T14:32:45+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 216,
+      "name": "취업정보",
+      "updated_at": "2026-11-27T14:32:45+09:00"
+    },
+    "https://masscom.pknu.ac.kr/comm/8353": {
+      "source_id": "https://masscom.pknu.ac.kr/comm/8353",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-27T14:33:11+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 6,
+      "name": "글로벌정책대학원 영상문화콘텐츠학과",
+      "updated_at": "2026-11-27T14:33:11+09:00"
+    },
+    "https://masscom.pknu.ac.kr/comm/3119": {
+      "source_id": "https://masscom.pknu.ac.kr/comm/3119",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-27T14:36:19+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 50,
+      "name": "기존 공지사항",
+      "updated_at": "2026-11-27T14:36:19+09:00"
+    }
+  }
+}

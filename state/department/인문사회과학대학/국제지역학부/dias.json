@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "dataset": "dias",
-  "updated_at": "2026-11-24T13:21:33+09:00",
+  "updated_at": "2026-11-27T11:03:45+09:00",
   "items": {
     "http://dias.pknu.ac.kr/dias/3995": {
       "source_id": "http://dias.pknu.ac.kr/dias/3995",
@@ -18,12 +18,12 @@
       "source_id": "http://dias.pknu.ac.kr/dias/3996",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-11-24T13:18:19+09:00",
+      "last_seen_at": "2026-11-27T11:00:42+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 389,
+      "last_no": 390,
       "name": "공지사항",
-      "updated_at": "2026-11-24T13:18:19+09:00"
+      "updated_at": "2026-11-27T11:00:42+09:00"
     },
     "http://dias.pknu.ac.kr/dias/3999": {
       "source_id": "http://dias.pknu.ac.kr/dias/3999",
