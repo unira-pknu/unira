@@ -111,6 +111,8 @@ def department_identity(text: str) -> tuple[str | None, str | None]:
         if names:
             names = [max(names, key=lambda name: len(departments._stem(name)))]
     if not names:
+        names = list(departments.informal_mentions(text)[:1])
+    if not names:
         return None, None
     name = max(names, key=len) if not aliases else aliases[-1]
     for entry in department_catalog():
@@ -152,7 +154,9 @@ def _names_department(text: str, department: str) -> bool:
     if any(alias in normalized and department in names for alias, names in departments.ALIASES.items()):
         return True
     stem = departments._stem(department)
-    return stem != department and departments.normalize(stem) + "과" in normalized
+    if stem != department and departments.normalize(stem) + "과" in normalized:
+        return True
+    return department in departments.informal_mentions(text)
 
 
 def _ground_queries(original: str, queries: list[str], plan: QuestionPlan) -> list[str]:

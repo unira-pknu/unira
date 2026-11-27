@@ -53,6 +53,22 @@ def test_colloquial_department_names_resolve_to_the_registry():
     assert department_identity("과사무실 어디야") == (None, None)
 
 
+def test_department_named_without_its_ending_or_by_a_short_name():
+    # 2026-11-27 paraphrased evaluation: these found no department and searched unscoped.
+    assert department_identity("통계데이터사이언스 팩스 번호 알려줘")[1] == "stat"
+    assert department_identity("해양공학 이인철 교수님 실험실 이름")[1] == "oceaneng"
+    assert department_identity("패션디자인 정현숙 교수님 방 어디야?")[1] == "fashion"
+    assert department_identity("정외과 과사 어느 건물 몇 호야?")[1] == "politics"
+    assert department_identity("영문과 황보현진 교수님")[1] == "english"
+    assert department_identity("환경지질 이민희 교수님 방")[1] == "earth"
+
+
+def test_short_forms_count_only_as_whole_words():
+    assert department_identity("전자공학개론 강의실") == (None, None)  # a course
+    assert department_identity("영문 과제 제출 기한") == (None, None)  # not 영문과
+    assert department_identity("2026년 1학기 통계학 105832-103 강의실") == (None, None)  # course, stem too short
+
+
 def test_faculty_question_adds_the_department_faculty_page():
     calls, fetch, extra = guide("컴퓨터·인공지능공학부 교수님 목록", {"ingestion_dataset": "ce"})
     assert ("contains", ("metadata", {"ingestion_dataset": "ce"})) in calls

@@ -95,6 +95,45 @@ def _stem(name: str) -> str:
 
 _NORMALIZED = tuple(sorted({normalize(name) for name in DEPARTMENT_NAMES}, key=len, reverse=True))
 
+# Students also name a department without its ending or by a short name: in the
+# 2026-11-27 paraphrased evaluation "통계데이터사이언스 팩스", "해양공학 이인철
+# 교수님", "정외과 과사" and eight more found no department, so the search ran
+# unscoped and answered from other departments' pages. These forms only count as
+# whole words: "전자공학개론" is a course, and "영문 과제" is not 영문과.
+INFORMAL_NAMES = {
+    "정외과": "정치외교학과",
+    "영문과": "영어영문학부",
+    "국문과": "국어국문학과",
+    "일문과": "일어일문학부",
+    "통계학과": "통계·데이터사이언스전공",
+    "환경지질": "환경지질과학전공",
+}
+_STEM_MIN_CHARS = 4  # "통계학"/"경영학" are also course names
+_WORD_BEFORE = r"(?<![가-힣A-Za-z0-9])"
+_WORD_AFTER = r"(?=$|[^가-힣A-Za-z0-9]|학과|학부|전공|과|부|쪽|의|은|는|이|가|에|도|랑|하고|사무실)"
+
+
+def _informal_forms() -> Tuple[Tuple[str, str], ...]:
+    forms = [(short.replace("·", ""), name) for short, name in INFORMAL_NAMES.items() if name in DEPARTMENT_NAMES]
+    for name in DEPARTMENT_NAMES:
+        plain = name.replace("·", "")
+        for suffix in ("학전공", "학과", "학부", "전공", "과", "부"):  # 패션디자인학과 -> 패션디자인, 패션디자인학
+            stem = plain.removesuffix(suffix)
+            if stem != plain and len(stem) >= _STEM_MIN_CHARS:
+                forms.append((stem, name))
+    return tuple(dict.fromkeys(forms))
+
+
+_INFORMAL = tuple((re.compile(_WORD_BEFORE + re.escape(form) + _WORD_AFTER), form, name)
+                  for form, name in _informal_forms())
+
+
+def informal_mentions(text: Optional[str]) -> Tuple[str, ...]:
+    """Registry names the text gives by a short name or without 전공/학과/학부, longest form first."""
+    body = (text or "").replace("·", "")
+    hits = sorted(((len(form), name) for pattern, form, name in _INFORMAL if pattern.search(body)), reverse=True)
+    return tuple(dict.fromkeys(name for _, name in hits))
+
 
 def focus_variants(query_text: Optional[str]) -> Optional[Tuple[str, ...]]:
     """Normalized names of the department the question is about, or None."""
