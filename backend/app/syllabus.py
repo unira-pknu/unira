@@ -6,18 +6,23 @@ from dataclasses import dataclass, replace
 from typing import Any
 
 from .freshness import current_term, query_term, today_kst
-from .course_identity import INSTRUCTOR, instructor_name, course_level, is_course_list, resolve_course_question
+from .course_identity import (
+    BARE_COURSE_CODE, COURSE_CODE, COURSE_PAIR, INSTRUCTOR, PROFILE_REFERENCE, SECTION,
+    course_level, has_course_identity, instructor_name, is_course_list, resolve_course_question,
+)
 
 SEARCH_URL = "https://irumi.pknu.ac.kr/nxui/launch.html?screenid=Desktop_screen_quick&menuId=U020913"
 SOURCE_LIMIT = 200
 PURPOSES = {
-    "assessment": ("평가", "중간고사", "기말고사", "배점", "비율"),
+    "assessment": ("평가", "중간고사", "기말고사", "배점", "비율", "과제", "출결", "출석", "퀴즈", "PASS/FAIL", "P/F"),
     "textbook": ("교재", "주교재", "부교재", "참고자료", "textbook"),
     "instructor": ("담당교수", "담당 교수", "교수님", "강사"),
     "prerequisites": ("선수과목", "선수 과목", "병수과목", "prerequisite"),
     "weekly": ("주차", "주별", "주간", "weekly"),
     "project": ("프로젝트", "project"),
     "language": ("강의언어", "강의 언어", "영어", "English"),
+    "offering": ("개설학", "개설 학과", "개설 전공", "학점", "이론", "실습"),
+    "consultation": ("상담시간", "상담 시간", "상담"),
     "classroom": ("강의실", "강의시간", "강의 시간", "수업시간", "수업 시간"),
 }
 TRIGGER = re.compile(r"강의\s*계획서|선수\s*과목|주차별|주별\s*강의|교재|평가\s*(?:비율|방법)|담당\s*교수|(?:수업|강의).{0,15}(?:교수님|팀프로젝트|영어)", re.I)
@@ -30,6 +35,13 @@ CLASS_FACT = re.compile(r"강의실|(?:강의|수업)\s*(?:시간|요일)")
 # instead of asking which section (102·103분반 of the same professor).
 CLASS_FACT_SECTIONS = 4
 LEGACY_TITLE = re.compile(r"^(?P<course_no>[A-Za-z0-9]+)_(?P<section>\d+)_(?P<course_name>.+)_(?P<variant>kor|eng|tech)_[a-f0-9]+\.pdf$")
+OFFERING_TITLE = re.compile(r"^(?P<year>20\d{2})-(?P<term>[12]|summer|winter)\s+(?P<course_name>.+?)\s*\((?P<course_no>[A-Za-z0-9]+)-(?P<section>\d+),\s*(?P<variant>kor|eng|tech)\)$")
+EVIDENCE_MARKERS = {
+    "assessment": ("평가비율", "평가내용", "성적평가기준", "평가방법", "중간고사:", "기말고사:", "퀴즈:", "pass/fail"),
+    "weekly": ("강의주제:", "주별강의", "주별:"),
+    "offering": ("개설학(부)과", "개설학과", "학점-이론-실습"),
+    "consultation": ("상담시간",),
+}
 
 
 @dataclass(frozen=True)
@@ -65,14 +77,19 @@ def compact(value: str) -> str:
 def extract_request(question: str, history: list[dict] | None = None) -> CourseRequest | None:
     history = history or []
     question = resolve_course_question(question, history)
+    identified = has_course_identity(question)
+    if PROFILE_REFERENCE.search(question) and not identified:
+        return None
     listing = is_course_list(question)
     previous = next((extract_request(turn["content"]) for turn in reversed(history)
                      if turn.get("role") == "user" and TRIGGER.search(turn.get("content", ""))), None)
     soft = not listing and not TRIGGER.search(question) and bool(CLASS_FACT.search(question))
-    if not listing and not TRIGGER.search(question) and not soft and not (previous and re.search(r"학기|분반|그\s*(?:수업|과목)|교수|교재|평가", question)):
+    if not listing and not identified and not TRIGGER.search(question) and not soft and not (previous and re.search(r"학기|분반|그\s*(?:수업|과목)|교수|교재|평가", question)):
         return None
-    purposes = tuple(key for key, words in PURPOSES.items() if any(word in question for word in words))
-    year_match = re.search(r"(?<!\d)(20\d{2})(?:\s*(?:년|학년도))?", question)
+    purposes = tuple(key for key, words in PURPOSES.items() if any(word.casefold() in question.casefold() for word in words))
+    if re.search(r"몇\s*주\s*차|몇\s*주째", question) and "weekly" not in purposes:
+        purposes += ("weekly",)
+    year_match = re.search(r"(?<!\d)(20\d{2})(?!\d)(?:\s*(?:학년도|년))?", question)
     term_match = re.search(r"([12])\s*학기|하계|여름\s*계절|동계|겨울\s*계절", question)
     term = None
     if term_match:
@@ -89,10 +106,12 @@ def extract_request(question: str, history: list[dict] | None = None) -> CourseR
     short_term = re.search(r"20\d{2}\s*[-/]\s*([12])(?!\d)(?:\s*학기)?", question)
     if not term and short_term:
         term = short_term[1]
-    section = re.search(r"(?<!\d)(\d{1,3})\s*분반|분반\s*[:：]?\s*(\d{1,3})", question)
-    code = re.search(r"학수번호\s*[:：]?\s*([A-Za-z0-9]+)", question)
-    pair = re.search(r"\b([A-Za-z]?\d{5,6})[-–](\d{1,3})\b", question)
+    section = SECTION.search(question)
+    pair = COURSE_PAIR.search(question)
+    code = COURSE_CODE.search(question) or (BARE_COURSE_CODE.search(question) if section and not pair else None)
     department = re.search(r"([가-힣·A-Za-z]+(?:학과|학부|전공))", question)
+    if department and department[1] in {"개설학과", "개설학부", "개설전공", "소속학과", "소속전공"}:
+        department = None
     instructor = INSTRUCTOR.search(question)
     # Do not mistake the predicate "담당 교수" for a professor's name.
     staff = instructor_name(question)
@@ -131,7 +150,8 @@ def extract_request(question: str, history: list[dict] | None = None) -> CourseR
         cleaned = ""
     request = CourseRequest(cleaned, year, term,
                             (section[1] or section[2]) if section else (pair[2] if pair else None),
-                            code[1] if code else (pair[1] if pair else None), department[1] if department else None, staff, purposes, level,
+                            (code[1] if code else pair[1]).upper() if code or pair else None,
+                            department[1] if department else None, staff, purposes, level,
                             soft=soft)
     if previous and not request.course and not request.course_no:
         return replace(request, course=previous.course, course_no=previous.course_no,
@@ -146,7 +166,9 @@ def extract_request(question: str, history: list[dict] | None = None) -> CourseR
 
 def offering(source: dict) -> dict:
     metadata = dict(source.get("metadata") or {})
-    match = LEGACY_TITLE.match(str(source.get("title") or ""))
+    title = str(source.get("title") or "")
+    filename = str(source.get("file_path") or "").replace("\\", "/").rsplit("/", 1)[-1]
+    match = OFFERING_TITLE.fullmatch(title) or LEGACY_TITLE.fullmatch(title) or LEGACY_TITLE.fullmatch(filename)
     if match:
         for key, value in match.groupdict().items():
             if not metadata.get(key):
@@ -160,9 +182,11 @@ def offering(source: dict) -> dict:
 
 def matches(source: dict, request: CourseRequest) -> bool:
     m = source["metadata"]
-    if request.course and compact(str(m.get("course_name") or "")) != compact(request.course):
+    if not request.course_no and request.course and compact(str(m.get("course_name") or "")) != compact(request.course):
         return False
-    for key, expected in (("year", request.year), ("term", request.term), ("course_no", request.course_no)):
+    if request.course_no and str(m.get("course_no") or "").upper() != request.course_no.upper():
+        return False
+    for key, expected in (("year", request.year), ("term", request.term)):
         if expected is not None and str(m.get(key)) != str(expected):
             return False
     if request.section is not None and str(m.get("section", "")).lstrip("0") != request.section.lstrip("0"):
@@ -266,12 +290,25 @@ def syllabus_row(chunk: dict, selected: dict, purposes: tuple[str, ...]) -> dict
 
 
 def evidence_window(content: str, purposes: tuple[str, ...], limit: int = 3500) -> str:
-    words = [word for purpose in purposes for word in PURPOSES[purpose]]
-    positions = [content.find(word) for word in words if word in content]
+    words = [word for purpose in purposes for word in EVIDENCE_MARKERS.get(purpose, PURPOSES[purpose])]
+    positions = [match.start() for word in words
+                 if (match := re.search(re.escape(word), content, re.IGNORECASE))]
     start = max(0, min(positions) - 120) if positions else 0
     # Prefer complete lines when table rows have been extracted structurally.
     start = content.rfind("\n", 0, start) + 1 if "\n" in content[:start] else start
-    return content[start:start + limit]
+    end = start + limit
+    # Keep an extracted table row complete. If the next row exceeds the
+    # window, retain the preceding complete lines rather than half a cell.
+    if end < len(content) and (boundary := content.rfind("\n", start, end + 1)) > start:
+        end = boundary
+    return content[start:end]
+
+
+def _chunk_score(chunk: dict, request: CourseRequest) -> int:
+    content = compact(str(chunk.get("content") or "").split("\n본문:", 1)[-1])
+    words = {compact(word) for purpose in request.purposes for word in PURPOSES[purpose]}
+    markers = {compact(word) for purpose in request.purposes for word in EVIDENCE_MARKERS.get(purpose, ())}
+    return sum(word in content for word in words) + 3 * sum(marker in content for marker in markers)
 
 
 def search_syllabus(client: Any, request: CourseRequest, *, top_k: int = 8) -> SyllabusResult:
@@ -280,14 +317,21 @@ def search_syllabus(client: Any, request: CourseRequest, *, top_k: int = 8) -> S
     if not request.course and not request.course_no:
         return SyllabusResult([], f"어떤 과목의 강의계획서인가요? 과목명과 학기·분반을 알려주세요.\n\n[공식 강의계획서 조회 화면]({SEARCH_URL})")
     # Only course identity enters this query. No full-text AND of question words.
-    query = client.table("pknu_syllabus_sources").select("id,title,url,parent_url,file_path,metadata").eq("status", "active")
+    def active_sources():
+        return client.table("pknu_syllabus_sources").select("id,title,url,parent_url,file_path,metadata").eq("status", "active")
+
     needle = request.course_no or request.course
     escaped = needle.replace("\\", "\\\\").replace("%", r"\%").replace("_", r"\_")
     # Whitespace may differ in titles; ordered name parts are safe ILIKE terms.
     pattern = "%" + "%".join(escaped.split()) + "%"
-    raw = query.ilike("title", pattern).order("id").limit(SOURCE_LIMIT + 1).execute().data or []
+    raw = active_sources().ilike("title", pattern).order("id").limit(SOURCE_LIMIT + 1).execute().data or []
+    if request.course_no:
+        by_code = active_sources().eq("metadata->>course_no", request.course_no.upper())
+        matched = by_code.order("id").limit(SOURCE_LIMIT + 1).execute().data or []
+        raw = list({item["id"]: item for item in (*raw, *matched)}.values())
     candidates = [source for item in raw if matches(source := offering(item), request)]
-    if len(raw) > SOURCE_LIMIT:
+    exact = bool(request.course_no and request.year and request.term and request.section)
+    if len(candidates) > SOURCE_LIMIT or (len(raw) > SOURCE_LIMIT and not exact):
         return SyllabusResult([], "후보가 많습니다. 과목명과 학수번호·학기·분반을 더 구체적으로 알려주세요.")
     if not candidates:
         return SyllabusResult([], f"요청한 과목·학기·분반에 일치하는 강의계획서를 찾지 못했습니다. 과목명이나 학수번호를 확인해 주세요.\n\n[공식 강의계획서 조회 화면]({SEARCH_URL})", False)
@@ -349,8 +393,7 @@ def search_syllabus(client: Any, request: CourseRequest, *, top_k: int = 8) -> S
     chunks = client.table("pknu_syllabus_chunks").select("id,source_id,chunk_id,chunk_index,content,metadata").eq("source_id", selected["id"]).order("chunk_index").limit(201).execute().data or []
     if len(chunks) > 200:
         return SyllabusResult([], "강의계획서가 커서 전체 내용을 확인하지 못했습니다. 조회 화면에서 원문을 확인해 주세요.", False)
-    words = [word for purpose in request.purposes for word in PURPOSES[purpose]]
-    chunks.sort(key=lambda row: sum(word in row["content"] for word in words), reverse=True)
+    chunks.sort(key=lambda row: _chunk_score(row, request), reverse=True)
     rows = []
     count = 32 if "weekly" in request.purposes else max(1, min(top_k, 8))
     for chunk in chunks[:count]:

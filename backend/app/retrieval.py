@@ -28,8 +28,11 @@ from .freshness import (
     says_this_term,
     seed_slots,
 )
-from . import department_focus, title_anchor
+from . import department_focus, document_focus, title_anchor
+from .excerpts import _score, _search_terms
+from .query_transform import named_document_request
 from .reranking import normalize_scores
+from .reviewed_campus_sources import source_rows as reviewed_campus_rows
 from .search_status import SearchResults, SearchUnavailable
 from .retrieval_trace import RetrievalTrace
 
@@ -88,6 +91,8 @@ QUERY_TERM_GROUPS = {
     "전과": ("전과", "전부", "전공변경"),
     "전공": ("전공", "전공제도"),
     "졸업": ("졸업", "졸업요건", "학위수여", "졸업작품", "졸업논문", "졸업사정"),
+    "졸업유예": ("학사학위취득유예", "졸업유예", "학위취득유예", "학사학위 취득유예"),
+    "셔틀버스": ("셔틀버스", "셔틀 버스", "셔틀버스이용"),
     "학점": ("학점", "소요학점", "이수학점"),
     "수강신청": ("수강신청", "수강 신청"),
     "휴학": ("휴학",),
@@ -325,7 +330,11 @@ def _lexical_synthetic_similarity(rank_index: int, min_similarity: float) -> flo
 # form to detect that a question is "about" that concept at all. Only the
 # lexical OR-query builder below excludes them, since it's the one place a
 # single overly-common token turns into a near-full-table scan.
-LEXICAL_EXCLUDED_VARIANTS = {"졸업", "전공", "컴퓨터공학과", "컴퓨터공학부", "인공지능공학부", "포털"}
+LEXICAL_EXCLUDED_VARIANTS = {"졸업", "전공", "학점", "컴퓨터공학과", "컴퓨터공학부", "인공지능공학부", "포털"}
+# GIN must read/recheck every row containing both 졸업 and 학점 for a phrase
+# query. Use precise compound lexemes here; the vector channel still covers
+# spaced table headings, and remains independent of this lexical query.
+GRADUATION_CREDIT_VARIANTS = ("졸업소요학점", "졸업학점")
 
 # Filler words that carry no retrieval signal but frequently show up in
 # natural Korean questions. websearch_to_tsquery ANDs every remaining word
@@ -408,6 +417,23 @@ def _lexical_fallback_query(query_text: str) -> str:
     return " ".join(dict.fromkeys(tokens))
 
 
+_COMPOUND_LEXICAL_TOPICS = (
+    (r"졸업\s*사정", '졸업사정 OR "졸업 사정"'),
+    (r"성적\s*자율\s*삭제", '자율삭제 OR "성적 자율삭제" OR "성적 자율 삭제"'),
+    (r"사회\s*봉사|봉사.{0,10}(?:교양|학점)", '사회봉사 OR "사회 봉사" OR "봉사활동 학점"'),
+    (r"국가\s*장학금?", '국가장학금 OR "국가 장학금"'),
+    (r"주거\s*안정\s*장학", '주거안정장학금 OR "주거 안정 장학금"'),
+    (r"온라인\s*공개\s*강좌", '공개강좌 OR "공개 강좌" OR K-MOOC'),
+    (r"이월.{0,5}학점|학점.{0,7}이월", '학점이월 OR 이월학점 OR "학점 이월"'),
+    (r"강의\s*평가", '강의평가 OR "강의 평가"'),
+    (r"모바일\s*학생증|학생증\s*발급", '학생증발급 OR "모바일 학생증" OR "학생증 발급"'),
+    (r"외박", '외박 OR 외박신청 OR 외박대장'),
+    (r"재입실", '재입실 OR 재입실자'),
+    (r"자퇴", '자퇴 OR 자퇴원 OR 자퇴신청'),
+    (r"학생\s*설계\s*전공", '학생설계전공 OR "학생 설계 전공"'),
+)
+
+
 def _lexical_query_text(
     query_text: Optional[str],
     query_terms: list[tuple[str, tuple[str, ...]]],
@@ -428,11 +454,41 @@ def _lexical_query_text(
     largest chunk tables and blows the statement timeout. Drop any matched
     term that is itself a substring of another, more specific matched term.
     """
+    compounds = [expression for pattern, expression in _COMPOUND_LEXICAL_TOPICS
+                 if re.search(pattern, query_text or "")]
+    if compounds:
+        return " OR ".join(compounds)
     specific_terms = [
         (term, variants)
         for term, variants in query_terms
         if not any(term != other and term in other for other, _ in query_terms)
     ]
+    keys = {term for term, _ in query_terms}
+    if "컴공학과" in keys and re.search(r"연락처|전화번호|사무실", query_text or ""):
+        # Department letterheads repeat across course/notice attachments.
+        # Use a supported websearch AND-of-two-phrases per OR branch; bare
+        # parentheses are not boolean grouping in websearch_to_tsquery.
+        offices = ("학부사무실", "학과사무실", "사무실")
+        names = ("컴퓨터·인공지능공학부", "컴퓨터인공지능공학부", "컴퓨터공학과", "컴퓨터공학부")
+        return " OR ".join(f'"{name}" "{office}"' for name in names for office in offices)
+    if "졸업유예" not in keys and "졸업" in keys and ("학점" in keys or re.search(r"졸업\s*요건", query_text or "")):
+        # Bare 학점 matched 62,394 notice chunks after the latest ingestion;
+        # ranking alone exceeded 12s. Search the requested graduation concept,
+        # not every credit-bearing course or a department's repeated letterhead.
+        specific_terms = [(term, variants) for term, variants in specific_terms
+                          if term not in {"졸업", "학점", "전공", "컴공학과"}]
+        variants = GRADUATION_CREDIT_VARIANTS if "학점" in keys else (*GRADUATION_CREDIT_VARIANTS, "졸업요건", "졸업 요건")
+        specific_terms.append(("졸업학점", variants))
+    if "휴학" in keys and re.search(r"신청|제출|기간|마감", query_text or ""):
+        specific_terms = [(term, variants) for term, variants in specific_terms if term != "휴학"]
+        specific_terms.append(("휴학신청", ("휴학신청", "휴학원")))
+    if keys == {"수강신청"} and re.search(r"본[ \t]*수강[ \t]*신청", query_text or ""):
+        if (term := query_term(query_text)) is not None:
+            # Limit the lexical scan to the requested registration stage and
+            # semester. Even the bare compound 본수강신청 can hit the DB timeout.
+            year, offset = divmod(term, 2)
+            semester = offset + 1
+            return f'본수강신청 "{year}학년도 {semester}학기" OR 본수강신청 "{year} {semester}학기"'
     if not specific_terms:
         return _lexical_fallback_query(query_text or "") or _normalize_text(query_text or "")
     scope_terms = [(term, variants) for term, variants in specific_terms if term in _LEXICAL_SCOPE_TERMS]
@@ -933,6 +989,10 @@ def _rerank_candidates(
     trace: Optional[RetrievalTrace] = None,
 ) -> List[Dict[str, Any]]:
     def finish(ordered):
+        # Reserve one passage when an exact menu or a question-matched passage
+        # from an already identified document was verified upstream.
+        if top_k > 1 and (focused := next((row for row in ordered if row.get("_focused_document")), None)):
+            ordered = [focused, *(row for row in ordered if row is not focused)]
         if trace is not None:
             trace.snapshot("rerank_ordered", ordered)
         capped = _cap_per_url(ordered, max_chunks_per_url=max_chunks_per_url,
@@ -1254,6 +1314,11 @@ TITLE_ANCHOR_TABLES = {
     "match_rag_documents": ("rag_sources", "rag_chunks"),
     "match_pknu_notice_documents": ("pknu_notice_sources", "pknu_notice_chunks"),
 }
+FOCUSED_DOCUMENT_TABLES = {
+    **TITLE_ANCHOR_TABLES,
+    "match_pknu_main_documents": ("pknu_main_sources", "pknu_main_chunks"),
+    "match_rule_documents": ("rule_sources", "rule_chunks"),
+}
 
 
 def _fetch_notice_chunks(
@@ -1262,6 +1327,8 @@ def _fetch_notice_chunks(
     chunk_table: str,
     source_ids: List[str],
     first_chunks: Optional[int] = None,
+    *,
+    text_filter: str = "",
 ) -> Optional[Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]]:
     """Source rows and their chunks (with embeddings; only the first
     `first_chunks` of each if given), or None on failure.
@@ -1285,6 +1352,8 @@ def _fetch_notice_chunks(
         )
         if first_chunks is not None:
             query = query.lt("chunk_index", first_chunks)
+        if text_filter:
+            query = query.ilike("content", f"%{text_filter}%")
         chunks = query.limit(400).execute().data or []
         if suffix:
             for chunk in chunks:
@@ -1369,8 +1438,16 @@ def _title_anchor_chunks(
     normal per-row pipeline; the reranker decides whether they're used. Any
     failed fetch only logs.
     """
-    tables = {rpc: TITLE_ANCHOR_TABLES[rpc] for rpc in rpc_names if rpc in TITLE_ANCHOR_TABLES}
-    terms = title_anchor.anchor_terms(query_text, _LEXICAL_STOPWORDS, _LEXICAL_PARTICLE_SUFFIXES)
+    phrases = title_anchor.notice_title_patterns(query_text or "")
+    lookup_tables = dict(TITLE_ANCHOR_TABLES)
+    if re.search(r"규정|세칙|지침|개정", query_text or ""):
+        lookup_tables["match_rule_documents"] = FOCUSED_DOCUMENT_TABLES["match_rule_documents"]
+    if {"학점교류", "교류수학"} & phrases.keys():
+        # The separate academic bulletin is stored with the main site.
+        lookup_tables["match_pknu_main_documents"] = FOCUSED_DOCUMENT_TABLES["match_pknu_main_documents"]
+    tables = {rpc: lookup_tables[rpc] for rpc in rpc_names if rpc in lookup_tables}
+    terms = list(dict.fromkeys((*phrases, *title_anchor.anchor_terms(
+        query_text, _LEXICAL_STOPWORDS, _LEXICAL_PARTICLE_SUFFIXES))))[:8]
     if not tables or not terms:
         return []
     rpc_by_source = {source: rpc for rpc, (source, _chunks) in tables.items()}
@@ -1381,7 +1458,7 @@ def _title_anchor_chunks(
                 rpc_client.table(source_table)
                 .select("id, url, title, published_at:metadata->>published_at, date:metadata->>date")
                 .eq("status", "active")
-                .ilike("title", f"%{term}%")
+                .ilike("title", phrases.get(term, f"%{term}%"))
                 .limit(title_anchor.TERM_FETCH_LIMIT)
             )
             filters = _source_lookup_filters((metadata_filters or {}).get(rpc_by_source[source_table], {}))
@@ -1408,7 +1485,26 @@ def _title_anchor_chunks(
     for (term, _source), rows in zip(jobs, results):
         term_rows[term].extend(rows)
 
-    urls = title_anchor.rank_notices(term_rows)
+    requested_year = re.search(r"(?<!\d)(20\d{2})\s*년", query_text or "")
+    named_years = set(re.findall(r"(?<!\d)(20\d{2})(?=\s*(?:년|학년도|[-/]\s*[12](?!\d)))", query_text or ""))
+    # Event/course years are not publication years (e.g. a CES 2025 call
+    # posted in 2024). Prefer posting years only for explicit posting lookups
+    # or a named institution's document request.
+    if requested_year and not re.search(r"게시|올라온|공지된|공고된", query_text or "") and not any(
+        named_document_request(query_text or "", str(row.get("title") or ""))
+        for rows in term_rows.values() for row in rows
+    ):
+        requested_year = None
+    event_month = title_anchor.notice_month(query_text or "") if phrases else None
+    if event_month and len(named_years) == 2:
+        # The program's year and the date of an orientation can differ.
+        named_years.discard(str(event_month[0]))
+    urls = title_anchor.rank_notices(
+        term_rows, published_year=int(requested_year[1]) if requested_year else None,
+        title_year=int(next(iter(named_years))) if len(named_years) == 1 else None,
+        event_month=event_month,
+        phrase_terms=frozenset(phrases),
+    )
     if not urls:
         return []
     source_ids: Dict[str, List[str]] = {}
@@ -1442,8 +1538,16 @@ def _title_anchor_chunks(
         words = title_anchor.chunk_terms(
             query_text, str(rows[0].get("title") or ""), _LEXICAL_STOPWORDS, _LEXICAL_PARTICLE_SUFFIXES
         )
+        asks_attachment = re.search(r"첨부|붙임|서식|매뉴얼|안내문|양식", query_text or "")
+
+        def chunk_rank(row):
+            metadata = row.get("metadata") or {}
+            filename = str(metadata.get("source_file") or metadata.get("attachment_name") or "")
+            filename_hits = title_anchor.keyword_hits(filename, words) if asks_attachment else 0
+            return filename_hits, title_anchor.keyword_hits(row.get("content"), words), _similarity(row)
+
         rows.sort(
-            key=lambda row: (title_anchor.keyword_hits(row.get("content"), words), _similarity(row)),
+            key=chunk_rank,
             reverse=True,
         )
         taken = 0
@@ -1462,6 +1566,106 @@ def _title_anchor_chunks(
         [url[-40:] for url in urls],
         len(extra),
     )
+    return extra
+
+
+def _focused_document_chunks(
+    client: Client,
+    rpc_names: List[str],
+    embedding: List[float],
+    candidates: List[Dict[str, Any]],
+    query_text: str,
+    query_terms: list[tuple[str, tuple[str, ...]]],
+    priority_weight: float,
+    dataset_priority_weight: float,
+    source_kind_weight: float,
+    metadata_filters: Dict[str, Dict[str, Any]],
+) -> List[Dict[str, Any]]:
+    """Look up exact public menus and retrieve relevant passages from matched documents."""
+    targeted: Dict[str, List[str]] = {}
+    facility = document_focus.meal_facility(query_text)
+    tuition_key = document_focus.tuition_row_key(query_text)
+    rule_pattern = document_focus.rule_title_pattern(query_text)
+    for rpc_name in ("match_pknu_main_documents", "match_rag_documents", "match_rule_documents"):
+        if rpc_name not in rpc_names:
+            continue
+        filters = _source_lookup_filters(metadata_filters.get(rpc_name, {}))
+        is_department = rpc_name == "match_rag_documents"
+        is_rule = rpc_name == "match_rule_documents"
+        if is_department and not filters.get("ingestion_dataset"):
+            continue
+        titles = [] if is_rule else document_focus.menu_titles(query_text, department=is_department)
+        if rpc_name == "match_pknu_main_documents" and tuition_key:
+            titles = [tuition_key.split(" / ", 1)[0] + " 등록금 조회 자료"]
+        if not (rule_pattern if is_rule else titles):
+            continue
+        table, _ = FOCUSED_DOCUMENT_TABLES[rpc_name]
+        try:
+            lookup = client.table(table).select("id").eq("status", "active")
+            lookup = lookup.ilike("title", rule_pattern) if is_rule else lookup.in_("title", titles)
+            if filters:
+                lookup = lookup.contains("metadata", filters)
+            hits = lookup.order("processed_at", desc=True).order("id").limit(8).execute().data or []
+        except Exception:
+            logger.warning("retrieval: exact menu lookup failed table=%s", table, exc_info=True)
+            continue
+        targeted[rpc_name] = [row["id"] for row in hits]
+
+    terms = _search_terms(query_text)
+    seen_documents = set()
+    for row in candidates:
+        metadata = row.get("metadata") or {}
+        title = str(row.get("title") or metadata.get("doc_title") or "")
+        rpc_name = metadata.get("rpc_name")
+        source_id = row.get("source_id")
+        meal = facility and "식단표" in title
+        rule = (rpc_name == "match_rule_documents" and re.search(r"규정|세칙|지침", query_text)
+                and _score(title, terms) >= 35)
+        if (meal or rule) and source_id and rpc_name in FOCUSED_DOCUMENT_TABLES:
+            key = (rpc_name, source_id)
+            if key not in seen_documents and len(seen_documents) < 4:
+                seen_documents.add(key)
+                targeted.setdefault(rpc_name, []).append(source_id)
+
+    extra = []
+    for rpc_name, ids in targeted.items():
+        if not ids:
+            continue
+        options = {"text_filter": "정규 등록금: " + tuition_key} if tuition_key and rpc_name == "match_pknu_main_documents" else {}
+        fetched = _fetch_notice_chunks(client, *FOCUSED_DOCUMENT_TABLES[rpc_name], list(dict.fromkeys(ids)), **options)
+        if fetched is None:
+            continue
+        best_by_document: Dict[str, List[tuple[int, Dict[str, Any]]]] = {}
+        for row in _notice_chunk_rows(rpc_name, *fetched, embedding, query_text, query_terms,
+                                      priority_weight, dataset_priority_weight, source_kind_weight):
+            content = str(row.get("content") or "").split("\n본문:", 1)[-1]
+            title = str(row.get("title") or "")
+            meal = facility and "식단표" in title
+            if meal:
+                content = document_focus.meal_passage(content, facility)
+                if not content:
+                    continue
+            score = _score(content, terms)
+            if tuition_key and rpc_name == "match_pknu_main_documents":
+                if not document_focus.tuition_passage(content, tuition_key):
+                    continue
+                score += 100
+            if document_focus.history_passage(content, query_text, title):
+                score += 100
+            if rpc_name == "match_rule_documents":
+                if re.search(r"정의|뜻|무엇", query_text) and re.search(r"제\s*\d+\s*조\s*\(정의\)|용어의 정의", content):
+                    score += 50
+                if document_focus.article_passage(content, query_text, title=title):
+                    score += 100
+            if score:
+                best_by_document.setdefault(row["source_id"], []).append((score, row))
+        best_documents = sorted(best_by_document.values(), key=lambda rows: max(score for score, _ in rows), reverse=True)
+        for matches in best_documents[:2]:
+            matches.sort(key=lambda item: (item[0], _similarity(item[1])), reverse=True)
+            for index, (_, row) in enumerate(matches[:2]):
+                if index == 0:
+                    row["_focused_document"] = True
+                extra.append(row)
     return extra
 
 
@@ -1619,7 +1823,8 @@ def _term_title_chunks(
                 for row in rows:
                     titles.setdefault(row["id"], row)
         if not graduate_asked:
-            titles = {key: row for key, row in titles.items() if "대학원" not in str(row.get("title") or "")}
+            titles = {key: row for key, row in titles.items() if "대학원" not in str(row.get("title") or "")
+                      or named_document_request(query_text or "", str(row.get("title") or ""))}
         if not titles:
             continue
 
@@ -1884,6 +2089,7 @@ def _search(
     max_chunks_per_url: int = 2,
     max_lexical_chunks_per_url: Optional[int] = None,
     query_text: Optional[str] = None,
+    reviewed_query_text: Optional[str] = None,
     metadata_filter: Optional[Dict[str, Any]] = None,
     per_rpc_metadata_filters: Optional[Dict[str, Dict[str, Any]]] = None,
     title_anchor: bool = False,
@@ -2028,7 +2234,8 @@ def _search(
                              "status": "error" if lexical_error else "ok",
                              "result_count": len(lexical_response.data) if lexical_error is None else None,
                              "elapsed_ms": round(_lexical_ms, 2),
-                             "error_type": type(lexical_error).__name__ if lexical_error else None})
+                             "error_type": type(lexical_error).__name__ if lexical_error else None,
+                             "error_code": getattr(lexical_error, "code", None)})
             if lexical_error is not None:
                 logger.warning(
                     "retrieval: lexical rpc=%s failed, skipping", lexical_rpc_name, exc_info=lexical_error
@@ -2226,6 +2433,14 @@ def _search(
                 metadata_filters={name: (per_rpc_metadata_filters or {}).get(name, metadata_filter or {}) for name in rpc_names},
             )
         )
+        focused = _focused_document_chunks(
+            client, rpc_names, embedding, candidates, query_text or "", query_terms,
+            priority_weight, dataset_priority_weight, source_kind_weight,
+            {name: (per_rpc_metadata_filters or {}).get(name, metadata_filter or {}) for name in rpc_names},
+        )
+        if focused:
+            focus_keys = {_dedupe_key(row) for row in focused}
+            candidates = [*focused, *(row for row in candidates if _dedupe_key(row) not in focus_keys)]
 
     candidates.extend(
         _term_title_chunks(
@@ -2326,6 +2541,12 @@ def _search(
         max_lexical_chunks_per_url=max_lexical_chunks_per_url,
         **({"trace": trace} if trace is not None else {}),
     )
+    reviewed = [row for row in reviewed_campus_rows(reviewed_query_text or query_text or "")
+                if scope_check is None or scope_check(row)]
+    if reviewed:
+        selected = [*reviewed, *selected][:top_k]
+        if trace is not None:
+            trace.snapshot("reviewed_campus_sources", reviewed)
     if trace is not None:
         trace.snapshot("task_selected", selected)
 

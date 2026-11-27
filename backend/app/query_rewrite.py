@@ -38,7 +38,9 @@ from openai import OpenAI
 
 from .openai_params import completion_options
 from .query_plan import QuestionPlan, finish_plan, rule_plan
-from .course_identity import is_course_list
+from .course_identity import is_course_list, is_single_offering_question
+from .document_focus import tuition_row_key
+from .reviewed_campus_sources import matching_sources
 
 logger = logging.getLogger(__name__)
 
@@ -97,7 +99,9 @@ def plan_question(
     if plan.route != "search":
         logger.info("structured query plan: %s", plan.model_dump(mode="json"))
         return plan
-    if is_course_list(plan.resolved_question):
+    if (is_course_list(plan.resolved_question) or is_single_offering_question(plan.resolved_question)
+            or tuition_row_key(plan.resolved_question)
+            or matching_sources(plan.resolved_question)):
         result = finish_plan(plan, question, [plan.resolved_question])
         logger.info("structured query plan: %s", result.model_dump(mode="json"))
         return result

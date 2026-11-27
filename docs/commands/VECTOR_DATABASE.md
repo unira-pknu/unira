@@ -184,15 +184,19 @@ CE 파이프라인을 자동으로 실행합니다.
 
 ### Migrations
 
-마이그레이션 SQL은 `supabase/migrations/`에 있습니다.
+마이그레이션 SQL은 [`supabase/migrations/`](../../supabase/migrations/README.md)에 있습니다.
+번호는 기존 적용 이력을 보존합니다. 전체 폴더를 재실행하지 말고,
+[DB 상태별 실행 안내](../../supabase/migrations/README.md#cleanup-and-replay-policy)를 확인하세요.
+현재 테이블 분리는 `018`, 저장소의 최신 어휘 검색 RPC는 `022`에 정의되어 있습니다.
+파일 중복 정리만 반영할 때는 DB 작업이 필요하지 않습니다.
 
 ```text
 supabase/migrations/
-  001_create_rag_documents.sql
-  002_split_rag_documents.sql
-  003_chat_history.sql
-  004_create_rule_rag_tables.sql
-  005_add_document_priority_columns.sql
+  000_inspect_database.sql          # 읽기 전용 점검
+  001_... ~ 017_...                 # 이전 스키마/운영 이력
+  018_split_dataset_tables.sql      # 일회성 테이블 분리
+  019_... ~ 021_...                 # 중간 어휘 검색 RPC 이력
+  024_bound_search_candidates.sql   # 최신 어휘 검색 RPC/조회 인덱스
 ```
 
 ### Audit

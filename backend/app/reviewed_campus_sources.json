@@ -1,0 +1,1302 @@
+[
+  {
+    "id": "multicultural_mentoring_application_2026",
+    "year": 2026,
+    "terms": [
+      [
+        "다문화탈북학생",
+        "다문화멘토링",
+        "탈북학생멘토링"
+      ],
+      [
+        "멘토링",
+        "멘토"
+      ],
+      [
+        "자기소개서",
+        "자소서"
+      ],
+      [
+        "글자수",
+        "몇자",
+        "자이내",
+        "분량",
+        "길이",
+        "글자제한",
+        "몇글자",
+        "최대글자",
+        "글자까지"
+      ]
+    ],
+    "answer": "부경대의 2026년 다문화·탈북학생 멘토링 모집 공고 붙임 4 자기소개서에서 지원 동기와 성격, 참여 목표, 앞으로의 활동계획을 묻는 세 문항은 각각 300자 이내였습니다.",
+    "source": {
+      "title": "★2026년 다문화 탈북학생 멘토링 사업 멘토 모집 공고(학부생, 대학원생 ~ 5. 26.(화)까지)★",
+      "url": "https://www.pknu.ac.kr/main/163?action=view&no=724857",
+      "dataset": "pknu_notice",
+      "published_at": "2026-05-19",
+      "capture_path": "files/pknu_main/커뮤니티/공지사항/공지사항/files/a3ee63e8d8a9cf46/office/(붙임4)(서식) 자기소개서, 기관등록 신청서.hwp",
+      "capture_sha256": "a123e6615665aa4209de56aa8f66e05c3bc27b5bd93ac48a183ab70dd5a4c876",
+      "preprocessed_path": "preprocessed/pknu_main/files/커뮤니티/공지사항/공지사항/hwp/a3ee63e8d8a9cf46/office/(붙임4)(서식) 자기소개서, 기관등록 신청서.json",
+      "attachment": {
+        "name": "(붙임4)(서식) 자기소개서, 기관등록 신청서.hwp",
+        "url": "https://www.pknu.ac.kr/boardDownload.do?no=79854"
+      }
+    }
+  },
+  {
+    "id": "regional_talent_briefing_2024_07_04",
+    "year": 2024,
+    "also_years": [
+      2025
+    ],
+    "terms": [
+      [
+        "지역인재7급"
+      ],
+      [
+        "설명회"
+      ],
+      [
+        "7월4일",
+        "20240704",
+        "202474",
+        "7월4"
+      ],
+      [
+        "장소",
+        "어디",
+        "위치",
+        "어느건물"
+      ]
+    ],
+    "answer": "2025년 지역인재 7급 수습직원 선발시험을 대비해 부경대가 2024년 7월 4일 개최한 설명회 장소는 핵심역량도서관 3층 인사이트룸이었습니다.",
+    "source": {
+      "title": "2025년 지역인재7급 수습직원(공무원) 선발시험 설명회 개최 안내",
+      "url": "https://www.pknu.ac.kr/main/163?action=view&no=716126",
+      "dataset": "pknu_notice",
+      "published_at": "2024-07-02",
+      "capture_path": "files/pknu_main/커뮤니티/공지사항/공지사항/json/posts/21ef051305648b5f.json",
+      "capture_sha256": "694feadca887df7ccd693dd6380abc8be9ef086111068cedce7ebb0279bc86ca",
+      "preprocessed_path": "preprocessed/pknu_main/json/커뮤니티/공지사항/공지사항/posts/21ef051305648b5f.json"
+    }
+  },
+  {
+    "id": "university_symbol_tree",
+    "terms": [
+      [
+        "교목",
+        "상징하는나무",
+        "상징나무",
+        "상징수목"
+      ]
+    ],
+    "answer": "국립부경대학교의 교목, 즉 학교를 상징하는 나무는 곰솔입니다.",
+    "source": {
+      "title": "상징물",
+      "url": "https://www.pknu.ac.kr/main/124",
+      "dataset": "pknu_main",
+      "published_at": "2026-11-18",
+      "capture_path": "files/pknu_main/대학소개/역사와상징/상징물/json/pages/d9cc87a327a0.json",
+      "capture_sha256": "5b24b161fe5a83099e31930a8ab0fd177e4f8d158d72f37f89bdba71d85aa002",
+      "preprocessed_path": "preprocessed/pknu_main/json/대학소개/역사와상징/상징물/pages/d9cc87a327a0.json"
+    }
+  },
+  {
+    "id": "incheon_university_summer_exchange_2024_student_number",
+    "year": 2024,
+    "schools": [
+      "인천대",
+      "인천대학교"
+    ],
+    "terms": [
+      [
+        "인천대",
+        "인천대학교"
+      ],
+      [
+        "하계",
+        "여름",
+        "하기"
+      ],
+      [
+        "학점교류",
+        "교류수학",
+        "계절수업",
+        "계절학기"
+      ],
+      [
+        "학번"
+      ]
+    ],
+    "answer": "부경대 학점교류 게시판에 첨부된 인천대 2024학년도 하계 계절학기 안내문에 따르면, 인천대는 학번을 2024년 5월 27일(월)부터 SMS로 개별 통보했습니다.",
+    "source": {
+      "title": "<2024학년도 하계 계절수업 타 대학(인천대학교) 교류 수학 안내>",
+      "url": "https://www.pknu.ac.kr/main/95?action=view&no=715415",
+      "dataset": "pknu_student_life",
+      "published_at": null,
+      "capture_path": "files/pknu_main/대학생활/학사안내/학점교류/files/1bb85969e1cd605e/archives/2024학년도 하계 계절수업 인천대학교 수학 안내 및 추천자 명단(서식).zip!/2024학년도 하계 계절학기 학점교류 안내문.hwp",
+      "capture_sha256": "8655cf4ec7bfe7b39d746a158a8f279e971a3d53b644d547e4f3ce4663d11663",
+      "preprocessed_path": "preprocessed/pknu_main/files/대학생활/학사안내/학점교류/zip/1bb85969e1cd605e/archives/2024학년도 하계 계절수업 인천대학교 수학 안내 및 추천자 명단(서식)/2024학년도 하계 계절학기 학점교류 안내문.json",
+      "attachment": {
+        "name": "2024학년도 하계 계절수업 인천대학교 수학 안내 및 추천자 명단(서식).zip",
+        "url": "https://www.pknu.ac.kr/boardDownload.do?no=72425",
+        "member_sha256": "d5180cc7d7a1e6510a3664b0cefbc646b891cb22915b44d756e1aee8fd1ade37",
+        "member": "2024학년도 하계 계절학기 학점교류 안내문.hwp"
+      }
+    }
+  },
+  {
+    "id": "mock_toeic_admission_2023_06_29",
+    "year": 2023,
+    "terms": [
+      [
+        "모의토익"
+      ],
+      [
+        "6월29일",
+        "20230629",
+        "2023629",
+        "6월29"
+      ],
+      [
+        "입실",
+        "시험장에들어",
+        "고사장에들어"
+      ]
+    ],
+    "answer": "2023년 6월 29일 부경대 모의토익은 오후 6시 20분(18:20)부터 입실했고, 오후 6시 50분(18:50) 이후에는 입실할 수 없었습니다.",
+    "source": {
+      "title": "6월 모의 토익시험 고사장 안내",
+      "url": "https://www.pknu.ac.kr/main/163?action=view&no=711248",
+      "dataset": "pknu_notice",
+      "published_at": "2023-06-29",
+      "capture_path": "files/pknu_main/커뮤니티/공지사항/공지사항/json/posts/faac7ddbab9244cf.json",
+      "capture_sha256": "58c938f07f3cb91b901241aa45b945baa6d4ace33fc1eb6e5cc72a2d40cdeefd",
+      "preprocessed_path": "preprocessed/pknu_main/json/커뮤니티/공지사항/공지사항/posts/faac7ddbab9244cf.json"
+    }
+  },
+  {
+    "id": "mock_toeic_2026_10",
+    "year": 2026,
+    "terms": [
+      [
+        "모의토익"
+      ],
+      [
+        "10월",
+        "202610"
+      ],
+      [
+        "응시료",
+        "비용",
+        "가격",
+        "시험시간",
+        "몇시",
+        "시험일시",
+        "응시시간"
+      ]
+    ],
+    "answer": "2026년 10월 부경대 모의토익 응시료는 4,000원이었습니다. 시험은 10월 15일(목) 오후 7시부터 9시까지(19:00~21:00), 총 120분 진행하도록 공지됐습니다.",
+    "source": {
+      "title": "2026년 10월 모의토익 시험 안내",
+      "url": "https://www.pknu.ac.kr/main/163?action=view&no=726452",
+      "dataset": "pknu_notice",
+      "published_at": "2026-09-30",
+      "capture_path": "files/pknu_main/커뮤니티/공지사항/공지사항/json/posts/e3e4884a196d78cb.json",
+      "capture_sha256": "e3a63f49dfa65669e54073e7c5d06e0b4ee4de19f87ac7fff959ddfd2e13d056",
+      "preprocessed_path": "preprocessed/pknu_main/json/커뮤니티/공지사항/공지사항/posts/e3e4884a196d78cb.json"
+    }
+  },
+  {
+    "id": "graduate_thesis_final_submission_2023_2",
+    "year": 2023,
+    "also_years": [
+      2024
+    ],
+    "terms": [
+      [
+        "일반대학원"
+      ],
+      [
+        "학위청구논문",
+        "학위논문",
+        "졸업논문"
+      ],
+      [
+        "2학기",
+        "20232"
+      ],
+      [
+        "완성본",
+        "최종본"
+      ]
+    ],
+    "exclude_terms": [
+      "학과별",
+      "학과내부",
+      "학과마감",
+      "학과공지"
+    ],
+    "answer": "부경대 본교의 2023학년도 2학기 일반대학원 학위청구논문 심사 계획 공지에서 논문 완성본 제출 기간은 2024년 1월 15일(월)부터 1월 19일(금)까지였습니다.",
+    "source": {
+      "title": "2023학년도 2학기 일반대학원 학위청구논문 심사 계획 알림",
+      "url": "https://www.pknu.ac.kr/main/163?action=view&no=712474",
+      "dataset": "pknu_notice",
+      "published_at": "2023-10-10",
+      "capture_path": "files/pknu_main/커뮤니티/공지사항/공지사항/json/posts/419bc3f4bb837542.json",
+      "capture_sha256": "8e9f67ad514a703c81cb1fc8578b7148305f5b9416b9f3353a6211d6d8a1f21c",
+      "preprocessed_path": "preprocessed/pknu_main/json/커뮤니티/공지사항/공지사항/posts/419bc3f4bb837542.json"
+    }
+  },
+  {
+    "id": "general_education_course_contest_2024",
+    "year": 2024,
+    "also_years": [
+      2023
+    ],
+    "terms": [
+      [
+        "후배에게추천",
+        "후배추천"
+      ],
+      [
+        "교양강좌",
+        "교양과목",
+        "교양수업"
+      ],
+      [
+        "공모전"
+      ],
+      [
+        "두학기",
+        "학기",
+        "수강",
+        "대상"
+      ]
+    ],
+    "answer": "2024년 ‘후배에게 추천하는 교양강좌’ 공모전의 대상은 2023학년도 2학기와 2024학년도 1학기에 수강한 교양과목이었습니다.",
+    "source": {
+      "title": "☆2024년 후배에게 추천하는 교양강좌 공모전 재안내( ~ 2024. 7. 14.(일)까지)☆",
+      "url": "https://www.pknu.ac.kr/main/163?action=view&no=716189",
+      "dataset": "pknu_notice",
+      "published_at": "2024-07-07",
+      "capture_path": "files/pknu_main/커뮤니티/공지사항/공지사항/json/posts/34b4e2aaee3b7fc5.json",
+      "capture_sha256": "79e6330d9ef16fe97f91aa5ac5a068f175b653c1a6d33e4713e0f3795cb606b0",
+      "preprocessed_path": "preprocessed/pknu_main/json/커뮤니티/공지사항/공지사항/posts/34b4e2aaee3b7fc5.json"
+    }
+  },
+  {
+    "id": "multicultural_mentoring_workplace_2026",
+    "year": 2026,
+    "terms": [
+      [
+        "다문화탈북학생",
+        "다문화멘토링",
+        "탈북학생멘토링"
+      ],
+      [
+        "멘토링",
+        "멘토"
+      ],
+      [
+        "희망근로지"
+      ]
+    ],
+    "answer": "2026년 부경대 다문화·탈북학생 멘토링 모집 공고에서는 희망근로지 신청을 선발에 반영하지 않아 별도로 신청할 필요가 없었습니다. 한국장학재단에서 멘토링 사업 자체에는 신청해야 했습니다.",
+    "source": {
+      "title": "★2026년 다문화 탈북학생 멘토링 사업 멘토 모집 공고(학부생, 대학원생 ~ 5. 26.(화)까지)★",
+      "url": "https://www.pknu.ac.kr/main/163?action=view&no=724857",
+      "dataset": "pknu_notice",
+      "published_at": "2026-05-19",
+      "capture_path": "files/pknu_main/커뮤니티/공지사항/공지사항/json/posts/a3ee63e8d8a9cf46.json",
+      "capture_sha256": "4f5eadbe410a1ce1a921de134401541cc4a7ef32acadae4bfbded2df6120f791",
+      "preprocessed_path": "preprocessed/pknu_main/json/커뮤니티/공지사항/공지사항/posts/a3ee63e8d8a9cf46.json"
+    }
+  },
+  {
+    "id": "combined_degree_other_major_and_duplicate_application",
+    "terms": [
+      [
+        "학석사연계",
+        "학사석사연계",
+        "학사석사연계과정"
+      ],
+      [
+        "대학원전공",
+        "학부전공",
+        "다른전공",
+        "연계학과",
+        "복수지원",
+        "중복지원",
+        "두곳",
+        "두군데",
+        "두학과",
+        "여러학과"
+      ],
+      [
+        "지원",
+        "신청",
+        "접수",
+        "넣"
+      ]
+    ],
+    "answer": "학·석사연계과정 안내에 따르면 학부과정의 전공과 무관하게 대학원 연계과정 학과에 지원할 수 있으며, 복수지원은 허용하지 않습니다.",
+    "source": {
+      "title": "학·석사연계과정",
+      "url": "https://www.pknu.ac.kr/main/98",
+      "dataset": "pknu_student_life",
+      "published_at": "2026-11-18T00:00:00+09:00",
+      "capture_path": "files/pknu_main/대학생활/학사안내/json/pages/4fb889b70fd1.json",
+      "capture_sha256": "53c5722f7e61be623beac3e2c7d8ed52e1d3b52cf442bf9ac4a3dd5202d7fe48",
+      "preprocessed_path": "preprocessed/pknu_main/json/대학생활/학사안내/pages/4fb889b70fd1.json"
+    }
+  },
+  {
+    "id": "academic_probation_consecutive_dismissal",
+    "terms": [
+      [
+        "학사경고"
+      ],
+      [
+        "제적"
+      ],
+      [
+        "연속",
+        "몇번",
+        "횟수",
+        "몇회"
+      ]
+    ],
+    "answer": "국립부경대 학사안내에 따르면 학사경고를 연속 4회 받으면 학사경고로 제적 처리됩니다.",
+    "source": {
+      "title": "학사경고",
+      "url": "https://www.pknu.ac.kr/main/243",
+      "dataset": "pknu_student_life",
+      "published_at": "2026-11-18T00:00:00+09:00",
+      "capture_path": "files/pknu_main/대학생활/학사안내/json/pages/78f7d6dbe138.json",
+      "capture_sha256": "c673425648acdc6d686a2d89801243c1e6391fcd95872f2a3f35e1d5ebfae105",
+      "preprocessed_path": "preprocessed/pknu_main/json/대학생활/학사안내/pages/78f7d6dbe138.json"
+    }
+  },
+  {
+    "id": "portal_student_contact_update",
+    "terms": [
+      [
+        "재적생",
+        "재학생",
+        "부경포털",
+        "포털"
+      ],
+      [
+        "휴대전화",
+        "전화번호",
+        "이메일",
+        "연락처",
+        "개인정보"
+      ],
+      [
+        "고치",
+        "변경",
+        "수정",
+        "바꾸",
+        "바꿀"
+      ],
+      [
+        "메뉴",
+        "포털",
+        "어디",
+        "경로",
+        "학생본인"
+      ]
+    ],
+    "answer": "재적생의 휴대전화번호와 이메일은 부경포털의 ‘개인정보변경’ 메뉴에서 학생 본인이 직접 변경할 수 있습니다.",
+    "source": {
+      "title": "개인정보변경",
+      "url": "https://www.pknu.ac.kr/main/248",
+      "dataset": "pknu_student_life",
+      "published_at": "2026-11-18T00:00:00+09:00",
+      "capture_path": "files/pknu_main/대학생활/학사안내/json/pages/f349ce81f736.json",
+      "capture_sha256": "b782ff12df63d7aa9d037ab39f4913c91a83ad1cb36048afac6fe1bace370073",
+      "preprocessed_path": "preprocessed/pknu_main/json/대학생활/학사안내/pages/f349ce81f736.json"
+    }
+  },
+  {
+    "id": "course_evaluation_results_processor",
+    "terms": [
+      [
+        "강의평가"
+      ],
+      [
+        "전산처리",
+        "전산으로",
+        "통계처리",
+        "결과를처리"
+      ],
+      [
+        "업무흐름",
+        "담당",
+        "부서",
+        "어디",
+        "누가"
+      ]
+    ],
+    "answer": "강의평가 업무흐름도에서 결과를 개인별 통보용과 통계로 전산처리하는 부서는 AI정보혁신본부입니다.",
+    "source": {
+      "title": "강의평가",
+      "url": "https://www.pknu.ac.kr/main/97",
+      "dataset": "pknu_student_life",
+      "published_at": "2026-11-18T00:00:00+09:00",
+      "capture_path": "files/pknu_main/대학생활/학사안내/json/pages/45d08adbc94e.json",
+      "capture_sha256": "e20ceac0318161b6a074481ec390c778367d4f51330b883bcd50ebb058a610e2",
+      "preprocessed_path": "preprocessed/pknu_main/json/대학생활/학사안내/pages/45d08adbc94e.json"
+    }
+  },
+  {
+    "id": "korea_talent_award_2023_selection_counts",
+    "year": 2023,
+    "terms": [
+      [
+        "대한민국인재상"
+      ],
+      [
+        "고등학생",
+        "대학생청년일반"
+      ],
+      [
+        "몇명",
+        "선발인원",
+        "모집인원",
+        "부문별인원"
+      ]
+    ],
+    "answer": "2023 대한민국 인재상 선발 공고문 기준 선발 인원은 고등학생 50명, 대학생·청년일반 50명으로 총 100명이었습니다.",
+    "source": {
+      "title": "2023 대한민국 인재상 선발 계획 안내",
+      "url": "https://www.pknu.ac.kr/main/163?action=view&no=711635",
+      "dataset": "pknu_notice",
+      "published_at": null,
+      "capture_path": "files/pknu_main/커뮤니티/공지사항/공지사항/files/e1f2a13432cb7773/pdf/2023년 대한민국 인재상 선발 공고문.pdf",
+      "capture_sha256": "e37fdf7749f5b4fef99e6e3bd7997c5f33b0f4c75a3524fcd21b62007fa4a11a",
+      "preprocessed_path": "preprocessed/pknu_main/files/커뮤니티/공지사항/공지사항/pdf/e1f2a13432cb7773/pdf/2023년 대한민국 인재상 선발 공고문.json",
+      "attachment": {
+        "name": "2023년 대한민국 인재상 선발 공고문.pdf",
+        "url": "https://www.pknu.ac.kr/boardDownload.do?no=69161"
+      }
+    }
+  },
+  {
+    "id": "incubator_september_2026_startup_age",
+    "year": 2026,
+    "terms": [
+      [
+        "창업보육센터"
+      ],
+      [
+        "9월",
+        "202609"
+      ],
+      [
+        "초기창업자"
+      ],
+      [
+        "업력",
+        "몇년",
+        "창업경력"
+      ]
+    ],
+    "answer": "2026년 9월 국립부경대 창업보육센터 신규 입주기업 모집 첨부 공고문에서 초기창업자는 공고일 기준 업력이 3년 미만이어야 했습니다.",
+    "source": {
+      "title": "♣ 국립부경대학교 창업보육센터 9월 신규 입주기업 모집 공고 ♣",
+      "url": "https://www.pknu.ac.kr/main/163?action=view&no=725705",
+      "dataset": "pknu_notice",
+      "published_at": null,
+      "capture_path": "files/pknu_main/커뮤니티/공지사항/공지사항/files/43705d9c309c3280/pdf/2026년 창업보육센터 신규 입주기업_모집 공고문.pdf",
+      "capture_sha256": "23e78270ba9d9f8e3b8b9d2fc962f95ae064acb1294159df306cd235e1544fbd",
+      "preprocessed_path": "preprocessed/pknu_main/files/커뮤니티/공지사항/공지사항/pdf/43705d9c309c3280/pdf/2026년 창업보육센터 신규 입주기업_모집 공고문.json",
+      "attachment": {
+        "name": "2026년 창업보육센터 신규 입주기업_모집 공고문.pdf",
+        "url": "https://www.pknu.ac.kr/boardDownload.do?no=80478"
+      }
+    }
+  },
+  {
+    "id": "may_2023_dorm_admission_period",
+    "year": 2023,
+    "terms": [
+      [
+        "학생생활관",
+        "생활관",
+        "기숙사",
+        "세종관",
+        "세종1관",
+        "세종2관"
+      ],
+      [
+        "5월",
+        "202305"
+      ],
+      [
+        "추가모집"
+      ],
+      [
+        "입실기간",
+        "거주기간",
+        "입주기간",
+        "입실은언제",
+        "언제부터언제",
+        "며칠부터",
+        "입실시작"
+      ]
+    ],
+    "answer": "2023학년도 1학기 학생생활관 세종1관·세종2관 5월 추가모집 첨부 공고문 기준 입실 기간은 2023년 5월 1일(월)부터 6월 25일(일) 14시까지였습니다.",
+    "source": {
+      "title": "2023학년도 1학기 학생생활관(세종1관, 세종2관) 5월 추가모집 공고",
+      "url": "https://www.pknu.ac.kr/main/163?action=view&no=710394",
+      "dataset": "pknu_notice",
+      "published_at": null,
+      "capture_path": "files/pknu_main/커뮤니티/공지사항/공지사항/files/399070df2bc98958/pdf/2023학년도 학생생활관 5월 추가모집 공고.pdf",
+      "capture_sha256": "f8701b619ecc73cd2501578ad4f55478a30fabf871ae2c957683c192bffa47de",
+      "preprocessed_path": "preprocessed/pknu_main/files/커뮤니티/공지사항/공지사항/pdf/399070df2bc98958/pdf/2023학년도 학생생활관 5월 추가모집 공고.json",
+      "attachment": {
+        "name": "2023학년도 학생생활관 5월 추가모집 공고.pdf",
+        "url": "https://www.pknu.ac.kr/boardDownload.do?no=68027"
+      }
+    }
+  },
+  {
+    "id": "waterloo_2026_donghwa_interview_checklist",
+    "year": 2026,
+    "terms": [
+      [
+        "워털루"
+      ],
+      [
+        "동화엔텍"
+      ],
+      [
+        "체크리스트",
+        "확인서",
+        "서식"
+      ],
+      [
+        "미선발",
+        "최종선발",
+        "참여하고싶",
+        "참여희망",
+        "면접"
+      ]
+    ],
+    "answer": "2026년 부산 워털루형 코업 동화엔텍 추가모집 첨부 체크리스트는 최종 선발되지 못하더라도 기업 면접에 참여하고 싶은지 확인했습니다.",
+    "source": {
+      "title": "[㈜동화엔텍] 2026년 부산 워털루형 코업 프로그램(현장실습) 참여자 추가모집 안내",
+      "url": "https://www.pknu.ac.kr/main/163?action=view&no=725525",
+      "dataset": "pknu_notice",
+      "published_at": null,
+      "capture_path": "files/pknu_main/커뮤니티/공지사항/공지사항/files/8667354fc7d77abd/archives/실습 참여 신청서 등 제출서류 서식.zip!/체크리스트((주)동화엔텍).hwp",
+      "capture_sha256": "95f4878a10421e78621a7d55ad960ffdddac3e6ab1c9ae8ef69b9e77558abb0a",
+      "preprocessed_path": "preprocessed/pknu_main/files/커뮤니티/공지사항/공지사항/zip/8667354fc7d77abd/archives/실습 참여 신청서 등 제출서류 서식/체크리스트((주)동화엔텍).json",
+      "attachment": {
+        "name": "실습 참여 신청서 등 제출서류 서식.zip",
+        "url": "https://www.pknu.ac.kr/boardDownload.do?no=80371",
+        "member": "체크리스트((주)동화엔텍).hwp",
+        "member_sha256": "c9d01b9f8a746f1abb26344fcfe5291be1e0cf66d939fa6d6624fe75916473f7"
+      }
+    }
+  },
+  {
+    "id": "linc_2024_standard_internship_years",
+    "year": 2024,
+    "terms": [
+      [
+        "표준현장실습학기제",
+        "표준현장실습"
+      ],
+      [
+        "linc",
+        "지원계획"
+      ],
+      [
+        "몇학년",
+        "대상학년",
+        "학년",
+        "교육과정정의"
+      ]
+    ],
+    "answer": "LINC 3.0의 2024년도 표준현장실습학기제 지원 계획은 3·4학년 학생들이 전공 분야와 관련된 산업현장에서 실습한다고 정의합니다.",
+    "source": {
+      "title": "LINC 3.0 2024년도 하계학기 표준현장실습학기제 지원 신청 안내",
+      "url": "https://www.pknu.ac.kr/main/163?action=view&no=715209",
+      "dataset": "pknu_notice",
+      "published_at": null,
+      "capture_path": "files/pknu_main/커뮤니티/공지사항/공지사항/files/10dbffe19ac5a70c/pdf/2024년도 LINC 3.0 표준현장실습학기제 지원 계획.pdf",
+      "capture_sha256": "7dacae5dc8c32d8648f0ac90c328221cd59a72a6a260153184e6968470422837",
+      "preprocessed_path": "preprocessed/pknu_main/files/커뮤니티/공지사항/공지사항/pdf/10dbffe19ac5a70c/pdf/2024년도 LINC 3.0 표준현장실습학기제 지원 계획.json",
+      "attachment": {
+        "name": "2024년도 LINC 3.0 표준현장실습학기제 지원 계획.pdf",
+        "url": "https://www.pknu.ac.kr/boardDownload.do?no=72208"
+      }
+    }
+  },
+  {
+    "id": "museum_opening_year_month",
+    "terms": [
+      [
+        "박물관"
+      ],
+      [
+        "개관",
+        "문을열",
+        "처음열"
+      ],
+      [
+        "학교소개",
+        "부경대",
+        "몇년",
+        "몇월",
+        "언제"
+      ]
+    ],
+    "answer": "국립부경대 박물관 소개에 따르면 박물관은 1984년 5월에 개관했습니다.",
+    "source": {
+      "title": "박물관",
+      "url": "https://www.pknu.ac.kr/main/289",
+      "dataset": "pknu_main",
+      "published_at": null,
+      "capture_path": "files/pknu_main/대학소개/조직도/소개안내/json/pages/main_289.json",
+      "capture_sha256": "af0c2539a560d80ffed1e2c0fc8b1047197fc489d64ce972152134914b267f96",
+      "preprocessed_path": "preprocessed/pknu_main/json/대학소개/조직도/소개안내/pages/main_289.json"
+    }
+  },
+  {
+    "id": "academic_affairs_office",
+    "terms": [
+      [
+        "학사관리과"
+      ],
+      [
+        "위치",
+        "어디",
+        "찾아가",
+        "몇호",
+        "호실",
+        "방문",
+        "오시는길"
+      ]
+    ],
+    "answer": "학사관리과 위치는 대연캠퍼스 본관 106호입니다.",
+    "source": {
+      "title": "학사관리과",
+      "url": "https://www.pknu.ac.kr/main/316",
+      "dataset": "pknu_main",
+      "published_at": null,
+      "capture_path": "files/pknu_main/대학소개/조직도/소개안내/json/pages/main_316.json",
+      "capture_sha256": "6e4c83bed508314ed5698be652945070a6268ebf933b313de2f4c867580cd052",
+      "preprocessed_path": "preprocessed/pknu_main/json/대학소개/조직도/소개안내/pages/main_316.json"
+    }
+  },
+  {
+    "id": "international_exchange_team_selection",
+    "terms": [
+      [
+        "국제교류부"
+      ],
+      [
+        "교환학생",
+        "복수학위제",
+        "복수학위"
+      ],
+      [
+        "선발",
+        "파견"
+      ],
+      [
+        "어느팀",
+        "담당팀",
+        "부서",
+        "누가",
+        "어디",
+        "업무"
+      ]
+    ],
+    "answer": "국립부경대 국제교류부 소개에서 교환학생 및 복수학위제 학생 선발과 파견을 맡는 팀은 국제교류팀입니다.",
+    "source": {
+      "title": "국제교류부",
+      "url": "https://www.pknu.ac.kr/main/296",
+      "dataset": "pknu_main",
+      "published_at": null,
+      "capture_path": "files/pknu_main/대학소개/조직도/소개안내/json/pages/main_296.json",
+      "capture_sha256": "ddb2bc2289d6678680d739f48a80a657289cd3d2234683f5f13109c7a17df69d",
+      "preprocessed_path": "preprocessed/pknu_main/json/대학소개/조직도/소개안내/pages/main_296.json"
+    }
+  },
+  {
+    "id": "language_center_writing_lab_english_cafe",
+    "terms": [
+      [
+        "writinglab",
+        "라이팅랩"
+      ],
+      [
+        "englishcafe",
+        "잉글리시카페",
+        "영어카페"
+      ],
+      [
+        "센터",
+        "어디",
+        "담당",
+        "운영"
+      ]
+    ],
+    "answer": "Writing Lab과 English Cafe 운영은 글로벌어학교육센터 어학교육팀의 업무입니다.",
+    "source": {
+      "title": "글로벌어학교육센터",
+      "url": "https://www.pknu.ac.kr/main/295",
+      "dataset": "pknu_main",
+      "published_at": null,
+      "capture_path": "files/pknu_main/대학소개/조직도/소개안내/json/pages/main_295.json",
+      "capture_sha256": "ab77d50c5d65948e3ef158efe7874a7a3a1ae3d40f9753e380a1646de7bfa9b1",
+      "preprocessed_path": "preprocessed/pknu_main/json/대학소개/조직도/소개안내/pages/main_295.json"
+    }
+  },
+  {
+    "id": "tech_transfer_center_office",
+    "terms": [
+      [
+        "기술이전사업화센터"
+      ],
+      [
+        "방문",
+        "위치",
+        "어디",
+        "몇호",
+        "호실",
+        "오시는길"
+      ]
+    ],
+    "answer": "기술이전사업화센터 위치는 대연캠퍼스 본관 704호입니다.",
+    "source": {
+      "title": "기술이전사업화센터",
+      "url": "https://www.pknu.ac.kr/main/351",
+      "dataset": "pknu_main",
+      "published_at": null,
+      "capture_path": "files/pknu_main/대학소개/조직도/소개안내/json/pages/main_351.json",
+      "capture_sha256": "b06d96dd8c490d515374bb983fa1d288057f2b235d4ce9ffb38567ecc919f6ec",
+      "preprocessed_path": "preprocessed/pknu_main/json/대학소개/조직도/소개안내/pages/main_351.json"
+    }
+  },
+  {
+    "id": "university_statistics_responsible_center",
+    "terms": [
+      [
+        "대학정보공시",
+        "고등교육통계"
+      ],
+      [
+        "담당",
+        "센터",
+        "부서",
+        "어디",
+        "누가",
+        "업무"
+      ]
+    ],
+    "answer": "부경대 대학정보공시 업무와 고등교육통계 업무는 지속가능·성과관리센터에서 담당합니다.",
+    "source": {
+      "title": "지속가능·성과관리센터",
+      "url": "https://www.pknu.ac.kr/main/303",
+      "dataset": "pknu_main",
+      "published_at": null,
+      "capture_path": "files/pknu_main/대학소개/조직도/소개안내/json/pages/main_303.json",
+      "capture_sha256": "7cb01947751ebfb6a350ae305f35649c36ef8272eae39a622446291793626f9a",
+      "preprocessed_path": "preprocessed/pknu_main/json/대학소개/조직도/소개안내/pages/main_303.json"
+    }
+  },
+  {
+    "id": "finance_tuition_contact",
+    "terms": [
+      [
+        "재무과"
+      ],
+      [
+        "등록금",
+        "수납"
+      ],
+      [
+        "전화",
+        "번호",
+        "연락처",
+        "문의"
+      ]
+    ],
+    "answer": "재무과 소개에 등록금 문의 전화번호는 051-629-5142, 대표 내선은 5134로 구분해 기재되어 있습니다.",
+    "source": {
+      "title": "재무과",
+      "url": "https://www.pknu.ac.kr/main/279",
+      "dataset": "pknu_main",
+      "published_at": null,
+      "capture_path": "files/pknu_main/대학소개/조직도/소개안내/json/pages/main_279.json",
+      "capture_sha256": "3c03bdea1aa891a99a8f7c163239cf0e43d171389e57302bcce4d280494e31f2",
+      "preprocessed_path": "preprocessed/pknu_main/json/대학소개/조직도/소개안내/pages/main_279.json"
+    }
+  },
+  {
+    "id": "lee_minhee_lab_location",
+    "terms": [
+      [
+        "이민희"
+      ],
+      [
+        "지질환경오염복원",
+        "환경지질과학",
+        "교수"
+      ],
+      [
+        "연구실",
+        "실험실"
+      ],
+      [
+        "몇호",
+        "호실",
+        "위치",
+        "어디",
+        "주소",
+        "방문"
+      ]
+    ],
+    "answer": "환경지질과학전공의 지질환경오염복원 이민희 교수 공개 소개에 나온 연구실 위치는 환경해양관(B14) 411호입니다.",
+    "source": {
+      "title": "지질환경오염복원 이민희 교수",
+      "url": "https://earth.pknu.ac.kr/earth/1628?action=view&no=19401717",
+      "dataset": "earth",
+      "published_at": null,
+      "capture_path": "files/department/환경·해양대학/지구환경시스템과학부/환경지질과학전공/earth/output/json/교수진/0434a1fb9b3a12be.json",
+      "capture_sha256": "d0b8400f658ae3472ce557ad39b68c1dadfb4d12556ae102a8aed6d52a777909",
+      "preprocessed_path": "preprocessed/earth/json/교수진/0434a1fb9b3a12be.json"
+    }
+  },
+  {
+    "id": "han_bongseok_research_field",
+    "terms": [
+      [
+        "한봉석"
+      ],
+      [
+        "교수",
+        "사학과"
+      ],
+      [
+        "연구분야",
+        "연구주제",
+        "연구하는",
+        "연구전공",
+        "어떤분야"
+      ]
+    ],
+    "answer": "사학과 한봉석 교수의 공개 상세 프로필에 기재된 연구 분야는 한국현대사입니다.",
+    "source": {
+      "title": "한봉석 교수",
+      "url": "http://history.pknu.ac.kr/history/3898?action=view&no=19402753",
+      "dataset": "history",
+      "published_at": null,
+      "capture_path": "files/department/인문사회과학대학/사학과/history/output/json/교수진/1d40cd709d2737e7.json",
+      "capture_sha256": "932b7bddf148848babb58a15f3a06e423230a290316a2bbd53a05d8427e2e567",
+      "preprocessed_path": "preprocessed/history/json/교수진/1d40cd709d2737e7.json"
+    }
+  },
+  {
+    "id": "ha_ildo_doctorate",
+    "terms": [
+      [
+        "하일도"
+      ],
+      [
+        "교수",
+        "통계데이터사이언스",
+        "통계학"
+      ],
+      [
+        "박사",
+        "phd",
+        "최종학위"
+      ]
+    ],
+    "answer": "통계·데이터사이언스전공 하일도 교수의 공개 프로필에는 서울대학교 통계학과 박사(Ph.D.)로 기재되어 있습니다.",
+    "source": {
+      "title": "하일도 교수",
+      "url": "http://stat.pknu.ac.kr/stat/272?action=view&no=5501040",
+      "dataset": "stat",
+      "published_at": null,
+      "capture_path": "files/department/정보융합대학/데이터정보과학부/통계·데이터사이언스전공/stat/output/json/교수진/2b0b6a6882fec5f0.json",
+      "capture_sha256": "9754d2168f6c8a1f9a7a570293749529d73c99c5cc723c60b5df5e1409d9d6cd",
+      "preprocessed_path": "preprocessed/stat/json/교수진/2b0b6a6882fec5f0.json"
+    }
+  },
+  {
+    "id": "capstone_adventure_spring_2024_extended_deadline",
+    "year": 2024,
+    "terms": [
+      [
+        "캡스톤"
+      ],
+      [
+        "어드벤처"
+      ],
+      [
+        "1학기",
+        "봄학기"
+      ],
+      [
+        "연장"
+      ],
+      [
+        "언제",
+        "마감",
+        "신청기간",
+        "며칠",
+        "몇시",
+        "까지"
+      ]
+    ],
+    "answer": "2024학년도 1학기 캡스톤·어드벤처디자인 지원 신청 기간은 2024년 3월 26일(화) 18시까지로 연장되었습니다.",
+    "source": {
+      "title": "2024년도 1학기 캡스톤/어드벤처디자인 지원 신청 기간 연장안내 (~ 3월 26일 화요일 오후 18시)",
+      "url": "https://www.pknu.ac.kr/main/163?action=view&no=714800",
+      "dataset": "pknu_notice",
+      "published_at": "2024-03-22T00:00:00+09:00",
+      "capture_path": "files/pknu_main/커뮤니티/공지사항/공지사항/json/posts/9c25d455568915dc.json",
+      "capture_sha256": "170acdb07250f30d5213293fd2f270dfdd722bd76846b6653789dd3a058ad179",
+      "preprocessed_path": "preprocessed/pknu_main/json/커뮤니티/공지사항/공지사항/posts/9c25d455568915dc.json"
+    }
+  },
+  {
+    "id": "waterloo_2026_donghwa_additional_intake",
+    "year": 2026,
+    "terms": [
+      [
+        "워털루"
+      ],
+      [
+        "동화엔텍"
+      ],
+      [
+        "추가모집",
+        "추가선발"
+      ],
+      [
+        "학년",
+        "선발인원",
+        "몇명",
+        "모집인원",
+        "정원"
+      ]
+    ],
+    "answer": "동화엔텍의 2026년 부산 워털루형 코업 추가모집 공고에서 지원 대상은 2026학년도 2학기 현장실습 교과목 수강이 가능한 4학년 재학생이었고, 학교 선발 인원은 4명이었습니다.",
+    "source": {
+      "title": "[㈜동화엔텍] 2026년 부산 워털루형 코업 프로그램(현장실습) 참여자 추가모집 안내",
+      "url": "https://www.pknu.ac.kr/main/163?action=view&no=725525",
+      "dataset": "pknu_notice",
+      "published_at": "2026-07-09T00:00:00+09:00",
+      "capture_path": "files/pknu_main/커뮤니티/공지사항/공지사항/json/posts/8667354fc7d77abd.json",
+      "capture_sha256": "30c4e69d1778d34453bd984e5c2a39a711f33341a90312dd9b36fdcad26ac5c9",
+      "preprocessed_path": "preprocessed/pknu_main/json/커뮤니티/공지사항/공지사항/posts/8667354fc7d77abd.json"
+    }
+  },
+  {
+    "id": "museum_2023_heritage_tour_theme",
+    "year": 2023,
+    "terms": [
+      [
+        "박물관"
+      ],
+      [
+        "문화답사",
+        "문화유산답사"
+      ],
+      [
+        "주제",
+        "두서원",
+        "서원두곳"
+      ]
+    ],
+    "answer": "부경대 박물관의 2023년 문화답사 주제는 ‘아름다운 두 서원이야기, 남계와 도동’이었습니다. 주제의 두 서원은 남계서원과 도동서원입니다.",
+    "source": {
+      "title": "<마감> [박물관] 2023년도 문화답사 안내",
+      "url": "https://www.pknu.ac.kr/main/163?action=view&no=712482",
+      "dataset": "pknu_notice",
+      "published_at": "2023-10-10T00:00:00+09:00",
+      "capture_path": "files/pknu_main/커뮤니티/공지사항/공지사항/json/posts/0facb248a8ea66b3.json",
+      "capture_sha256": "8029de310d19a1cef82aff365e3af650426a108a1fc2f138a529551c5e8c02d6",
+      "preprocessed_path": "preprocessed/pknu_main/json/커뮤니티/공지사항/공지사항/posts/0facb248a8ea66b3.json"
+    }
+  },
+  {
+    "id": "non_sw_genai_training_2025_intake",
+    "year": 2025,
+    "terms": [
+      [
+        "생성형ai",
+        "생성형인공지능"
+      ],
+      [
+        "소프트웨어융합혁신원",
+        "비전공자",
+        "비sw학과"
+      ],
+      [
+        "교육"
+      ],
+      [
+        "대상",
+        "몇명",
+        "정원",
+        "선착순",
+        "인원",
+        "누가"
+      ]
+    ],
+    "answer": "소프트웨어융합혁신원의 2025년 비전공자 대상 생성형 AI 활용 교육은 부경대 비SW학과 재학생을 대상으로 선착순 30명을 모집했습니다.",
+    "source": {
+      "title": "[소프트웨어융합혁신원] 비전공자 대상 「생성형 AI 활용 교육」 안내",
+      "url": "https://www.pknu.ac.kr/main/163?action=view&no=720380",
+      "dataset": "pknu_notice",
+      "published_at": "2025-06-11T00:00:00+09:00",
+      "capture_path": "files/pknu_main/커뮤니티/공지사항/공지사항/json/posts/01c080694c54b46c.json",
+      "capture_sha256": "caf8813b616475fd037f4115096f8ade317a1eb39d3a9a242843dccfcfe75f3c",
+      "preprocessed_path": "preprocessed/pknu_main/json/커뮤니티/공지사항/공지사항/posts/01c080694c54b46c.json"
+    }
+  },
+  {
+    "id": "swiss_government_scholarship_2024_2025_tracks",
+    "year": 2024,
+    "also_years": [
+      2025
+    ],
+    "terms": [
+      [
+        "스위스"
+      ],
+      [
+        "정부초청",
+        "정부장학"
+      ],
+      [
+        "장학생",
+        "장학금"
+      ],
+      [
+        "과정",
+        "트랙",
+        "프로그램종류",
+        "유형"
+      ]
+    ],
+    "answer": "2024–2025 스위스 정부초청 장학생 선발 과정은 예술(Arts), 박사(PhD), 박사 후(Post-Doctoral), 연구(Research Fellowships)였습니다.",
+    "source": {
+      "title": "2024-2025 스위스 정부초청 장학생 선발 안내",
+      "url": "https://www.pknu.ac.kr/main/163?action=view&no=711693",
+      "dataset": "pknu_notice",
+      "published_at": "2023-08-03T00:00:00+09:00",
+      "capture_path": "files/pknu_main/커뮤니티/공지사항/공지사항/json/posts/c3cf957e60c8de14.json",
+      "capture_sha256": "0ce354fd92eb7a326c57f60c2a0e1e13d9d2d7bda3570f5261e84b452bababff",
+      "preprocessed_path": "preprocessed/pknu_main/json/커뮤니티/공지사항/공지사항/posts/c3cf957e60c8de14.json"
+    }
+  },
+  {
+    "id": "incubator_september_2026_eligibility",
+    "year": 2026,
+    "terms": [
+      [
+        "창업보육센터"
+      ],
+      [
+        "9월",
+        "202609"
+      ],
+      [
+        "입주기업",
+        "신규입주",
+        "모집"
+      ],
+      [
+        "어떤창업자",
+        "모집대상",
+        "창업자를모집",
+        "지원대상",
+        "신청대상",
+        "예비창업자",
+        "지원자격"
+      ]
+    ],
+    "answer": "2026년 9월 국립부경대 창업보육센터 신규 입주기업 모집 공고의 대상은 신기술을 보유한 예비창업자 및 초기창업자였습니다.",
+    "source": {
+      "title": "♣ 국립부경대학교 창업보육센터 9월 신규 입주기업 모집 공고 ♣",
+      "url": "https://www.pknu.ac.kr/main/163?action=view&no=725705",
+      "dataset": "pknu_notice",
+      "published_at": "2026-07-21T00:00:00+09:00",
+      "capture_path": "files/pknu_main/커뮤니티/공지사항/공지사항/json/posts/43705d9c309c3280.json",
+      "capture_sha256": "8b36c1ebd5730a5a169de734ad5cfb486c0430802bcdf6e57695ea7ac62ad80f",
+      "preprocessed_path": "preprocessed/pknu_main/json/커뮤니티/공지사항/공지사항/posts/43705d9c309c3280.json"
+    }
+  },
+  {
+    "id": "student_portfolio_contest_19_submission_location",
+    "year": 2025,
+    "terms": [
+      [
+        "포트폴리오경진대회",
+        "포트폴리오대회"
+      ],
+      [
+        "19회"
+      ],
+      [
+        "제출처",
+        "제출장소",
+        "제출하는곳",
+        "어디",
+        "몇호",
+        "접수처",
+        "센터"
+      ]
+    ],
+    "answer": "2025년 제19회 학생 포트폴리오 경진대회의 제출처는 공학교육혁신센터(공학1관 207호)였습니다.",
+    "source": {
+      "title": "▶공학계열 학생들을 위한 학생 포트폴리오 경진대회 개최◀",
+      "url": "https://www.pknu.ac.kr/main/163?action=view&no=719836",
+      "dataset": "pknu_notice",
+      "published_at": "2025-04-29T00:00:00+09:00",
+      "capture_path": "files/pknu_main/커뮤니티/공지사항/공지사항/json/posts/bb405f45d6d59677.json",
+      "capture_sha256": "d80f99b7b26326ccf3f39b41dbd9f05db22a6defad58544737fcda08e4fce29f",
+      "preprocessed_path": "preprocessed/pknu_main/json/커뮤니티/공지사항/공지사항/posts/bb405f45d6d59677.json"
+    }
+  },
+  {
+    "id": "faculty_relative_required_course_section",
+    "terms": [
+      [
+        "교수자녀",
+        "부모강의",
+        "부모의강의",
+        "부모님강의",
+        "부모가담당",
+        "부모가가르치는"
+      ],
+      [
+        "필수과목",
+        "필수교과목",
+        "필수수업",
+        "전공필수",
+        "다른분반",
+        "타분반"
+      ]
+    ],
+    "exclude_terms": [
+      "제4조",
+      "사전신고",
+      "분반이없",
+      "분반없",
+      "분반이하나",
+      "분반하나",
+      "분반은없",
+      "단일분반",
+      "분반한개",
+      "분반이한개"
+    ],
+    "answer": "국립부경대학교 교수-자녀 간 강의수강 및 성적평가 공정성 제고 관리 지침 제3조 제3항에 따르면, 학생의 소속 학부(과)장은 부모의 강의를 수강하지 않도록 지도하고, 필수 교과목인 경우에도 다른 분반을 선택해 수강할 수 있도록 지도해야 합니다.",
+    "source": {
+      "title": "국립부경대학교 교수-자녀 간 강의수강 및 성적평가 공정성 제고 관리 지침",
+      "url": "https://www.pknu.ac.kr/rule/bylawsAndGuidelineView.do?bbsId=2&no=702360",
+      "dataset": "pknu_rule",
+      "published_at": "2021-08-17T00:00:00+09:00",
+      "capture_path": "files/rule/output/files/pknu_rule_bylaw/141faf4eb7853f6c/국립부경대학교 교수 자녀 간 강의수강 및 성적평가 공정성 제고 관리지침.hwp",
+      "capture_sha256": "e68567fd962119a7b43f3e5b785f6480654314807e85399f5e08b791694730cd",
+      "preprocessed_path": "preprocessed/rule/file/pknu_rule_bylaw/141faf4eb7853f6c/국립부경대학교 교수 자녀 간 강의수강 및 성적평가 공정성 제고 관리지침.json"
+    }
+  },
+  {
+    "id": "kim_jeongsu_profile_primary_research",
+    "terms": [
+      [
+        "김정수"
+      ],
+      [
+        "간호학과",
+        "간호학전공",
+        "간호학부"
+      ],
+      [
+        "주연구분야",
+        "연구분야",
+        "연구주제",
+        "전문분야"
+      ]
+    ],
+    "exclude_terms": [
+      "교수진목록",
+      "교수진명단",
+      "교수진리스트",
+      "목록에",
+      "명단에",
+      "강의과목",
+      "담당과목"
+    ],
+    "answer": "국립부경대학교 간호학과 김정수 교수의 상세 프로필에서 ‘주연구분야’ 탭에 기재된 분야는 성인간호학과 노인간호학입니다.",
+    "source": {
+      "title": "김정수 교수",
+      "url": "http://nursing.pknu.ac.kr/nursing/425?action=view&no=6401040",
+      "dataset": "nursing",
+      "published_at": null,
+      "capture_path": "files/department/자연과학대학/간호학과/nursing/output/html/교수진/182308ba7a7e093a.html",
+      "capture_sha256": "a3e07c31d7579d7a23bb05a87a8ed67924726110899c5a127153d9065ad49dbe",
+      "preprocessed_path": "preprocessed/nursing/json/교수진/182308ba7a7e093a.json"
+    }
+  },
+  {
+    "id": "undergraduate_science_2026_2_new_student_regular_tuition",
+    "year": 2026,
+    "terms": [
+      [
+        "2학기",
+        "20262"
+      ],
+      [
+        "학부"
+      ],
+      [
+        "이학계열"
+      ],
+      [
+        "신입생"
+      ],
+      [
+        "등록금",
+        "수업료",
+        "입학금",
+        "총액"
+      ]
+    ],
+    "exclude_terms": [
+      "분납",
+      "분할납부",
+      "회차",
+      "재학생",
+      "학과별",
+      "공학계열",
+      "인문사회계열",
+      "예능계열",
+      "체능계열",
+      "대학원"
+    ],
+    "answer": "2026학년도 2학기 학부 이학계열 신입생 정규 등록금 표의 입학금은 0원이며, 수업료와 총액은 각각 2,041,500원입니다.",
+    "source": {
+      "title": "2026학년도 2학기 등록금 조회 자료",
+      "url": "https://www.pknu.ac.kr/main/102",
+      "dataset": "pknu_main",
+      "published_at": null,
+      "capture_path": "files/pknu_main/대학생활/학사정보/등록금_안내/json/pages/main_102.json",
+      "capture_sha256": "870150426583e9856cfd7376903851a15bb2d67e20e89a27e2093f9b807e1b9b",
+      "preprocessed_path": "preprocessed/pknu_main/json/대학생활/학사정보/등록금_안내/pages/main_102.json"
+    }
+  }
+]

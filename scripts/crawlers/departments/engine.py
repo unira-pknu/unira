@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any
-from urllib.parse import unquote, urljoin, urlparse
+from urllib.parse import parse_qsl, unquote, urlencode, urljoin, urlparse
 
 import requests
 import urllib3
@@ -335,6 +335,7 @@ def fetch(
     url: str,
     params: dict | None = None,
     delay: float = REQUEST_DELAY,
+    redirect_validator=None,
 ) -> requests.Response | None:
     global TLS_SYSTEM_TRUST_FALLBACK_USED, _LAST_FETCH_FAILURE
     _LAST_FETCH_FAILURE = None
@@ -356,7 +357,29 @@ def fetch(
             system_trust_fallback=bool(
                 ACTIVE_CONFIG and ACTIVE_CONFIG.tls_system_trust_fallback
             ),
+            **({"allow_redirects": False} if redirect_validator is not None else {}),
         )
+        if redirect_validator is not None:
+            for _hop in range(5):
+                if resp.status_code not in {301, 302, 303, 307, 308}:
+                    break
+                target = resolve_link(resp.headers.get("Location"), resp.url or url)
+                if not target or not redirect_validator(target):
+                    _LAST_FETCH_FAILURE = RequestFailure(
+                        code="PROFILE_REDIRECT_OUT_OF_SCOPE", url=target or url,
+                        message="Faculty profile redirected outside its registered menu or identity",
+                        retryable=False,
+                    )
+                    resp.close()
+                    log_event(log, logging.ERROR, "request_failed", url=target or url,
+                              error_code=_LAST_FETCH_FAILURE.code, retryable=False)
+                    return None
+                resp.close()
+                resp, hop_fallback = get_with_tls_policy(
+                    session, target, timeout=REQUEST_TIMEOUT, allow_redirects=False,
+                    system_trust_fallback=bool(ACTIVE_CONFIG and ACTIVE_CONFIG.tls_system_trust_fallback),
+                )
+                fallback_used = fallback_used or hop_fallback
         if fallback_used:
             TLS_SYSTEM_TRUST_FALLBACK_USED = True
             log_event(
@@ -1095,7 +1118,7 @@ def crawl_board(
                 )
                 remove_redundant_legacy_fields(doc)
                 collect_document_images(doc, post_soup, session, download=not no_download_files,
-                                        page_url=effective_url)
+                                        page_url=effective_url, detail=True, diagnostics=diagnostics)
                 if validate_body_content(doc, view, diagnostics):
                     stats.failed += 1
                     save_document(doc, post_resp.text)
@@ -1147,15 +1170,18 @@ def crawl_board(
 # ─── 정적 페이지 크롤러 ───────────────────────────────────────────────────────
 def validate_body_content(doc, parsed, diagnostics=None):
     """Record extraction gaps instead of silently treating empty text as success."""
-    if str(doc.get("content") or "").strip():
+    if str(doc.get("content") or "").strip() and not parsed.get("content_state"):
         return False
-    state = parsed.get("content_state") or ("attachment_only" if doc.get("attachments") else "empty")
+    state = parsed.get("content_state") or ("attachment_only" if doc.get("attachments") else
+                                            "image_only" if doc.get("metadata", {}).get("body_images") else "empty")
     doc["metadata"]["content_state"] = state
     if parsed.get("content_images"):
         doc["metadata"]["content_images"] = [urljoin(doc["url"], src) for src in parsed["content_images"]]
     code = {"attachment_only": "ATTACHMENT_ONLY", "image_only": "IMAGE_ONLY_REQUIRES_OCR"}.get(state, "EMPTY_BODY")
     doc["crawl"]["warnings"].append(code)
-    doc["crawl"]["status"] = "success" if state == "attachment_only" else "partial_success" if state == "image_only" else "failed"
+    status = "success" if state == "attachment_only" else "partial_success" if state == "image_only" else "failed"
+    if status != "success" or doc["crawl"].get("status") != "partial_success":
+        doc["crawl"]["status"] = status
     log_event(log, logging.WARNING, "content_validation", source_id=doc["source_id"], url=doc["url"], code=code)
     if state != "attachment_only" and diagnostics is not None:
         diagnostics.errors.append({"code": code, "source_id": doc["source_id"], "url": doc["url"],
@@ -1163,9 +1189,10 @@ def validate_body_content(doc, parsed, diagnostics=None):
     return state == "empty"
 
 
-def collect_document_images(doc, soup, session, *, download=True, page_url=None):
+def collect_document_images(doc, soup, session, *, download=True, page_url=None, detail=False, diagnostics=None):
     from scripts.crawlers.common.body_images import collect_body_images, save_body_images
-    candidates = collect_body_images(soup)
+    root = ACTIVE_ADAPTER.select_body_root(soup, page_url=page_url or doc['url'], base_url=BASE_URL, detail=detail)
+    candidates = collect_body_images(soup, root=root) if root is not None else []
     if not candidates:
         return
     records = save_body_images(candidates, session=session, page_url=page_url or doc['url'],
@@ -1175,6 +1202,15 @@ def collect_document_images(doc, soup, session, *, download=True, page_url=None)
     if any(image['status'] == 'failed' for image in records):
         doc['crawl']['warnings'].append('BODY_IMAGE_DOWNLOAD_FAILED')
         doc['crawl']['status'] = 'partial_success'
+        if diagnostics is not None:
+            diagnostics.errors.append({'code': 'BODY_IMAGE_DOWNLOAD_FAILED', 'source_id': doc.get('source_id'),
+                                       'url': doc['url'], 'message': 'One or more body images could not be saved',
+                                       'retryable': True})
+
+
+def _static_key(url: str) -> str:
+    parsed = urlparse(url)
+    return parsed._replace(query=urlencode(sorted(parse_qsl(parsed.query, keep_blank_values=True))), fragment="").geturl()
 
 
 def crawl_static(
@@ -1182,15 +1218,26 @@ def crawl_static(
     section: dict,
     diagnostics: CrawlDiagnostics | None = None,
     no_download_files: bool = False,
+    max_items: int | None = None,
+    visited_urls: set[str] | None = None,
+    parent_url: str | None = None,
 ) -> CrawlStats:
     """정적 소개/안내 페이지를 크롤링해 저장한다."""
     page_url = section["url"]
     category = section["category"]
     name = section["name"]
     doc_type = section["type"]
+    visited_urls = visited_urls if visited_urls is not None else set()
+    key = _static_key(page_url)
+    if key in visited_urls:
+        return CrawlStats(skipped=1)
+    visited_urls.add(key)
+    is_profile = section["category"] == "교수진" and ACTIVE_ADAPTER.is_profile_detail_url(page_url)
 
     log.info("[정적] %s (%s)", name, page_url)
-    resp = fetch(session, page_url, delay=LIST_DELAY)
+    profile_options = ({"redirect_validator": lambda target: ACTIVE_ADAPTER.profile_target_allowed(target, page_url)}
+                       if is_profile else {})
+    resp = fetch(session, page_url, delay=LIST_DELAY, **profile_options)
     if resp is None:
         _record_request_failure(
             diagnostics, _LAST_FETCH_FAILURE, url=page_url, source_id=section.get("id") or name,
@@ -1200,14 +1247,28 @@ def crawl_static(
         diagnostics.sections_initialized += 1
 
     soup = BeautifulSoup(resp.text, "lxml")
+    effective_url = getattr(resp, "url", None) or page_url
+    if is_profile and not ACTIVE_ADAPTER.profile_target_allowed(effective_url, page_url):
+        if diagnostics is not None:
+            diagnostics.errors.append({"code": "PROFILE_REDIRECT_OUT_OF_SCOPE", "url": effective_url,
+                                       "source_id": section.get("id"), "message": "Profile identity changed", "retryable": False})
+        return CrawlStats(discovered=1, requested=1, failed=1)
 
     # 제목: breadcrumb 마지막 항목 또는 <title>
     # Pass the page URL so relative attachment links (e.g. "/upload/x.pdf")
     # resolve instead of being dropped by resolve_link("", ...).
-    parsed = ACTIVE_ADAPTER.parse_static(
+    parser = ACTIVE_ADAPTER.parse_profile if is_profile else ACTIVE_ADAPTER.parse_static
+    parsed = parser(
         soup, fallback_title=name, page_url=page_url, base_url=BASE_URL,
         site_prefix=ACTIVE_CONFIG.site_prefix if ACTIVE_CONFIG else "",
     )
+    if parsed is None:
+        if diagnostics is not None:
+            diagnostics.errors.append({"code": "PROFILE_PARSE_FAILED", "url": page_url,
+                                       "source_id": section.get("id"), "message": "Expected public faculty profile structure missing",
+                                       "retryable": False})
+        log_event(log, logging.ERROR, "document_failed", url=page_url, stage="profile_parse")
+        return CrawlStats(discovered=1, requested=1, failed=1)
     title = parsed["title"]
     content_text = parsed["content"]
     for attachment in parsed.get("attachments", []):
@@ -1231,6 +1292,7 @@ def crawl_static(
         "is_notice": False,
         "content": content_text,
         "attachments": attachments,
+        **({"reference_links": parsed["reference_links"]} if parsed.get("reference_links") else {}),
         "crawled_at": datetime.now().isoformat(),
     }
     doc = apply_common_schema(
@@ -1243,13 +1305,15 @@ def crawl_static(
         metadata={
             "section_name": name,
             "legacy_type": doc_type,
+            **({"requested_url": page_url} if effective_url != page_url else {}),
+            **({"profile_list_url": parent_url} if parent_url else {}),
             **({"source_type": section["source_type"]} if section.get("source_type") else {}),
         },
         crawled_at=doc.get("crawled_at"),
     )
     remove_redundant_legacy_fields(doc)
     collect_document_images(doc, soup, session, download=not no_download_files,
-                            page_url=getattr(resp, 'url', None) or page_url)
+                            page_url=getattr(resp, 'url', None) or page_url, diagnostics=diagnostics)
     stats = CrawlStats(discovered=1, requested=1)
     stats.count_attachments(doc.get("attachments"))
     log_attachment_events(log, doc.get("attachments"), source_id=source_id)
@@ -1257,6 +1321,45 @@ def crawl_static(
         stats.failed = 1
         save_document(doc, resp.text)
         return stats
+    if section["category"] == "교수진" and not is_profile and parent_url is None:
+        profiles = ACTIVE_ADAPTER.static_detail_links(soup, page_url=page_url)
+        if profiles:
+            doc["metadata"]["faculty_profiles"] = profiles
+        for index, link in enumerate(profiles):
+            if _static_key(link["url"]) in visited_urls:
+                link["status"] = "already_collected"
+                continue
+            if index >= 100 or (max_items is not None and stats.requested >= max_items):
+                link["status"] = "not_attempted"
+                link["reason"] = "profile_limit" if index >= 100 else "item_limit"
+                doc["crawl"]["status"] = "partial_success"
+                if "PROFILE_DETAILS_LIMITED" not in doc["crawl"]["warnings"]:
+                    doc["crawl"]["warnings"].append("PROFILE_DETAILS_LIMITED")
+                continue
+            registered_url = next((configured["url"] for configured in SECTIONS
+                                   if not configured["is_board"] and _static_key(configured["url"]) == _static_key(link["url"])),
+                                  link["url"])
+            profile_section = {**section, "url": registered_url, "name": link["label"] or name}
+            try:
+                child_stats = crawl_static(session, profile_section, diagnostics=diagnostics,
+                                           no_download_files=no_download_files, max_items=1,
+                                           visited_urls=visited_urls, parent_url=page_url)
+            except Exception as exc:
+                child_stats = CrawlStats(discovered=1, requested=1, failed=1)
+                if diagnostics is not None:
+                    diagnostics.errors.append({"code": "PROFILE_PROCESSING_FAILED", "url": link["url"],
+                                               "message": str(exc), "retryable": False})
+                log_event(log, logging.ERROR, "document_failed", url=link["url"], stage="profile_processing", error=str(exc))
+            stats.add(child_stats)
+            link.update(followed=True, status="failed" if child_stats.failed else "collected")
+            for reference in doc.get("reference_links", []):
+                if (_static_key(reference["url"]) == _static_key(link["url"])
+                        or ACTIVE_ADAPTER.profile_target_allowed(reference["url"], link["url"])):
+                    reference["followed"] = True
+            if child_stats.failed:
+                doc["crawl"]["status"] = "partial_success"
+                if "PROFILE_DETAILS_FAILED" not in doc["crawl"]["warnings"]:
+                    doc["crawl"]["warnings"].append("PROFILE_DETAILS_FAILED")
     existing_path = existing_document_path(category, doc["slug"])
     existing_hash = ""
     if existing_path.exists():
@@ -1265,7 +1368,7 @@ def crawl_static(
         except (OSError, json.JSONDecodeError):
             pass
     outcome = classify_document(existing_hash, doc.get("content_hash"))
-    setattr(stats, outcome, 1)
+    setattr(stats, outcome, getattr(stats, outcome) + 1)
     save_document(doc, resp.text)
     log.info("[정적] %s 완료", name)
     return stats
@@ -1305,6 +1408,7 @@ def run_crawl(
     if diagnostics is not None:
         diagnostics.sections_selected = len(sections)
     remaining = max_items
+    visited_static_urls: set[str] = set()
     for section in sections:
         if remaining is not None and remaining <= 0:
             break
@@ -1343,7 +1447,8 @@ def run_crawl(
                         "updated_at": now_kst(),
                     }
             else:
-                section_stats = crawl_static(session, section, diagnostics=diagnostics, no_download_files=no_download_files)
+                section_stats = crawl_static(session, section, diagnostics=diagnostics, no_download_files=no_download_files,
+                                             max_items=remaining, visited_urls=visited_static_urls)
             if remaining is not None:
                 remaining -= section_stats.requested
         except Exception as exc:

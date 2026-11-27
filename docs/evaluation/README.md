@@ -6,6 +6,54 @@
 Evaluation commands are in `eval/tools/` and run from the repository root with
 `python -m eval.tools.<command>`.
 
+[전체 범위 100문항 개선 기록](FULL_SCOPE_FEEDBACK_20261124.md)에 11월 24일 평가의 실패 유형, 수정 내역과 재평가 명령을 정리했습니다.
+
+## 로컬 실제 검색·답변 평가
+
+`eval_local`은 `backend/.env`의 실제 임베딩·재순위화 모델, DB 검색, OpenAI 답변 생성을
+사용하면서 `/ask` 처리 함수를 직접 호출합니다. DB 데이터는 변경하지 않습니다.
+인증을 거친 HTTP 요청, 스트리밍 전송, 프런트엔드 동작까지 검증하는 평가는 아닙니다.
+이 범위는 결과 manifest의 `execution_mode`와 `http_auth_tested`에도 기록됩니다.
+
+```powershell
+.\.venv\Scripts\python.exe -m eval.tools.eval_local --questions eval/cases/regression.jsonl --per-category 1 --output eval/results/local_quality.jsonl --max-calls 35 --data-snapshot "확인한-적재-receipt-ID"
+.\.venv\Scripts\python.exe -m eval.tools.grade_eval_results --results eval/results/local_quality.jsonl --model gpt-4o-mini --schema-retries 1
+```
+
+`--max-calls`는 질문 계획과 답변 교정 호출을 합친 OpenAI 요청 상한입니다. 기존 출력은 덮어쓰지
+않으므로 재실행할 때 새 출력 경로를 사용합니다. `--case-id`를 반복 지정하면 특정 질문만
+실행할 수 있습니다. 실제 검색 장애는 응답 성공과 별개로 `retrieval_status`와 근거 snapshot에서
+확인합니다. 데이터 snapshot 이름은 적재 이력을 가리키는 표식이며 DB를 고정한 복제본은 아닙니다.
+`--workers`는 동시에 평가할 질문 수입니다(1~4, 기본 1). 여러 질문을 실행해도 임베딩과 재순위화 모델은
+각각 한 번만 로드합니다. 비교할 때는 같은 동시 실행 수를 사용합니다.
+모델 설정이 바뀌는 동안 비교한다면 `--model gpt-4o-mini`처럼 모델을 고정합니다. 이 옵션은
+`.env`를 변경하지 않으며 manifest의 `configuration_override`와 각 답변의 설정에 기록됩니다.
+manifest의 `completions`에는 질문 ID별 실제 응답 모델, 종료 사유, 출력·추론 토큰 수가 기록됩니다.
+`finish_reason=length`인 빈/부분 출력과 근거가 없다는 실제 답변을 구분할 때 사용합니다.
+백엔드는 출력 한도에 걸린 첫 답변을 한 번만 확장된 예산으로 다시 생성하고 근거를 재검증합니다.
+이 재생성은 기존 답변 교정 한도를 공유합니다. 두 번째 출력도 잘리거나 모델이 빈 출력을 반환하면
+생성 오류로 처리하며, 이를 정보 부재 답변으로 바꾸지 않습니다. 명시적인 정보 부재 답변은 유지합니다.
+
+프로그램 조회·셔틀 이용·실시간 정보의 부분 답변을 묶어서 확인하려면 다음과 같이 실행합니다.
+출력 경로는 매번 새 이름을 지정하고, `--data-snapshot`에는 실제 적재 이력을 기록합니다.
+검색 함수 변경은 [023 마이그레이션](../../supabase/migrations/023_lexical_late_hydration.sql)을 참고합니다.
+자동 채점 모델은 평가 대상 답변 모델과 별도로 지정합니다.
+
+```powershell
+.\.venv\Scripts\python.exe -m eval.tools.eval_local --questions eval/cases/regression.jsonl --case-id notice_attachment_001 --case-id student_life_001 --case-id partial_003 --output eval/results/targeted_quality_new.jsonl --max-calls 10 --data-snapshot "적재-이력-ID+023"
+```
+반복 수정에 사용한 질문의 점수를 독립 평가나 전체 정답률로 제시하지 않습니다. 자동 채점의
+`judge_error`가 남으면 채점이 완료된 것으로 간주하지 않습니다.
+
+실행 중인 백엔드와 유효한 로그인 토큰이 있다면 `ASK_API_TOKEN` 환경변수를 설정한 뒤
+다음 명령으로 인증을 포함한 HTTP 경로를 별도로 확인합니다. 프런트엔드 검사는 Node/npm이
+설치된 환경에서 실행합니다.
+
+```powershell
+.\.venv\Scripts\python.exe -m eval.tools.eval_ask --base-url http://127.0.0.1:8000 --questions eval/cases/smoke.jsonl --output eval/results/http_smoke.jsonl
+npm --prefix frontend run lint
+```
+
 다음 학습을 준비할 때는 [이후 학습 진행 계획](FEEDBACK_TRAINING_NEXT_STEPS.md)에서
 현재 데이터 상태, 추가 근거·검수, 비용 확인, 시범 학습과 전체 평가 순서를 확인합니다.
 
@@ -13,12 +61,20 @@ Evaluation commands are in `eval/tools/` and run from the repository root with
 
 - `cases/smoke.jsonl`: 빠른 확인용 핵심 질문 8~15개. 작은 변경 후 실행합니다.
 - `cases/regression.jsonl`: 출처와 정답 라벨 검수를 마친 100개 질문의 회귀 평가 세트입니다. 모든 행이 `ready` 상태입니다.
+- `cases/faculty_regression_20261124.jsonl`: 교수진 명단, 연락처, 연구분야, 상세 프로필, 소속·직함·확인 불가를 각각 20개씩 다룹니다. 답변 가능 94개와 공개 목록의 빈 필드·대상 확인 6개를 포함합니다. 라벨은 `review_notes`에 기록된 공식 페이지 수집본 기준입니다. 상세 프로필은 URL의 `action`과 `no` 값까지 대조해야 합니다.
 - `cases/feedback_graduation_20261115.jsonl`: 졸업요건 피드백 두 질문의 별도 평가 세트입니다. [공식 자료 기반 라벨 수정 내역](GRADUATION_LABEL_REVIEW_20261115.md)을 참고합니다.
 - `cases/challenge.jsonl`: 범위 밖, 애매한 표현, 오타, 복합 조건처럼 실패 가능성이 높은 질문만 집중 평가합니다. 회귀 세트와 일부 중복될 수 있습니다.
 - `schemas/eval_case.schema.json`: 구조화 평가 케이스의 JSON Schema입니다.
 - `baselines/`: 코드와 모델 및 RAG 설정별 기준 점수를 보관합니다.
 - `results/`: 로컬 평가 실행 결과를 저장합니다. 생성 결과는 Git에 커밋하지 않습니다.
 - `drafts/question_bank_100.jsonl`: 유형 균형을 맞춘 100개 질문 초안입니다. 정답 출처와 사실 라벨을 검수하기 전에는 실행용 회귀 세트로 사용하지 않습니다.
+
+교수진 기준 실행에서 73/100건이 통과했습니다. 상세 프로필 실패 19건의 정답은 운영 DB의 활성 문서에 있었지만 검색 후보에 들어오지 않았습니다. 수정 후에는 같은 문항을 사용해 이름·학과가 일치하는 상세 출처를 인용하는지 확인합니다. 명단과 연락처도 함께 비교하고, 연구분야는 같은 사람의 이름과 분야가 답변 근거에 남는지 확인합니다. 앞선 대화에 인물이 없는 경우에는 대상 확인 질문만 반환해야 합니다.
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest backend/tests/test_faculty.py backend/tests/test_query_plan.py backend/tests/test_evidence_context.py backend/tests/test_syllabus.py -q
+.\.venv\Scripts\python.exe -m eval.tools.eval_local --questions eval/cases/faculty_regression_20261124.jsonl --output eval/results/faculty_regression_recheck.jsonl --workers 3 --max-calls 300 --data-snapshot "확인한-적재-receipt-ID"
+```
 
 ## 다섯 테이블 분리 이후의 호환성
 

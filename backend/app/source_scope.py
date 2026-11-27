@@ -6,7 +6,39 @@ from datetime import date
 from urllib.parse import urlparse
 
 from . import department_focus as departments
+from .document_focus import course_evaluation_app_mismatch, meal_date_mismatch
 from .query_plan import AUDIENCES, PROGRAM_CONTEXTS, SCHOOL_ALIASES, SearchTask, department_catalog
+from .query_transform import named_document_request
+
+
+_EXCHANGE_TRACKS = ("혁신융합대학", "혁신공유대학", "디지털신기술", "공유대학")
+_SEASONS = {"summer": r"하기|하계|여름", "winter": r"동기|동계|겨울"}
+_FORM_LENGTH = re.compile(r"글자\s*수|몇\s*(?:글자|자)|글자\s*제한|분량|자\s*이내")
+_PERSONAL_APPLICATION = re.compile(r"제가|저는|나는|나도|저도|(?:신청|지원)\s*할\s*수|(?:신청|지원)\s*가능")
+
+
+def _dated_document_mismatch(title: str, task: SearchTask) -> str | None:
+    text = task.text
+    exchange = bool(re.search(r"학점\s*교류|교류\s*수학|교류\s*신청", text)
+                    and re.search(r"학점\s*교류|교류\s*수학|교류\s*신청", title))
+    if exchange:
+        track = next((name for name in _EXCHANGE_TRACKS if name in title), None)
+        if track and track not in text:
+            return "different_exchange_track"
+        seasons = {name for name, pattern in _SEASONS.items() if re.search(pattern, text)}
+        title_seasons = {name for name, pattern in _SEASONS.items() if re.search(pattern, title)}
+        if len(seasons) == 1 and len(title_seasons) == 1 and seasons != title_seasons:
+            return "different_exchange_season"
+    named_edition = bool(re.search(r"규정|세칙|지침", text) and re.search(r"규정|세칙|지침", title)
+                         and re.search(r"개정|게시|20\d{2}\s*년\s*\d{1,2}\s*월", text))
+    named_event = bool(re.search(r"졸업사정|공모전|채용상담회|교환학생.*모집", text)
+                       and re.search(r"졸업사정|공모전|채용상담회|교환학생.*모집", title))
+    if exchange or named_edition or named_event:
+        question_years = set(re.findall(r"(?<!\d)(20\d{2})(?=\s*(?:년|학년도))", text))
+        title_years = set(re.findall(r"(?<!\d)(20\d{2})(?!\d)", title))
+        if len(question_years) == 1 and len(title_years) == 1 and question_years != title_years:
+            return "different_document_year"
+    return None
 
 
 def source_department(row: dict) -> str | None:
@@ -33,6 +65,12 @@ def scope_reason(row: dict, task: SearchTask) -> str | None:
     m = row.get("metadata") or {}
     title = str(m.get("doc_title") or row.get("title") or "")
     content = str(row.get("content") or "")
+    document_lookup = named_document_request(task.text, title)
+    reviewed_form_length = bool(
+        m.get("reviewed_campus_source") and m.get("attachment_name") and task.purpose == "general"
+        and re.search(r"자기\s*소개서|자소서", task.text) and _FORM_LENGTH.search(task.text)
+        and not _PERSONAL_APPLICATION.search(task.text)
+    )
     target = task.target
     table = m.get("structured_table") or {}
     table_rows = table.get("rows") or []
@@ -59,8 +97,14 @@ def scope_reason(row: dict, task: SearchTask) -> str | None:
         except ValueError:
             pass
     if task.conditions.kind == "search":
+        if meal_date_mismatch(task.text, title, str(m.get("published_at") or m.get("date") or "")):
+            return "different_meal_week"
+        if course_evaluation_app_mismatch(task.text, f"{title}\n{content}"):
+            return "different_course_evaluation_app"
+        if mismatch := _dated_document_mismatch(title, task):
+            return mismatch
         for context, pattern in PROGRAM_CONTEXTS.items():
-            if context not in target.contexts and re.search(pattern, title):
+            if not document_lookup and context not in target.contexts and re.search(pattern, title):
                 return "different_program_context"
         syllabus = row.get("_syllabus") or m.get("source_dataset") == "pknu_syllabus" or m.get("rpc_name") == "match_pknu_syllabus_documents"
         if (syllabus and not row.get("_syllabus")
@@ -79,7 +123,7 @@ def scope_reason(row: dict, task: SearchTask) -> str | None:
     exchange = re.search(r"타\s*대학\s*\(([^)]+)\)", title)
     if exchange:
         school = SCHOOL_ALIASES.get(exchange[1], exchange[1]).removeprefix("국립")
-    if school and school != target.school:
+    if school and school != target.school and not document_lookup:
         if not (exchange and re.search(r"교류|교환|타\s*대학", task.text)):
             return "different_school"
     # Publishing a document on pknu.ac.kr does not make another school's rules applicable.
@@ -114,7 +158,7 @@ def scope_reason(row: dict, task: SearchTask) -> str | None:
             return "restricted_student_section"
     for audience in ("외국인", "대학원", "신입생", "편입생"):
         if any(w in heading.lower() for w in AUDIENCES[audience]):
-            if not catalogue and audience not in target.audiences:
+            if not catalogue and not document_lookup and not reviewed_form_length and audience not in target.audiences:
                 # '신·편입생' is one combined population; either explicit type suffices.
                 if audience in {"신입생", "편입생"} and set(target.audiences) & {"신입생", "편입생"}:
                     continue
@@ -158,5 +202,8 @@ def checked_rows(rows: list[dict], task: SearchTask) -> list[dict]:
         m["request_query"] = task.text
         # This label travels with the evidence into generation; URL alone is not scope.
         m["applicability_note"] = "공통 규정과 특정 대상의 예외를 구분하고, 신청자격을 이수조건으로 대체하지 마세요. 학번·학년·개인 자격을 확인하지 못했으면 해당 학생에게 적용된다고 확정하지 마세요."
+        if named_document_request(task.text, str(m.get("doc_title") or row.get("title") or "")):
+            m["request_document_lookup"] = True
+            m["applicability_note"] += " 특정 기관의 공고 조회입니다. 공고의 모집 대상·조건을 설명하되 사용자가 그 자격을 충족한다고 확정하지 마세요."
         kept.append({**row, "metadata": m})
     return kept

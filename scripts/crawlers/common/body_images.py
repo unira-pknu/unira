@@ -39,8 +39,12 @@ def image_info(payload):
     return extension, Image.MIME.get(format_name), width, height
 
 
-def collect_body_images(soup: BeautifulSoup) -> list[dict]:
-    root = next((node for selector in ROOTS if (node := soup.select_one(selector)) is not None), None)
+def select_body_root(soup: BeautifulSoup):
+    return next((node for selector in ROOTS if (node := soup.select_one(selector)) is not None), None)
+
+
+def collect_body_images(soup: BeautifulSoup, *, root=None) -> list[dict]:
+    root = root if root is not None else select_body_root(soup)
     if root is None:
         return []  # Never collect the entire page chrome as a fallback.
     clone = BeautifulSoup(str(root), 'lxml')
@@ -61,7 +65,15 @@ def collect_body_images(soup: BeautifulSoup) -> list[dict]:
                 continue
         except ValueError:
             pass
-        images.append({'order': len(images) + 1, 'src': src, 'alt': str(img.get('alt') or '')})
+        record = {'order': len(images) + 1, 'src': src, 'alt': str(img.get('alt') or '')}
+        # Curriculum diagrams often link a small preview to the original image.
+        anchor = img.find_parent('a', href=True)
+        original = str(anchor.get('href') or '').strip() if anchor else ''
+        if (re.search(r'\.(?:png|jpe?g|gif|webp|bmp|tiff?)(?:[?#]|$)', original, re.I)
+                and not re.match(r'(?i)^(?:javascript|data|file):', original)):
+            if original != src:
+                record.update(src=original, display_src=src)
+        images.append(record)
     return images
 
 
@@ -79,6 +91,8 @@ def save_body_images(images, *, session, page_url: str, output_dir: Path, projec
         try:
             if not inline:
                 record['source_url'] = resolve_url(src, page_url)
+            if item.get('display_src') and not item['display_src'].lower().startswith('data:'):
+                record['display_url'] = resolve_url(item['display_src'], page_url)
             if not download:
                 results.append(record)
                 continue

@@ -34,6 +34,48 @@ from scripts.preprocessing.file_preprocessing import (
     legacy_archive_member_output_path, save_preprocessed_archive,
     save_preprocessed_archive_member, validate_archive_member_targets, write_archive_result,
 )
+from scripts.preprocessing.main_structured import normalize_structured_main, structured_kind
+
+
+class StructuredMainPreprocessingTests(unittest.TestCase):
+    def test_calendar_keeps_accepted_dates_and_does_not_promote_rejected_events(self):
+        data = {"page_id": 31, "url": "https://www.pknu.ac.kr/main/31", "year": 2026,
+                "title": "학사일정", "retrieved_at": "2026-11-18T03:00:00+09:00", "status": "needs_review",
+                "events": [{"title": "수강신청", "start_date": "2026-02-02", "end_date": "2026-02-04"}],
+                "rejected_events": [{"title": "오류 일정", "raw_end_date": "20260112"}]}
+        normalized = normalize_structured_main(data)
+        self.assertIn("2026-02-02", normalized["content"])
+        self.assertIn("2026-02-04", normalized["content"])
+        self.assertNotIn("오류 일정", normalized["content"])
+        self.assertEqual("academic_calendar", normalized["metadata"]["document_kind"])
+        self.assertEqual("needs_review", normalized["metadata"]["source_review_status"])
+        self.assertNotIn("content", data)
+
+    def test_tuition_keeps_payment_sequence_context_and_review_warning(self):
+        common = {"academic_year": 2026, "semester": 2, "university_or_college": "학부",
+                  "category": "외국인글로벌계열", "category_code": "C0019013", "grade": 1,
+                  "installment_count": 2, "domestic_foreign_type": "공용",
+                  "regular_sum_check": "needs_review", "warnings": ["INSTALLMENT_REGULAR_BASIS_UNVERIFIED"]}
+        data = {"page_url": "https://www.pknu.ac.kr/main/102",
+                "source_url": "https://irumi.pknu.ac.kr/uni/enro/uniEnroView", "academic_year": 2026,
+                "semester": 2, "retrieved_at": "2026-11-18T03:00:00+09:00", "status": "needs_review",
+                "tuition": [], "departments": [], "warnings": ["INSTALLMENT_GROUPS_NEED_REVIEW"],
+                "installments": [{**common, "installment_sequence": 1, "total_krw": 936000},
+                                 {**common, "installment_sequence": 2, "total_krw": 936000}]}
+        normalized = normalize_structured_main(data)
+        self.assertIn("2026학년도 2학기", normalized["content"])
+        self.assertIn("외국인글로벌계열", normalized["content"])
+        self.assertIn("1회차 936,000원; 2회차 936,000원", normalized["content"])
+        self.assertIn("INSTALLMENT_REGULAR_BASIS_UNVERIFIED", normalized["content"])
+        self.assertEqual("https://www.pknu.ac.kr/main/102", normalized["url"])
+
+    def test_collection_summaries_and_empty_placeholders_stay_outside_body_documents(self):
+        for data in ({"page_id": 399, "documents": [{"post_no": "1"}]},
+                     {"page_id": 31, "url": "https://www.pknu.ac.kr/main/31", "events": []},
+                     {"page_id": 31, "url": "https://outside.example/main/31", "events": [{}]}):
+            with self.subTest(data=data):
+                self.assertIsNone(structured_kind(data))
+                self.assertIs(data, normalize_structured_main(data))
 
 class AttachmentSchemaTests(unittest.TestCase):
     def test_retry_recovers_unvisited_successes_from_the_completed_history(self):
@@ -447,6 +489,24 @@ class AttachmentSchemaTests(unittest.TestCase):
                 self.assertEqual(paths[0].name, "안내.pdf.json")
                 self.assertEqual(paths[1].name, "안내.hwp.json")
                 self.assertEqual(paths[0].parent.name, "첨부")
+
+    def test_zip_storage_stems_with_trailing_space_or_dot_do_not_alias(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            output = root / "preprocessed"
+            archives = [root / name for name in ("sample.zip", "sample .zip", "sample..zip")]
+            for layout in ("flat", "by_ext"):
+                paths = [archive_member_output_path(p, root, output, "guide.pdf", layout=layout)
+                         for p in archives]
+                self.assertEqual(3, len(set(paths)))
+                self.assertEqual("sample", paths[0].parent.name)
+                for archive, target in zip(archives, paths):
+                    self.assertFalse(target.parent.name.endswith((" ", ".")))
+                    self.assertEqual("guide.pdf.json", target.name)
+                    self.assertEqual(target, archive_member_output_path(
+                        archive, root, output, "guide.pdf", layout=layout))
+                self.assertEqual("sample ", legacy_archive_member_output_path(
+                    archives[1], root, output, "guide.pdf", layout=layout).parent.name)
 
     def test_zip_restores_both_members_preserving_only_the_matching_legacy_slug(self):
         with tempfile.TemporaryDirectory() as directory:

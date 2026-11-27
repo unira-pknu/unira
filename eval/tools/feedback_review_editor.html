@@ -66,7 +66,8 @@
     details { margin-top:14px; border-top:1px solid var(--line); padding-top:12px; }
     summary { cursor:pointer; font-weight:600; }
     .source { border:1px solid var(--line); border-radius:8px; padding:14px; margin-top:10px; }
-    .source a { color:var(--accent); overflow-wrap:anywhere; }
+    .source a, #evidenceContent > a { color:var(--accent); overflow-wrap:anywhere; }
+    #evidenceContent > a { display:block; }
     blockquote { border-left:3px solid #9ac4b6; padding:7px 12px; margin:10px 0; white-space:pre-wrap; overflow-wrap:anywhere; background:#f5faf7; }
     .actions { display:flex; gap:9px; align-items:center; flex-wrap:wrap; margin-top:18px; }
     .nav { display:flex; gap:8px; }
@@ -82,7 +83,7 @@
     <h1>답변을 읽고, 근거를 확인하고, 검수하세요.</h1>
     <p class="muted">선택한 파일은 이 브라우저 안에서 처리합니다. 수정 후 검수본 JSONL을 내려받으세요.</p>
     <div class="toolbar">
-      <button id="openReview" type="button" class="primary">피드백 JSONL 열기</button>
+      <button id="openReview" type="button" class="primary">피드백·평가 JSONL 열기</button>
       <button id="openEvidence" type="button" disabled>근거 JSONL 연결</button>
       <span id="fileName" class="file-label muted">review.jsonl을 선택하세요</span>
       <span class="spacer"></span>
@@ -97,7 +98,7 @@
   <div class="stats" aria-label="검수 현황">
     <span><strong id="totalCount">0</strong>전체</span>
     <span><strong id="pendingCount">0</strong>검수 대기</span>
-    <span><strong id="approvedCount">0</strong>승인</span>
+    <span><strong id="approvedCount">0</strong><span id="approvedLabel">승인</span></span>
     <span><strong id="rejectedCount">0</strong>제외</span>
   </div>
   <div class="layout">
@@ -115,7 +116,7 @@
         <div class="eyebrow">01 / OPEN A REVIEW FILE</div>
         <h2>한 줄의 JSON 대신, 항목별로 검수하세요.</h2>
         <p>상단에서 <strong>review.jsonl</strong>을 선택하세요.</p>
-        <p class="muted">2단계의 review_queue.jsonl도 열 수 있습니다. evidence.jsonl을 연결하면 근거를 함께 확인합니다.</p>
+        <p class="muted">피드백 검수 큐와 평가 검수용 JSONL도 열 수 있습니다. 피드백 근거는 evidence.jsonl을 연결해 확인합니다.</p>
       </section>
       <div id="editor" hidden>
         <section class="panel">
@@ -125,12 +126,16 @@
           </div>
           <p id="identity" class="identity"></p>
           <p id="pairing" class="help"></p>
-          <label class="field"><span class="field-title">질문 · 개인정보 제거와 필요한 맥락 보강</span><textarea id="question" data-field="question" rows="3"></textarea></label>
+          <label class="field"><span id="questionLabel" class="field-title">질문 · 개인정보 제거와 필요한 맥락 보강</span><textarea id="question" data-field="question" rows="3"></textarea></label>
           <div class="two-column" style="margin-top:20px">
             <div><h3 id="originalAnswerTitle">기존 답변</h3><pre id="rejectedAnswer" class="readonly old-answer"></pre></div>
-            <label><span class="field-title">검수할 수정 답변</span><textarea id="correctedAnswer" data-field="corrected_answer" rows="10" placeholder="공식 근거를 확인한 정답을 작성하세요"></textarea></label>
+            <div>
+              <div id="evaluationReference" hidden><h3>기준 답안</h3><pre id="referenceAnswer" class="readonly old-answer"></pre></div>
+              <label id="correctionField"><span id="correctionLabel" class="field-title">검수할 수정 답변</span><textarea id="correctedAnswer" data-field="corrected_answer" rows="10" placeholder="공식 근거를 확인한 정답을 작성하세요"></textarea></label>
+            </div>
           </div>
-          <details><summary id="feedbackInfoTitle">사용자 피드백과 AI 실패 분석</summary><pre id="feedbackInfo" class="readonly"></pre></details>
+          <details id="feedbackDetails"><summary id="feedbackInfoTitle">사용자 피드백과 AI 실패 분석</summary><pre id="feedbackInfo" class="readonly"></pre></details>
+          <details id="evaluationComparison" hidden><summary id="comparisonTitle"></summary><pre id="comparisonAnswer" class="readonly old-answer"></pre></details>
           <pre id="pipelineInfo" class="readonly help"></pre>
         </section>
         <section class="panel">
@@ -138,7 +143,7 @@
           <h2>근거와 정답 조건</h2>
           <div id="evidenceContent"></div>
           <label class="field"><span class="field-title">직접 확인한 공식 문서 URL · 한 줄에 하나</span><textarea id="verifiedSources" data-field="verified_sources" rows="3" placeholder="https://..."></textarea></label>
-          <p class="help">제안된 인용을 확인한 뒤 URL을 직접 입력하세요. 연결된 출처를 자동으로 검증 완료 처리하지 않습니다.</p>
+          <p id="sourceHelp" class="help">제안된 인용을 확인한 뒤 URL을 직접 입력하세요. 연결된 출처를 자동으로 검증 완료 처리하지 않습니다.</p>
           <div class="two-column">
             <label class="field"><span class="field-title">필수 사실 · 한 줄에 하나</span><textarea id="requiredFacts" data-field="required_facts" rows="4"></textarea></label>
             <label class="field"><span class="field-title">금지할 주장 · 한 줄에 하나</span><textarea id="forbiddenClaims" data-field="forbidden_claims" rows="4"></textarea></label>
@@ -146,15 +151,23 @@
         </section>
         <section class="panel">
           <div class="eyebrow">03 / MAKE A REVIEW DECISION</div>
-          <h2>검수 기록과 승인</h2>
-          <div class="two-column">
-            <label><span class="field-title">사용 구분</span><select id="split" data-field="split"><option value="">선택하세요</option><option value="train">학습용 · train</option><option value="evaluation">평가용 · evaluation</option></select></label>
-            <label><span class="field-title">검수자 식별명</span><input id="reviewedBy" type="text" data-field="reviewed_by" autocomplete="off" placeholder="검수자를 구분할 이름"></label>
+          <h2 id="decisionHeading">검수 기록과 승인</h2>
+          <div id="feedbackDecisionFields">
+            <div class="two-column">
+              <label><span class="field-title">사용 구분</span><select id="split" data-field="split"><option value="">선택하세요</option><option value="train">학습용 · train</option><option value="evaluation">평가용 · evaluation</option></select></label>
+              <label><span class="field-title">검수자 식별명</span><input id="reviewedBy" type="text" data-field="reviewed_by" autocomplete="off" placeholder="검수자를 구분할 이름"></label>
+            </div>
+            <label class="checkbox"><input id="privacyChecked" type="checkbox" data-field="privacy_checked"><span>학습에 들어갈 질문과 수정 답변의 개인정보를 확인했습니다.</span></label>
+            <label class="checkbox"><input id="contextChecked" type="checkbox" data-field="context_checked"><span>학과·대상·적용 시점·예외와 근거 문맥을 확인했습니다.</span></label>
+            <p class="help">승인 시 현재 시각(한국 시간)을 기록합니다. 승인한 내용을 다시 편집하면 검수 대기로 돌아갑니다.</p>
           </div>
-          <label class="checkbox"><input id="privacyChecked" type="checkbox" data-field="privacy_checked"><span>학습에 들어갈 질문과 수정 답변의 개인정보를 확인했습니다.</span></label>
-          <label class="checkbox"><input id="contextChecked" type="checkbox" data-field="context_checked"><span>학과·대상·적용 시점·예외와 근거 문맥을 확인했습니다.</span></label>
+          <div id="evaluationDecisionFields" hidden>
+            <label class="field"><span class="field-title">22문항 재실행 답변 판정</span><select id="verdict" data-field="verdict">
+              <option value="">선택하세요</option><option value="pass">통과</option><option value="partial">부분 답변</option><option value="no_answer">미응답</option><option value="incorrect">오답</option><option value="error">실행 오류</option>
+            </select></label>
+            <label class="field"><span class="field-title">검토 메모</span><textarea id="reviewNotes" data-field="notes" rows="3" placeholder="판정 사유나 수정할 내용을 적으세요"></textarea></label>
+          </div>
           <p id="reviewedAt" class="help"></p>
-          <p class="help">승인 시 현재 시각(한국 시간)을 기록합니다. 승인한 내용을 다시 편집하면 검수 대기로 돌아갑니다.</p>
           <ul id="issues" class="issues"></ul>
           <p id="ready" class="valid" hidden>필수 입력이 준비되었습니다. 근거와 정답을 확인했다면 승인하세요.</p>
           <div class="actions">
@@ -168,7 +181,7 @@
       </div>
     </main>
   </div>
-  <footer>피드백 내용은 새로고침하면 사라집니다. 편집한 검수본을 저장한 뒤 기존 학습 데이터 변환 명령에서 사용하세요.</footer>
+  <footer id="saveHelp">피드백 내용은 새로고침하면 사라집니다. 편집한 검수본을 저장한 뒤 기존 학습 데이터 변환 명령에서 사용하세요.</footer>
 
   <script id="review-core">
   "use strict";
@@ -177,8 +190,11 @@
     const SHA = /^[0-9a-f]{64}$/;
     const REVIEW_FIELDS = ["corrected_answer", "verified_sources", "required_facts", "forbidden_claims", "reviewed_by", "split", "privacy_checked", "context_checked", "status"];
     const CONTENT_FIELDS = ["question", "corrected_answer", "verified_sources", "required_facts", "forbidden_claims"];
+    const VERDICTS = ["pass", "partial", "no_answer", "incorrect", "error"];
+    const EVALUATION_FIELDS = ["corrected_answer", "verified_sources", "required_facts", "forbidden_claims", "verdict", "notes", "status"];
     const clone = value => JSON.parse(JSON.stringify(value));
     const synthetic = row => row.kind === "synthetic_feedback_qa";
+    const evaluation = row => row.kind === "evaluation_case";
     const object = value => value !== null && typeof value === "object" && !Array.isArray(value);
     const text = value => typeof value === "string" && value.trim().length > 0;
     const normalize = value => value.trim().replace(/\s+/gu, " ").toLowerCase().replace(/[\s?!.~…]+$/gu, "");
@@ -196,10 +212,20 @@
     }
     function parseReviews(input) {
       const rows = parseLines(input), seen = new Set();
+      const evaluationBatch = evaluation(rows[0]);
       for (const [index, row] of rows.entries()) {
         const where = `${index + 1}번째 항목`;
         if (row.schema_version !== 1) throw new Error(`${where}: 지원하지 않는 schema_version입니다.`);
-        if (synthetic(row)) {
+        if (evaluation(row) !== evaluationBatch) throw new Error("평가 문항과 피드백 항목을 별도 파일로 열어 주세요.");
+        if (evaluationBatch) {
+          const result = row.evaluation;
+          if (!object(result) || typeof result.reference_answer !== "string"
+              || !Array.isArray(result.reference_sources) || !result.reference_sources.every(text)
+              || ![result.retry22, result.full100].every(run => object(run) && VERDICTS.includes(run.verdict)
+                && typeof run.answer === "string" && Array.isArray(run.sources) && run.sources.every(object))) {
+            throw new Error(`${where}: 기준 답안과 두 평가 실행 기록이 필요합니다.`);
+          }
+        } else if (synthetic(row)) {
           if (row.synthetic !== true || row.review_package_version !== 1 || "rating" in row
               || !UUID.test(row.parent_feedback_id || "") || !SHA.test(row.parent_question_key || "")
               || !SHA.test(row.candidate_fingerprint || "") || !SHA.test(row.parent_feedback_fingerprint || "")) {
@@ -208,11 +234,15 @@
         } else if (row.rating !== "down" || row.synthetic === true) {
           throw new Error(`${where}: 실제 싫어요 또는 검수 패키지의 합성 질문이 필요합니다.`);
         }
-        if (typeof row.id !== "string" || !UUID.test(row.id) || seen.has(row.id)) throw new Error(`${where}: 잘못되거나 중복된 피드백 ID입니다.`);
+        const idPattern = evaluationBatch ? /^[a-z0-9][a-z0-9_.-]*$/iu : UUID;
+        if (typeof row.id !== "string" || !idPattern.test(row.id) || seen.has(row.id)) throw new Error(`${where}: 잘못되거나 중복된 항목 ID입니다.`);
         seen.add(row.id);
         if (!object(row.review) || !["pending", "approved", "rejected"].includes(row.review.status)) throw new Error(`${where}: 검수 상태가 잘못되었습니다.`);
-        if (typeof row.question !== "string" || (!synthetic(row) && typeof row.rejected_answer !== "string")) throw new Error(`${where}: 질문과 기존 답변이 필요합니다.`);
-        if (!synthetic(row) && !["matched", "missing_answer", "missing_question", "ambiguous_question"].includes(row.pairing_status)) throw new Error(`${where}: 질문 연결 상태가 잘못되었습니다.`);
+        if (typeof row.question !== "string" || (!evaluationBatch && !synthetic(row) && typeof row.rejected_answer !== "string")) throw new Error(`${where}: 질문과 기존 답변이 필요합니다.`);
+        if (!evaluationBatch && !synthetic(row) && !["matched", "missing_answer", "missing_question", "ambiguous_question"].includes(row.pairing_status)) throw new Error(`${where}: 질문 연결 상태가 잘못되었습니다.`);
+        if (evaluationBatch && ((row.review.verdict !== "" && !VERDICTS.includes(row.review.verdict)) || typeof row.review.notes !== "string")) {
+          throw new Error(`${where}: 검토 판정 또는 메모 형식이 잘못되었습니다.`);
+        }
         for (const key of ["verified_sources", "required_facts", "forbidden_claims"]) {
           if (key in row.review && (!Array.isArray(row.review[key]) || row.review[key].some(item => typeof item !== "string"))) throw new Error(`${where}: ${key}는 문자열 목록이어야 합니다.`);
         }
@@ -241,6 +271,12 @@
     }
     function approvalIssues(row, requireTime = true) {
       const review = row.review, issues = [];
+      if (evaluation(row)) {
+        if (!VERDICTS.includes(review.verdict)) issues.push("22문항 재실행 답변의 판정을 선택하세요.");
+        try { (review.verified_sources || []).forEach(sourceKey); } catch (error) { issues.push(error.message); }
+        if (requireTime && !validTimestamp(review.reviewed_at)) issues.push("판정 완료 버튼으로 검수 시각을 기록하세요.");
+        return issues;
+      }
       if (row.schema_version !== 1 || (synthetic(row) ? row.review_package_version !== 1 : row.rating !== "down" || row.pairing_status !== "matched")) issues.push("질문 연결 또는 합성 질문의 검수 패키지를 확인하세요.");
       if (typeof row.original_question_key !== "string" || !SHA.test(row.original_question_key)) issues.push("원래 질문 키를 확인하세요.");
       if (!text(row.question) || !row.question.replace(/[\s?!.~…]+/gu, "")) issues.push("질문을 작성하세요.");
@@ -261,7 +297,8 @@
       return issues;
     }
     function edit(row, field, value) {
-      if (field !== "question" && !REVIEW_FIELDS.includes(field)) throw new Error("수정할 수 없는 필드입니다.");
+      const allowed = evaluation(row) ? EVALUATION_FIELDS.includes(field) : field === "question" || REVIEW_FIELDS.includes(field);
+      if (!allowed) throw new Error("수정할 수 없는 필드입니다.");
       if (field === "status" && !["pending", "rejected"].includes(value)) throw new Error("승인은 검수 완료 버튼을 사용하세요.");
       const previous = field === "question" ? row.question : row.review[field];
       if (JSON.stringify(previous) === JSON.stringify(value)) return clone(row);
@@ -270,8 +307,10 @@
       else result.review[field] = clone(value);
       if (row.review.status === "approved" && field !== "status") result.review.status = "pending";
       result.review.reviewed_at = "";
-      if (CONTENT_FIELDS.includes(field)) result.review.context_checked = false;
-      if (["question", "corrected_answer"].includes(field)) result.review.privacy_checked = false;
+      if (!evaluation(row)) {
+        if (CONTENT_FIELDS.includes(field)) result.review.context_checked = false;
+        if (["question", "corrected_answer"].includes(field)) result.review.privacy_checked = false;
+      }
       return result;
     }
     function approve(row, timestamp) {
@@ -307,11 +346,13 @@
       const assigned = new Map(), seenQuestions = new Set();
       for (const [index, row] of rows.entries()) {
         const before = clone(originals[index]), after = clone(row);
-        delete before.question; delete before.review; delete after.question; delete after.review;
+        if (!evaluation(originals[index])) { delete before.question; delete after.question; }
+        delete before.review; delete after.review;
         if (JSON.stringify(before) !== JSON.stringify(after)) throw new Error(`${index + 1}번째 항목의 원본 식별 정보가 바뀌었습니다.`);
         if (row.review.status !== "approved") continue;
         const issues = approvalIssues(row);
         if (issues.length) throw new Error(`${index + 1}번째 승인 항목을 확인하세요.\n${issues.join("\n")}`);
+        if (evaluation(row)) continue;
         const keys = ["original:" + row.original_question_key, "question:" + normalize(row.question)];
         if (keys.some(key => seenQuestions.has(key))) throw new Error("승인 항목에 중복 질문이 있습니다. 대표 교정본 하나만 승인하세요.");
         keys.forEach(key => seenQuestions.add(key));
@@ -326,7 +367,7 @@
       parseReviews(output);
       return output;
     }
-    return Object.freeze({clone, parseReviews, parseEvidence, sourceKey, approvalIssues, edit, approve, serialize, synthetic});
+    return Object.freeze({clone, parseReviews, parseEvidence, sourceKey, approvalIssues, edit, approve, serialize, synthetic, evaluation});
   })();
   </script>
 
@@ -336,23 +377,32 @@
     const core = globalThis.FeedbackReview, $ = id => document.getElementById(id);
     const state = {rows:[], originals:[], evidence:new Map(), selected:-1, dirty:false, name:"", loadRequest:0, revision:0};
     const labels = {pending:"검수 대기", approved:"승인", rejected:"제외"};
-    const fields = {question:"question", corrected_answer:"correctedAnswer", verified_sources:"verifiedSources", required_facts:"requiredFacts", forbidden_claims:"forbiddenClaims", split:"split", reviewed_by:"reviewedBy", privacy_checked:"privacyChecked", context_checked:"contextChecked", status:"reviewStatus"};
+    const verdictLabels = {pass:"통과", partial:"부분 답변", no_answer:"미응답", incorrect:"오답", error:"실행 오류"};
+    const fields = {question:"question", corrected_answer:"correctedAnswer", verified_sources:"verifiedSources", required_facts:"requiredFacts", forbidden_claims:"forbiddenClaims", split:"split", reviewed_by:"reviewedBy", privacy_checked:"privacyChecked", context_checked:"contextChecked", status:"reviewStatus", verdict:"verdict", notes:"reviewNotes"};
     const listFields = new Set(["verified_sources", "required_facts", "forbidden_claims"]);
     const content = value => value == null || value === "" ? "(없음)" : typeof value === "string" ? value : JSON.stringify(value, null, 2);
+    const evaluationMode = () => state.rows.length > 0 && core.evaluation(state.rows[0]);
     function message(text, error = false) { $("notice").textContent = text; $("notice").classList.toggle("error", error); }
     function koreaTime() { return new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().replace(/Z$/u, "+09:00"); }
     function visible() {
       const query = $("search").value.trim().toLowerCase(), status = $("statusFilter").value;
-      return state.rows.map((row, index) => ({row,index})).filter(({row}) =>
-        (status === "all" || row.review.status === status) && (!query || [row.id,row.question,row.rejected_answer,row.review.corrected_answer,row.comment].join("\n").toLowerCase().includes(query)));
+      return state.rows.map((row, index) => ({row,index})).filter(({row}) => {
+        const result = core.evaluation(row) ? row.evaluation : null;
+        const searchable = [row.id, row.question, row.rejected_answer, row.review.corrected_answer, row.comment,
+          row.category, row.review.notes, result?.reference_answer, result?.retry22.answer, result?.full100.answer];
+        return (status === "all" || row.review.status === status) && (!query || searchable.join("\n").toLowerCase().includes(query));
+      });
     }
     function renderList() {
       const container = $("candidateList"); container.replaceChildren();
       for (const {row,index} of visible()) {
         const button = document.createElement("button"); button.type = "button"; button.className = "candidate";
         button.setAttribute("aria-current", String(index === state.selected));
-        const badge = document.createElement("span"); badge.className = "badge " + row.review.status; badge.textContent = labels[row.review.status];
-        const meta = document.createElement("span"); meta.className = "meta"; meta.textContent = `  ${index + 1} / ${state.rows.length}${core.synthetic(row) ? " · 합성" : " · 실제 피드백"}`;
+        const badge = document.createElement("span"); badge.className = "badge " + row.review.status;
+        badge.textContent = core.evaluation(row) && row.review.status === "approved" ? "판정 완료" : labels[row.review.status];
+        const meta = document.createElement("span"); meta.className = "meta";
+        const detail = core.evaluation(row) ? verdictLabels[row.evaluation.retry22.verdict] + " · " + row.category : core.synthetic(row) ? "합성" : "실제 피드백";
+        meta.textContent = `  ${index + 1} / ${state.rows.length} · ${detail}`;
         const title = document.createElement("span"); title.className = "question"; title.textContent = row.question || "(질문 연결 안 됨)";
         button.append(badge,meta,title); button.addEventListener("click", () => { state.selected = index; renderEditor(); renderList(); }); container.append(button);
       }
@@ -376,10 +426,43 @@
       for (const text of issues) { const li = document.createElement("li"); li.textContent = text; list.append(li); }
       list.hidden = !issues.length; $("ready").hidden = !!issues.length || row.review.status === "approved";
       $("approve").disabled = !!issues.length || row.review.status === "approved";
-      $("reviewedAt").textContent = "검수 시각: " + (row.review.reviewed_at || "승인 시 기록됩니다");
+      $("reviewedAt").textContent = "검수 시각: " + (row.review.reviewed_at || (core.evaluation(row) ? "판정 완료 시 기록됩니다" : "승인 시 기록됩니다"));
+    }
+    function sourceLink(card, uri) {
+      try {
+        core.sourceKey(uri);
+        const link = document.createElement("a"); link.href = uri.trim(); link.target = "_blank";
+        link.rel = "noopener noreferrer"; link.textContent = uri; card.append(link);
+      } catch {
+        const p = document.createElement("p"); p.textContent = content(uri); card.append(p);
+      }
+    }
+    function renderEvaluationEvidence(container, result) {
+      const heading = document.createElement("h3"); heading.textContent = "평가 기준 출처"; container.append(heading);
+      if (!result.reference_sources.length) {
+        const p = document.createElement("p"); p.className = "muted"; p.textContent = "등록된 기준 출처가 없습니다."; container.append(p);
+      }
+      for (const source of result.reference_sources) sourceLink(container, source);
+      for (const [run, label] of [[result.retry22, "22문항 재실행"], [result.full100, "전체 회귀 평가"]]) {
+        const details = document.createElement("details"), summary = document.createElement("summary");
+        summary.textContent = `${label} · 모델에 전달된 근거 ${run.sources.length}건`; details.append(summary);
+        for (const source of run.sources) {
+          const card = document.createElement("div"); card.className = "source";
+          const title = document.createElement("h3");
+          title.textContent = `[${source.index}] ${source.title || "근거 문서"}${source.cited ? " · 답변에 인용" : ""}`;
+          card.append(title); sourceLink(card, source.uri);
+          const excerpt = document.createElement("blockquote"); excerpt.textContent = content(source.excerpt); card.append(excerpt);
+          details.append(card);
+        }
+        container.append(details);
+      }
     }
     function renderEvidence(row) {
       const container = $("evidenceContent"); container.replaceChildren();
+      if (core.evaluation(row)) {
+        renderEvaluationEvidence(container, row.evaluation);
+        return;
+      }
       const snapshot = state.evidence.get(core.synthetic(row) ? row.parent_feedback_id : row.id), sources = snapshot ? snapshot.sources : [];
       const correction = core.synthetic(row) ? row : row.ai_generation && row.ai_generation.correction;
       const citations = correction && Array.isArray(correction.citations) ? correction.citations : [];
@@ -388,8 +471,7 @@
       for (const source of sources) {
         const card = document.createElement("div"); card.className = "source";
         const title = document.createElement("h3"); title.textContent = (source.evidence_id || "") + " · " + (source.title || "근거 문서"); card.append(title);
-        try { core.sourceKey(source.uri); const link = document.createElement("a"); link.href = source.uri.trim(); link.target = "_blank"; link.rel = "noopener noreferrer"; link.textContent = source.uri; card.append(link); }
-        catch { const p = document.createElement("p"); p.textContent = content(source.uri); card.append(p); }
+        sourceLink(card, source.uri);
         for (const citation of citations.filter(item => item && item.evidence_id === source.evidence_id)) { const quote = document.createElement("blockquote"); quote.textContent = content(citation.quote); card.append(quote); }
         const metadata = document.createElement("p"); metadata.className = "help"; metadata.textContent = "조건·시점: " + content(source.metadata); card.append(metadata);
         const details = document.createElement("details"), summary = document.createElement("summary"), body = document.createElement("pre"); summary.textContent = "근거 본문 펼치기"; body.className = "readonly"; body.textContent = content(source.content); details.append(summary,body); card.append(details);
@@ -402,7 +484,8 @@
     }
     function renderEditor() {
       const row = state.rows[state.selected]; $("empty").hidden = !!row; $("editor").hidden = !row; if (!row) return;
-      $("position").textContent = `FEEDBACK ${String(state.selected + 1).padStart(2,"0")} / ${state.rows.length}`;
+      const isEvaluation = core.evaluation(row);
+      $("position").textContent = `${isEvaluation ? "평가" : "FEEDBACK"} ${String(state.selected + 1).padStart(2,"0")} / ${state.rows.length}`;
       $("identity").textContent = row.id;
       $("pairing").textContent = core.synthetic(row) ? `합성 질문 · 부모 피드백: ${row.parent_feedback_id}` : `질문 연결: ${row.pairing_status} · 피드백 수정: ${row.feedback_updated_at || "기록 없음"}`;
       $("originalAnswerTitle").textContent = core.synthetic(row) ? "AI가 처음 제안한 답변" : "기존 답변";
@@ -414,7 +497,24 @@
       const pipeline = row.review_pipeline;
       const decisionLabels = {ready:"변환 가능", blocked:"변환 보류", pending:"검수 대기", rejected:"제외"};
       $("pipelineInfo").textContent = pipeline ? `이전 자동 검사: ${decisionLabels[pipeline.decision] || pipeline.decision}\n사유: ${(pipeline.reason_labels || pipeline.reasons || []).join(", ") || "없음"}\n편집 후 변환 명령에서 다시 검사합니다.` : "";
-      const raw = core.clone(state.originals[state.selected]); delete raw.question; delete raw.review; delete raw.ai_generation; $("provenance").textContent = JSON.stringify(raw,null,2);
+      if (isEvaluation) {
+        const result = row.evaluation;
+        $("pairing").textContent = `${row.category} · 배포 전 평가 ${verdictLabels[result.before_verdict] || result.before_verdict}`;
+        $("originalAnswerTitle").textContent = `22문항 재실행 · ${verdictLabels[result.retry22.verdict]}`;
+        $("rejectedAnswer").textContent = content(result.retry22.answer);
+        $("referenceAnswer").textContent = content(result.reference_answer);
+        $("comparisonTitle").textContent = `전체 100문항에서의 답변 · ${verdictLabels[result.full100.verdict]}`;
+        $("comparisonAnswer").textContent = content(result.full100.answer);
+        $("evaluationComparison").open = result.retry22.verdict !== result.full100.verdict;
+        $("pipelineInfo").textContent = [
+          result.retry22.notes && "22문항 평가 메모 · " + result.retry22.notes,
+          result.full100.notes && "전체 평가 메모 · " + result.full100.notes
+        ].filter(Boolean).join("\n");
+      }
+      const raw = core.clone(state.originals[state.selected]);
+      delete raw.question; delete raw.review; delete raw.ai_generation;
+      if (isEvaluation) raw.evaluation = {reference_source_ids:raw.evaluation.reference_source_ids, result_files:raw.evaluation.result_files};
+      $("provenance").textContent = JSON.stringify(raw,null,2);
       for (const [field,id] of Object.entries(fields)) {
         const value = field === "question" ? row.question : row.review[field], element = $(id);
         if (element.type === "checkbox") element.checked = value === true;
@@ -422,6 +522,28 @@
       }
       updateNavigation();
       renderEvidence(row); updateIssues();
+    }
+    function renderMode() {
+      const isEvaluation = evaluationMode();
+      $("openEvidence").disabled = isEvaluation;
+      $("question").readOnly = isEvaluation;
+      $("questionLabel").textContent = isEvaluation ? "평가 질문" : "질문 · 개인정보 제거와 필요한 맥락 보강";
+      $("evaluationReference").hidden = !isEvaluation;
+      $("correctionLabel").textContent = isEvaluation ? "수정 답변 제안 (선택)" : "검수할 수정 답변";
+      $("correctionField").classList.toggle("field", isEvaluation);
+      $("correctedAnswer").style.minHeight = isEvaluation ? "100px" : "";
+      $("correctedAnswer").rows = isEvaluation ? 3 : 10;
+      $("feedbackDetails").hidden = isEvaluation;
+      $("evaluationComparison").hidden = !isEvaluation;
+      $("feedbackDecisionFields").hidden = isEvaluation;
+      $("evaluationDecisionFields").hidden = !isEvaluation;
+      $("sourceHelp").textContent = isEvaluation ? "직접 확인한 근거를 추가로 남길 수 있습니다." : "제안된 인용을 확인한 뒤 URL을 직접 입력하세요. 연결된 출처를 자동으로 검증 완료 처리하지 않습니다.";
+      $("decisionHeading").textContent = isEvaluation ? "판정과 검토 메모" : "검수 기록과 승인";
+      $("approve").textContent = isEvaluation ? "판정 완료" : "검수 완료 · 승인";
+      $("ready").textContent = isEvaluation ? "판정 완료를 누르면 완료 상태가 기록됩니다." : "필수 입력이 준비되었습니다. 근거와 정답을 확인했다면 승인하세요.";
+      for (const id of ["statusFilter", "reviewStatus"]) $(id).querySelector('option[value="approved"]').textContent = isEvaluation ? "판정 완료" : "승인";
+      $("approvedLabel").textContent = isEvaluation ? "판정 완료" : "승인";
+      $("saveHelp").textContent = isEvaluation ? "새로고침하기 전에 검수본 JSONL을 저장하세요." : "피드백 내용은 새로고침하면 사라집니다. 편집한 검수본을 저장한 뒤 기존 학습 데이터 변환 명령에서 사용하세요.";
     }
     for (const [field,id] of Object.entries(fields)) {
       const element = $(id);
@@ -433,14 +555,14 @@
           const row = core.edit(previous,field,value); state.rows[state.selected] = row; state.dirty = true; state.revision++; $("confirmSaved").hidden = true;
           $("reviewStatus").value = row.review.status;
           $("privacyChecked").checked = row.review.privacy_checked === true; $("contextChecked").checked = row.review.context_checked === true;
-          if (previous.review.status === "approved" && row.review.status === "pending") message("승인한 내용이 바뀌어 검수 대기로 되돌렸습니다. 수정 후 다시 확인하고 승인하세요.");
+          if (previous.review.status === "approved" && row.review.status === "pending") message(core.evaluation(row) ? "검토 내용이 바뀌어 검수 대기로 되돌렸습니다." : "승인한 내용이 바뀌어 검수 대기로 되돌렸습니다. 수정 후 다시 확인하고 승인하세요.");
           updateIssues(); updateSummary(); renderList();
         } catch (error) { message(error.message,true); renderEditor(); }
       });
     }
     $("approve").addEventListener("click", () => {
       if (state.selected < 0) return;
-      try { state.rows[state.selected] = core.approve(state.rows[state.selected],koreaTime()); state.dirty = true; state.revision++; $("confirmSaved").hidden = true; renderEditor(); renderList(); updateSummary(); message("현재 항목을 승인했습니다. 검수본 JSONL을 저장하면 변경 내용이 파일에 반영됩니다."); }
+      try { state.rows[state.selected] = core.approve(state.rows[state.selected],koreaTime()); state.dirty = true; state.revision++; $("confirmSaved").hidden = true; renderEditor(); renderList(); updateSummary(); message(evaluationMode() ? "현재 항목의 판정을 완료했습니다. 검수본 JSONL을 저장하면 변경 내용이 파일에 반영됩니다." : "현재 항목을 승인했습니다. 검수본 JSONL을 저장하면 변경 내용이 파일에 반영됩니다."); }
       catch (error) { message(error.message,true); }
     });
     $("openReview").addEventListener("click", () => $("reviewFile").click());
@@ -454,8 +576,9 @@
         if (request !== state.loadRequest) return;
         if (state.revision !== revision && !window.confirm("파일을 읽는 동안 현재 검수 내용을 수정했습니다. 새 파일로 바꿀까요?")) return;
         state.rows = rows; state.originals = core.clone(rows); state.evidence = new Map(); state.selected = 0; state.dirty = false; state.name = file.name;
-        $("fileName").textContent = file.name; $("openEvidence").disabled = false; $("confirmSaved").hidden = true; $("search").value = ""; $("statusFilter").value = "all";
-        renderList(); renderEditor(); updateSummary(); message(`${rows.length}개 피드백을 불러왔습니다. 같은 폴더의 evidence.jsonl도 연결할 수 있습니다.`);
+        $("fileName").textContent = file.name; $("confirmSaved").hidden = true; $("search").value = ""; $("statusFilter").value = "all";
+        renderMode(); renderList(); renderEditor(); updateSummary();
+        message(evaluationMode() ? `평가 문항 ${rows.length}개를 불러왔습니다. 기준 답안과 두 실행의 답변을 비교할 수 있습니다.` : `${rows.length}개 피드백을 불러왔습니다. 같은 폴더의 evidence.jsonl도 연결할 수 있습니다.`);
       } catch (error) { message(error.message,true); }
     });
     $("evidenceFile").addEventListener("change", async event => {
@@ -472,8 +595,9 @@
     $("download").addEventListener("click", () => {
       try {
         const serialized = core.serialize(state.rows,state.originals), blob = new Blob([serialized],{type:"application/x-ndjson;charset=utf-8"});
-        const url = URL.createObjectURL(blob), link = document.createElement("a"); link.href = url; link.download = "reviewed.jsonl"; document.body.append(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url),30000);
-        $("confirmSaved").hidden = !state.dirty; message(`전체 ${state.rows.length}건을 reviewed.jsonl 다운로드로 전달했습니다. 브라우저에서 파일이 저장됐는지 확인한 뒤 저장 완료 확인을 누르세요.`);
+        const name = evaluationMode() ? state.name.replace(/(?:_reviewed|_review)?\.[^.]+$/u, "") + "_reviewed.jsonl" : "reviewed.jsonl";
+        const url = URL.createObjectURL(blob), link = document.createElement("a"); link.href = url; link.download = name; document.body.append(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url),30000);
+        $("confirmSaved").hidden = !state.dirty; message(`전체 ${state.rows.length}건을 ${name} 다운로드로 전달했습니다. 브라우저에서 파일이 저장됐는지 확인한 뒤 저장 완료 확인을 누르세요.`);
       } catch (error) { message(error.message,true); }
     });
     $("confirmSaved").addEventListener("click", () => { state.dirty = false; $("confirmSaved").hidden = true; updateSummary(); message("검수본 파일 저장을 확인했습니다. 추가로 편집하면 다시 저장해야 합니다."); });

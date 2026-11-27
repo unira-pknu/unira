@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import unittest
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from bs4 import BeautifulSoup
@@ -313,6 +314,100 @@ WORKSPACE_ROOT = PROJECT_ROOT
 FIXTURE_ROOT = FIXTURES_ROOT / "departments" / "numeric_cms"
 
 
+class NumericCMSStaticLayoutTests(unittest.TestCase):
+    def setUp(self):
+        self.adapter = NumericCMSAdapter()
+        self.url = 'https://control.pknu.ac.kr/control/3868'
+
+    def test_b_and_d_templates_keep_tables_and_exclude_page_chrome(self):
+        for wrapper in ('b_bdCont', 'd_sbCont'):
+            with self.subTest(wrapper=wrapper):
+                soup = BeautifulSoup(f'''<header><div class="container">전체 메뉴</div></header>
+                  <div id="sub"><div class="container">
+                  <aside>학과 메뉴</aside><div class="{wrapper}">
+                  <h3 class="d_subTitle">교육과정</h3>
+                  <table><tr><th>교과목</th><th>학점</th></tr><tr><td>설계</td><td>3</td></tr></table>
+                  <div style="display:none"><table><tr><td>심화</td><td>2</td></tr></table></div>
+                  </div></div></div><footer>푸터</footer>''', 'lxml')
+                parsed = self.adapter.parse_static(soup, fallback_title='교육과정', page_url=self.url)
+                self.assertEqual('교과목 | 학점\n설계 | 3\n심화 | 2', parsed['content'])
+                self.assertIs(soup.select_one('.' + wrapper), self.adapter.select_body_root(soup, page_url=self.url))
+                self.assertNotIn('content_state', parsed)
+
+    def test_verified_direct_sub_container_skips_outer_sidebar_wrapper(self):
+        soup = BeautifulSoup('''<header><div class="container">전체 메뉴</div></header>
+          <div id="sub"><div class="container"><div id="a_sbLft">학과 메뉴</div>
+          <div id="sub"><div class="container"><h3 id="subTitle">졸업요건</h3>
+          <p>이수학점 안내</p><table><tr><td>전공</td><td>60</td></tr></table>
+          </div></div></div></div><footer>푸터</footer>''', 'lxml')
+        parsed = self.adapter.parse_static(soup, fallback_title='졸업요건', page_url=self.url)
+        self.assertIn('이수학점 안내', parsed['content'])
+        self.assertIn('전공 | 60', parsed['content'])
+        for chrome in ('전체 메뉴', '학과 메뉴', '푸터', '졸업요건'):
+            self.assertNotIn(chrome, parsed['content'])
+
+    def test_custom_sub_fallback_uses_configured_host_and_retains_empty_body(self):
+        soup = BeautifulSoup('''<div class="container">메뉴</div>
+          <div id="sub"><div class="container"></div></div>''', 'lxml')
+        root = self.adapter.select_body_root(soup, page_url='https://icms.pknu.ac.kr/control/3868',
+                                             base_url='https://control.pknu.ac.kr')
+        self.assertIs(soup.select_one('#sub > .container'), root)
+        parsed = self.adapter.parse_static(soup, fallback_title='안내', page_url=self.url)
+        self.assertEqual('', parsed['content'])
+        self.assertEqual('empty', parsed['content_state'])
+        self.assertIs(soup.select_one('.container'), self.adapter.select_body_root(
+            soup, page_url='https://control.pknu.ac.kr.example.test/control/3868'))
+
+    def test_standard_body_retains_priority_over_alternate_layouts(self):
+        soup = BeautifulSoup('''<div class="b_bdCont">다른 영역</div>
+          <div class="d_sbCont">다른 영역</div><div id="sbCont">기존 안내</div>''', 'lxml')
+        parsed = self.adapter.parse_static(soup, fallback_title='안내', page_url=self.url)
+        self.assertEqual('기존 안내', parsed['content'])
+
+    def test_new_body_roots_preserve_image_only_evidence_and_image_scope(self):
+        from scripts.crawlers.common.body_images import collect_body_images
+        for wrapper in ('<div class="b_bdCont">{}</div>', '<div class="d_sbCont">{}</div>',
+                        '<div id="sub"><div class="container">{}</div></div>'):
+            with self.subTest(wrapper=wrapper):
+                body = '<h3>교육과정</h3><a href="/upload/full.png"><img data-src="/upload/preview.png"></a>'
+                soup = BeautifulSoup('<header><div class="container"><img src="/upload/header.png"></div></header>'
+                                     + wrapper.format(body) + '<footer><img src="/upload/footer.png"></footer>', 'lxml')
+                parsed = self.adapter.parse_static(soup, fallback_title='교육과정', page_url=self.url)
+                self.assertEqual('image_only', parsed['content_state'])
+                self.assertEqual(['/upload/full.png'], parsed['content_images'])
+                root = self.adapter.select_body_root(soup, page_url=self.url)
+                self.assertEqual(['/upload/full.png'], [image['src'] for image in collect_body_images(soup, root=root)])
+
+    def test_b_and_d_faculty_roots_expose_only_body_profile_links(self):
+        for wrapper in ('b_bdCont', 'd_sbCont'):
+            with self.subTest(wrapper=wrapper):
+                soup = BeautifulSoup(f'''<div class="container"><a href="?action=view&amp;no=9">상세보기</a></div>
+                  <div class="{wrapper}"><div class="tch_list"><h3 class="a_tch_name">교수 A</h3>
+                  <p>연구분야: 냉동공학</p><a href="?action=view&amp;no=1">상세보기</a></div></div>''', 'lxml')
+                links = self.adapter.static_detail_links(soup, page_url=self.url)
+                self.assertEqual([self.url + '?action=view&no=1'], [link['url'] for link in links])
+                self.assertIn('연구분야: 냉동공학', self.adapter.parse_static(
+                    soup, fallback_title='교수진', page_url=self.url)['content'])
+
+    def test_heading_language_links_are_content_without_following_targets(self):
+        soup = BeautifulSoup('''<div id="sbCont"><h3 id="subTitle">유학생활 가이드북</h3>
+          <h4><a href="https://oia.pknu.ac.kr/E-book/kor/index.html">한국어</a>
+          <a href="https://oia.pknu.ac.kr/E-book/eng/index.html">English</a></h4></div>''', 'lxml')
+        parsed = self.adapter.parse_static(soup, fallback_title='가이드북',
+                                           page_url='https://gic.pknu.ac.kr/gic/8917')
+        self.assertNotIn('content_state', parsed)
+        self.assertEqual('한국어 English', parsed['content'])
+        self.assertEqual(2, len(parsed['reference_links']))
+        self.assertTrue(all(link['followed'] is False for link in parsed['reference_links']))
+
+    def test_heading_navigation_links_do_not_make_empty_pages_successful(self):
+        for href in ('#', 'javascript:openBook()', 'mailto:test@example.test', 'https://[invalid'):
+            with self.subTest(href=href):
+                soup = BeautifulSoup(f'<div id="sbCont"><h4><a href="{href}">안내</a></h4></div>', 'lxml')
+                parsed = self.adapter.parse_static(soup, fallback_title='안내', page_url=self.url)
+                self.assertEqual('empty', parsed['content_state'])
+
+
 class FakeResponse:
     def __init__(self, text: str) -> None:
         self.text = text
@@ -448,6 +543,188 @@ class DepartmentNumericCmsRegressionTests(unittest.TestCase):
         self.assertEqual(1, len(captured))
         expected = self.expected["static_document"]
         self.assertEqual(expected, {key: captured[0][key] for key in expected})
+
+
+class DepartmentCoreContentTests(unittest.TestCase):
+    def setUp(self):
+        engine.configure_department(get_department('physics'))
+        self.adapter = NumericCMSAdapter()
+        self.url = 'https://physics.pknu.ac.kr/physics/303'
+        self.section = {'id': 'faculty', 'name': '교수진', 'category': '교수진',
+                        'type': 'guide', 'is_board': False, 'url': self.url}
+        self.list_html = '''<div id="sbCont"><h3 id="subTitle">교수진</h3>
+          <div class="tch_list"><h3 class="a_tch_name">교수 A</h3><p>연구분야: 물리학</p>
+          <a href="?action=view&amp;no=1">상세보기</a>
+          <a href="?no=1&amp;action=view">상세보기</a></div>
+          <div class="tch_list"><h3>교수 B</h3><a href="?action=view&amp;no=2">상세보기</a></div>
+          <a href="https://lab.example.org/">연구실 홈페이지</a></div>'''
+        self.profile_html = '''<div id="sbCont"><h3 id="subTitle">교수진</h3>
+          <div class="a_bdCont"><div class="tch_in"><h3 class="a_tch_name">교수 A</h3>
+          <a href="mailto:faculty@example.org">메일</a></div>
+          <ul class="tch_tab"><li>탭 이동</li></ul>
+          <table><tr><th>학력</th><td class="bdvEdit">박사</td></tr></table>
+          <div style="display:none"><table><tr><th>연구분야</th><td>응용물리학</td></tr></table></div>
+          </div></div>'''
+
+    def test_english_and_stance_roots_override_empty_layout_and_keep_tables(self):
+        for html in (
+            '<div id="sbCont"></div><div class="e_sbCont"><dl class="e_sbtNav">메뉴 문구</dl>'
+            '<div id="sub"><table><tr><td>교과목</td><td>학점</td></tr></table></div></div>',
+            '<div class="container">메뉴 문구</div><div id="stance"><table><tr><td>교과목</td><td>학점</td></tr></table></div>',
+        ):
+            with self.subTest(html=html):
+                parsed = self.adapter.parse_static(BeautifulSoup(html, 'lxml'), fallback_title='교육과정')
+                self.assertIn('교과목 | 학점', parsed['content'])
+                self.assertNotIn('메뉴 문구', parsed['content'])
+
+    def test_heading_and_lazy_image_remain_partial_content_evidence(self):
+        soup = BeautifulSoup('<div id="stance"><h3>교육과정</h3><img data-src="/curriculum.png"></div>', 'lxml')
+        parsed = self.adapter.parse_static(soup, fallback_title='교육과정')
+        self.assertEqual('image_only', parsed['content_state'])
+        self.assertEqual(['/curriculum.png'], parsed['content_images'])
+        doc = {'url': self.url, 'source_id': 'static:test', 'content': parsed['content'],
+               'metadata': {}, 'crawl': {'warnings': []}}
+        diagnostics = engine.CrawlDiagnostics()
+        self.assertFalse(engine.validate_body_content(doc, parsed, diagnostics))
+        self.assertEqual('partial_success', doc['crawl']['status'])
+        self.assertEqual('IMAGE_ONLY_REQUIRES_OCR', diagnostics.errors[0]['code'])
+
+    def test_only_same_menu_profile_links_are_selected_and_deduplicated(self):
+        html = self.list_html.replace('</div>', '''<a href="https://outside.example.org/physics/303?action=view&amp;no=3">상세보기</a>
+          <a href="/physics/999?action=view&amp;no=4">상세보기</a>
+          <a href="javascript:profile(5)">상세보기</a></div>''', 1)
+        links = self.adapter.static_detail_links(BeautifulSoup(html, 'lxml'), page_url=self.url)
+        self.assertEqual([self.url + '?action=view&no=1', self.url + '?action=view&no=2'], [link['url'] for link in links])
+
+    def test_profile_body_has_person_title_and_rejects_a_returned_list(self):
+        parsed = self.adapter.parse_profile(BeautifulSoup(self.profile_html, 'lxml'), fallback_title='교수진',
+                                             page_url=self.url + '?action=view&no=1', base_url=self.url, site_prefix='physics')
+        self.assertEqual('교수 A', parsed['title'])
+        self.assertIn('학력 | 박사', parsed['content'])
+        self.assertIn('연구분야 | 응용물리학', parsed['content'])
+        self.assertIn('faculty@example.org', parsed['content'])
+        self.assertNotIn('탭 이동', parsed['content'])
+        self.assertIsNone(self.adapter.parse_profile(BeautifulSoup(self.list_html, 'lxml'), fallback_title='교수진',
+                                                     page_url=self.url + '?action=view&no=1', base_url=self.url, site_prefix='physics'))
+
+    def test_profile_binds_each_tab_heading_to_its_referenced_panel(self):
+        html = '''<div id="sbCont"><div class="tch_in"><h3 class="a_tch_name">교수 A</h3></div>
+          <ul class="tch_tab">
+            <li><a onclick="fn_tab_ch(this,3);">주연구분야</a></li>
+            <li><a href="#tab4">강의과목</a></li>
+            <li><a href="#tab9">없는 본문</a></li>
+          </ul>
+          <div id="tab4" class="tab"><table><tr><td>질적연구 / 만성질환간호</td></tr></table></div>
+          <div id="tab3" class="tab" style="display:none">성인간호학 / 노인간호학</div>
+        </div>'''
+        parsed = self.adapter.parse_profile(BeautifulSoup(html, 'lxml'), fallback_title='교수진',
+                                            page_url=self.url + '?action=view&no=1', base_url=self.url, site_prefix='physics')
+        self.assertIn('주연구분야:\n성인간호학 / 노인간호학', parsed['content'])
+        self.assertIn('강의과목:\n질적연구 / 만성질환간호', parsed['content'])
+        self.assertNotIn('없는 본문', parsed['content'])
+
+    def test_profile_redirect_scope_requires_the_same_person_and_menu(self):
+        requested = self.url + '?action=view&no=1'
+        self.assertTrue(self.adapter.profile_target_allowed('https://icms.pknu.ac.kr/physics/303?no=1&action=view', requested))
+        for target in ('https://outside.example.org/physics/303?action=view&no=1',
+                       self.url + '?action=view&no=2', 'https://icms.pknu.ac.kr/other/303?action=view&no=1'):
+            self.assertFalse(self.adapter.profile_target_allowed(target, requested))
+
+    def test_external_profile_redirect_is_not_requested(self):
+        requested = self.url + '?action=view&no=1'
+        response = SimpleNamespace(status_code=302, url=requested,
+                                   headers={'Location': 'https://outside.example.org/profile'}, close=lambda: None)
+        with (patch.object(engine, 'get_with_tls_policy', return_value=(response, False)) as request,
+              patch.object(engine.time, 'sleep')):
+            result = engine.fetch(object(), requested,
+                                  redirect_validator=lambda target: self.adapter.profile_target_allowed(target, requested))
+        self.assertIsNone(result)
+        self.assertEqual(1, request.call_count)
+        self.assertFalse(request.call_args.kwargs['allow_redirects'])
+
+    def test_profile_limit_duplicate_visits_and_list_provenance(self):
+        captured = []
+        visited = set()
+        responses = [SimpleNamespace(text=self.list_html, url=self.url),
+                     SimpleNamespace(text=self.profile_html, url=self.url + '?action=view&no=1')]
+        with (patch.object(engine, 'fetch', side_effect=responses) as fetch,
+              patch.object(engine, 'collect_document_images') as images,
+              patch.object(engine, 'existing_document_path', return_value=SimpleNamespace(exists=lambda: False)),
+              patch.object(engine, 'save_document', side_effect=lambda doc, _: captured.append(doc))):
+            stats = engine.crawl_static(object(), self.section, max_items=2, no_download_files=True, visited_urls=visited)
+            skipped = engine.crawl_static(object(), {**self.section, 'url': self.url + '?no=1&action=view'},
+                                           visited_urls=visited)
+        self.assertEqual(2, fetch.call_count)
+        self.assertEqual(2, stats.requested)
+        self.assertEqual(2, stats.new)
+        self.assertEqual(0, stats.failed)
+        self.assertEqual(1, skipped.skipped)
+        self.assertTrue(all(not call.kwargs['download'] for call in images.call_args_list))
+        profile, parent = captured
+        self.assertEqual(self.url, profile['metadata']['profile_list_url'])
+        self.assertEqual('collected', parent['metadata']['faculty_profiles'][0]['status'])
+        self.assertEqual('item_limit', parent['metadata']['faculty_profiles'][1]['reason'])
+        self.assertEqual('partial_success', parent['crawl']['status'])
+        self.assertTrue(any(link['followed'] for link in parent['reference_links']))
+        self.assertFalse(next(link for link in parent['reference_links'] if link['url'].startswith('https://lab.'))['followed'])
+
+    def test_returned_list_does_not_replace_an_existing_profile(self):
+        url = self.url + '?action=view&no=1'
+        diagnostics = engine.CrawlDiagnostics()
+        with (patch.object(engine, 'fetch', return_value=SimpleNamespace(text=self.list_html, url=url)),
+              patch.object(engine, 'save_document') as save):
+            stats = engine.crawl_static(object(), {**self.section, 'url': url}, diagnostics=diagnostics)
+        self.assertEqual(1, stats.failed)
+        save.assert_not_called()
+        self.assertEqual('PROFILE_PARSE_FAILED', diagnostics.errors[0]['code'])
+
+    def test_body_images_use_the_adapter_root_and_honor_metadata_only_mode(self):
+        soup = BeautifulSoup('<header><img src="header.png"></header><article class="page_con"><img src="diagram.png"></article>', 'lxml')
+        doc = {'url': 'http://geoinfo.pknu.ac.kr/03specialty/02.php', 'metadata': {}, 'crawl': {'warnings': []}}
+        with patch.object(engine, 'ACTIVE_ADAPTER', get_adapter('legacy_php')):
+            engine.collect_document_images(doc, soup, object(), download=False)
+        self.assertEqual(['http://geoinfo.pknu.ac.kr/03specialty/diagram.png'],
+                         [record['source_url'] for record in doc['metadata']['body_images']])
+        self.assertEqual('not_attempted', doc['metadata']['body_images'][0]['status'])
+
+    def test_board_images_use_the_body_of_each_supported_adapter(self):
+        cases = {
+            'query_view_do': '<div class="editor-data-box"><img src="body.png"></div>',
+            'query_view_legacy': '<div class="board-view-wrap"><table><thead><tr><td><img src="author.png"></td></tr></thead>'
+                                 '<tbody><tr><td><a class="file-add"><img src="attachment.png"></a></td></tr>'
+                                 '<tr><td><img src="body.png"></td></tr></tbody></table></div>',
+            'query_mcode': '<div class="boardReadBody"><div class="boardContents"><img src="body.png"></div></div>',
+            'html_php': '<div class="board_read"><div class="readcontent"><img src="body.png"></div></div>',
+            'legacy_php': '<table class="write"><tr><th>작성자</th><td><img src="author.png"></td></tr>'
+                          '<tr><td colspan="2"><img src="body.png"></td></tr></table>',
+        }
+        for adapter, html in cases.items():
+            with self.subTest(adapter=adapter):
+                soup = BeautifulSoup('<header><img src="header.png"></header>' + html, 'lxml')
+                doc = {'url': 'https://example.org/posts/1', 'metadata': {}, 'crawl': {'warnings': []}}
+                with patch.object(engine, 'ACTIVE_ADAPTER', get_adapter(adapter)):
+                    engine.collect_document_images(doc, soup, object(), download=False, detail=True)
+                self.assertEqual(['https://example.org/posts/body.png'],
+                                 [record['source_url'] for record in doc['metadata']['body_images']])
+
+    def test_static_links_outside_faculty_category_are_not_followed(self):
+        with (patch.object(engine, 'fetch', return_value=SimpleNamespace(text=self.list_html, url=self.url)) as fetch,
+              patch.object(engine, 'collect_document_images'),
+              patch.object(engine, 'save_document'),
+              patch.object(engine, 'existing_document_path', return_value=SimpleNamespace(exists=lambda: False))):
+            stats = engine.crawl_static(object(), {**self.section, 'category': '교육과정'})
+        self.assertEqual(1, fetch.call_count)
+        self.assertEqual(1, stats.requested)
+
+    def test_attachment_only_text_check_does_not_hide_an_image_download_failure(self):
+        doc = {'url': self.url, 'source_id': 'static:images', 'content': '', 'metadata': {}, 'crawl': {'warnings': []}}
+        soup = BeautifulSoup('<div id="stance"><img src="/diagram.png"></div>', 'lxml')
+        diagnostics = engine.CrawlDiagnostics()
+        with patch('scripts.crawlers.common.body_images.save_body_images', return_value=[{'status': 'failed'}]):
+            engine.collect_document_images(doc, soup, object(), diagnostics=diagnostics)
+        engine.validate_body_content(doc, {'content_state': 'attachment_only'}, diagnostics)
+        self.assertEqual('partial_success', doc['crawl']['status'])
+        self.assertEqual('BODY_IMAGE_DOWNLOAD_FAILED', diagnostics.errors[0]['code'])
 
 
 if __name__ == "__main__":

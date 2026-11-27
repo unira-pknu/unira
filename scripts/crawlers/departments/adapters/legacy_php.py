@@ -9,6 +9,9 @@ from urllib.parse import parse_qs, urlencode, urljoin, urlsplit, urlunsplit
 from bs4 import BeautifulSoup
 
 from .base import DepartmentCMSAdapter
+from .numeric_cms import (
+    extract_body_content, _empty_content_info, _body_reference_links, _embedded_media_links,
+)
 
 
 _SUPPORTED_ROOTS = {"00main", "01about", "05piazza"}
@@ -35,8 +38,50 @@ def _bbs_code(html: str, page_url: str) -> str | None:
     return None
 
 
+def _static_video_content(soup, content, page_url: str):
+    """Preserve the verified geoinfo player's literal source without running JS."""
+    if content is None or urlsplit(page_url).hostname != "geoinfo.pknu.ac.kr":
+        return content
+    frame = content.select_one("iframe#youtubeFrame")
+    if frame is None or str(frame.get("src") or "").strip():
+        return content
+    video_ids = set()
+    for script in soup.select("script:not([src])"):
+        code = script.get_text()
+        # Require the known element binding and exact template assignment in
+        # the same script; arbitrary JS expressions and other players stay empty.
+        if not re.search(
+            r"(?m)^\s*const\s+youtubeFrame\s*=\s*document\.getElementById\(['\"]youtubeFrame['\"]\)\s*;", code,
+        ):
+            continue
+        if not re.search(r"(?m)^\s*youtubeFrame\.src\s*=\s*`https://www\.youtube\.com/embed/\$\{videoId\}`\s*;", code):
+            continue
+        video_ids.update(re.findall(
+            r"(?m)^\s*const\s+videoId\s*=\s*['\"]([A-Za-z0-9_-]{11})['\"]\s*;", code,
+        ))
+    if len(video_ids) != 1:
+        return content
+    copy = BeautifulSoup(str(content), "lxml")
+    copy.select_one("iframe#youtubeFrame")["src"] = "https://www.youtube.com/embed/" + video_ids.pop()
+    return copy
+
+
 class LegacyPHPAdapter(DepartmentCMSAdapter):
     name = "legacy_php"
+    version = "1.2"
+
+    def select_body_root(self, soup, *, page_url="", base_url="", detail=False):
+        if detail:
+            table = soup.select_one("table.write")
+            if table is None:
+                return None
+            cells = [row.select_one("td[colspan]") for row in table.select("tr") if row.select_one("th") is None]
+            return next((cell for cell in reversed(cells) if cell is not None), None)
+        for selector in (".page_con", "#contents", "#content", ".contents", ".content", "table.tb3", "#container"):
+            root = soup.select_one(selector)
+            if root is not None:
+                return root
+        return None
 
     def discover_menus(self, html: str, base_url: str) -> list[dict[str, str]]:
         soup, base = BeautifulSoup(html, "lxml"), urlsplit(base_url)
@@ -166,12 +211,14 @@ class LegacyPHPAdapter(DepartmentCMSAdapter):
         page_url: str = "", base_url: str = "", site_prefix: str = "",
     ) -> dict[str, Any]:
         title = soup.select_one("h1, h2, .nav_title_txt, .page-title")
-        content = soup.select_one("#contents, #content, .contents, .content, #container, table.tb3, .page_con")
+        content = self.select_body_root(soup, page_url=page_url, base_url=base_url)
         if not content:
             return {"title": fallback_title, "content": "", "attachments": []}
-        clean = BeautifulSoup(str(content), "lxml")
-        for selector in ("nav", ".breadcrumb", ".location", "script", "style"):
-            for element in clean.select(selector):
-                element.decompose()
+        content = _static_video_content(soup, content, page_url or base_url)
+        text = extract_body_content(content, prefer_detail_body=False)
+        attachments = self.parse_attachments(content, page_url=page_url, base_url=base_url, site_prefix=site_prefix)
+        references = _embedded_media_links(content, page_url or base_url) + _body_reference_links(content, page_url or base_url)
         return {"title": title.get_text(" ", strip=True) if title else fallback_title,
-                "content": re.sub(r"\s+", " ", clean.get_text(" ", strip=True)).strip(), "attachments": []}
+                "content": text, "attachments": attachments,
+                **({"reference_links": references} if references else {}),
+                **_empty_content_info(content, text, attachments)}

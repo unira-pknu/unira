@@ -2,10 +2,20 @@ from __future__ import annotations
 
 import unittest
 
-from app.generation import build_user_message, load_system_prompt
+from app.generation import _format_source_block, build_user_message, load_system_prompt
 
 
 class GenerationPromptTests(unittest.TestCase):
+    def test_source_scope_preserves_publisher_and_requested_cohort_separately(self) -> None:
+        block = _format_source_block([{"content": "입학연도별 기준을 확인하세요.", "metadata": {
+            "department_name": "컴퓨터·인공지능공학부", "validated_target": {
+                "department": "컴퓨터공학전공", "admission_year": 2024, "grade": None},
+        }}], 500)
+        self.assertIn("게시·수집 학과: 컴퓨터·인공지능공학부", block)
+        self.assertIn('"admission_year": 2024', block)
+        self.assertIn("적용 확인 아님", block)
+        self.assertNotIn('"grade"', block)
+
     def test_prompt_prefers_partial_grounded_answer_over_no_info(self) -> None:
         message = build_user_message(
             question="장학금 신청 방법을 알려줘",

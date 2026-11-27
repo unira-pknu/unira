@@ -444,6 +444,10 @@ def extract_chunk_records(doc: dict, input_file: Path, project_root: Path) -> li
         "source_attachment_path": provenance.get("source_attachment_path", ""),
         "body_image_provenance": doc.get("body_image_provenance", []),
     }
+    if provenance.get("document_kind") in {"academic_calendar", "tuition"}:
+        for key in ("academic_year", "semester", "source_review_status", "data_source_url"):
+            if provenance.get(key) is not None:
+                base_metadata[key] = provenance[key]
     if provenance.get("document_kind") == "syllabus":
         for key in ("syllabus_task_id", "year", "term", "term_code", "course_no", "section",
                     "course_name", "staff_name", "department", "level", "variant",

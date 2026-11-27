@@ -105,7 +105,7 @@ class DepartmentRequestFailureTests(unittest.TestCase):
             "body": "fixture content comments",
             "attachments": [],
         }
-        page = Mock(text="<html></html>")
+        page = response(text="<html></html>", url=item["post_url"])
         failure = engine.RequestFailure("HTTP_ERROR", section["url"], "HTTP 503", True)
         with (
             patch.object(engine, "fetch", side_effect=[page, page, None]),
@@ -133,7 +133,8 @@ class DepartmentRequestFailureTests(unittest.TestCase):
         ]
         diagnostics = engine.CrawlDiagnostics()
 
-        def fake_static(_session, section, diagnostics=None, no_download_files=False):
+        def fake_static(_session, section, diagnostics=None, no_download_files=False,
+                        max_items=None, visited_urls=None, parent_url=None):
             if section["id"] == "one":
                 diagnostics.errors.append({
                     "code": "HTTP_ERROR", "source_id": "one", "url": section["url"],
@@ -216,7 +217,8 @@ class DepartmentRequestFailureTests(unittest.TestCase):
         ]
         diagnostics = engine.CrawlDiagnostics()
 
-        def fake_static(_session, section, diagnostics=None, no_download_files=False):
+        def fake_static(_session, section, diagnostics=None, no_download_files=False,
+                        max_items=None, visited_urls=None, parent_url=None):
             if section["id"] == "one":
                 raise OSError("output directory is not writable")
             diagnostics.sections_initialized += 1

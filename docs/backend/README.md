@@ -7,7 +7,7 @@ FastAPI 백엔드. 단일 엔드포인트 `POST /ask` 를 제공한다.
 
 ```
 질문 → (sentence-transformers 임베딩) → Supabase RPC `match_rag_documents`
-     → (top-k 청크) → OpenAI gpt-4o-mini → 답변 + 출처
+     → (top-k 청크) → OpenAI (`OPENAI_MODEL`, 현재 환경설정 예시: gpt-6-luna) → 답변 + 출처
 ```
 
 ## 폴더 구조
@@ -69,9 +69,31 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 | `SUPABASE_URL` | `https://<project>.supabase.co` |
 | `SUPABASE_SERVICE_ROLE_KEY` | service_role key (anon key 로는 RLS 정책에 따라 RPC 호출이 거부될 수 있음) |
 | `OPENAI_API_KEY` | OpenAI API 키 |
+| `OPENAI_MODEL` | 호출 모델 ID. 현재 `main`의 환경설정 예시: `gpt-6-luna`. 코드 기본값: `gpt-4o-mini` |
+| `OPENAI_REASONING_EFFORT` | reasoning 모델의 추론 강도. 현재 환경설정 예시: `medium`, 코드 기본값: `low`. 빈 문자열이면 모델 기본값 사용 |
 | `ADMIN_EMAILS` | 관리자 대시보드(`/admin`)를 볼 수 있는 계정 이메일, 콤마 구분. 비워 두면 아무도 접근 불가(기본 거부). 대시보드는 service_role 로 전체 사용자의 질문·피드백을 읽으므로 이 목록이 유일한 접근 제어다 |
 
 기타 키 기본값은 `.env.example` 참고. `EXPECTED_DIMENSIONS` 와 `EMBEDDING_MODEL` 의 차원이 DB 컬럼과 일치해야 한다.
+
+설정은 프로세스 환경변수 → `backend/.env` → 코드 기본값 순서로 적용됩니다.
+`.env.example` 변경만으로 기존 `.env`나 배포 환경변수가 갱신되지는 않습니다.
+설정은 프로세스에서 캐시하므로 변경 후 백엔드를 재시작하세요.
+
+일반 답변·스트리밍·수정 답변·잡담·질문 재작성은
+[`openai_params.py`](../../backend/app/openai_params.py)의 공통 요청 옵션을 사용합니다.
+`gpt-5*`, `gpt-6*`, `o1*`, `o3*`, `o4*` 모델에는 `temperature`와 `max_tokens` 대신
+`max_completion_tokens`와 설정된 `reasoning_effort`를 전달합니다.
+`OPENAI_MAX_TOKENS`에 추론 토큰 여유분 1000을 더한 값이 전체 토큰 상한이며,
+실제 답변 길이를 보장하지는 않습니다. 기존 모델에는 `temperature`와 `max_tokens`를 유지합니다.
+평가 증거의 `settings`에도 `openai_reasoning_effort`를 기록합니다.
+
+프로젝트 루트에서 아래 명령으로 적용 설정과 회귀 테스트를 확인할 수 있습니다.
+테스트의 OpenAI 호출은 모의 클라이언트로 대체됩니다.
+
+```powershell
+.\.venv\Scripts\python.exe -c "from backend.app.config import get_settings; s = get_settings(); print(s.openai_model, s.openai_reasoning_effort)"
+.\.venv\Scripts\python.exe -m pytest backend/tests/test_openai_params.py backend/tests/test_generation.py backend/tests/test_grounding.py backend/tests/test_query_plan.py backend/tests/test_evaluation_evidence.py backend/tests/test_ask_json.py
+```
 
 > 보안: `.env` 는 루트 `.gitignore` 에 포함되어 있다. `.env.example` 도 현재 .gitignore 패턴에 잡혀 있어서 git 에 안 올라간다. 팀과 공유할 거면 `.gitignore` 에서 `.env.example` 줄을 제거해야 한다.
 

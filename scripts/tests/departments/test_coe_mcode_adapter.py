@@ -15,6 +15,14 @@ BASE_URL = "https://coe.pknu.ac.kr/"
 
 
 class QueryMcodeAdapterTests(unittest.TestCase):
+    def test_static_diagram_under_heading_is_not_complete_text_content(self):
+        soup = BeautifulSoup('<div id="container-wrap">메뉴<div class="page-cont">'
+                             '<h2>교육과정</h2><img data-original="/diagram.png"></div></div>', 'lxml')
+        parsed = get_adapter('query_mcode').parse_static(soup, fallback_title='교육과정')
+        self.assertEqual('image_only', parsed['content_state'])
+        self.assertEqual(['/diagram.png'], parsed['content_images'])
+        self.assertNotIn('메뉴', parsed['content'])
+
     @classmethod
     def setUpClass(cls) -> None:
         cls.adapter = get_adapter("query_mcode")

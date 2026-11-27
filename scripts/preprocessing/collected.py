@@ -13,6 +13,7 @@ import shutil
 from scripts.preprocessing.storage import get_preprocessed_root
 from scripts.crawlers.common.storage import department_datasets, get_dataset_root
 from scripts.crawlers.main.paths import is_crawler_document
+from scripts.preprocessing.main_structured import is_structured_main_document
 from scripts.preprocessing.file_preprocessing import SUPPORTED_EXTS, run_batch
 from scripts.preprocessing.preprocessing_pipeline import PROJECT_ROOT, configure_logging, run_rule_dataset
 
@@ -49,7 +50,7 @@ def inspect(root: Path) -> dict:
         for path in source_files(source):
             ext = path.suffix.lower()
             if ext == ".json":
-                kind = "document_json" if is_crawler_document(path) else "other_json"
+                kind = "document_json" if is_crawler_document(path) or is_structured_main_document(path) else "other_json"
             elif ext in {".html", ".htm"}:
                 kind = "html_snapshot"
             elif ext in IMAGES:
@@ -84,7 +85,7 @@ def run(root: Path, *, dry_run: bool, pdf_ocr: str, workers: int = 1, worker_ind
             ext = path.suffix.lower()
             if ext not in SUPPORTED_EXTS:
                 continue
-            if ext == ".json" and not is_crawler_document(path):
+            if ext == ".json" and not (is_crawler_document(path) or is_structured_main_document(path)):
                 continue
             # Preserve category roots and join attachments to their sibling JSON.
             relative = path.relative_to(source)

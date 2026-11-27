@@ -1,11 +1,13 @@
 """Regression cases from the manual 100-question review, including follow-ups."""
 import json
 from types import SimpleNamespace
+from unittest.mock import Mock
 
 import pytest
 
-from app.query_plan import finish_plan, rule_plan
+from app.query_plan import finish_plan, rule_plan, target_for
 from app.query_rewrite import plan_question
+from app.query_transform import transform_query
 
 
 def planner(payload):
@@ -20,6 +22,15 @@ def test_unresolved_subject_never_calls_model_or_retrieval(question):
     assert plan.clarification.endswith("?") and not plan.queries
 
 
+def test_regular_tuition_fields_use_one_scoped_query_without_model_rewrite():
+    question = "2025학년도 1학기 학부 공학계열 신입생 정규 등록금의 수업료와 총액은 얼마예요?"
+    client = Mock()
+    plan = plan_question(openai_client=client, model="test", question=question, chat_history=[])
+    assert plan.queries == [question]
+    assert len(plan.tasks) == 1
+    client.chat.completions.create.assert_not_called()
+
+
 def test_unique_user_referent_resolves_but_multiple_referents_do_not():
     single = rule_plan("거기 전화번호는?", [{"role": "user", "content": "도서관 운영시간 알려줘"}])
     assert single.route == "search" and "도서관" in single.resolved_question
@@ -27,6 +38,57 @@ def test_unique_user_referent_resolves_but_multiple_referents_do_not():
     assert multiple.route == "clarification"
     guessed = rule_plan("거기 전화번호는?", [{"role": "assistant", "content": "주거안정장학금 문의처입니다"}])
     assert guessed.route == "clarification"
+
+
+def test_spaced_phone_followup_prompts_for_a_missing_place():
+    history = [{"role": "user", "content": "휴학 신청 방법을 알려줘"}]
+    for question in ("거기 전화 번호는?", "거기 전화번호는?"):
+        plan = rule_plan(question, history)
+        assert plan.route == "clarification"
+        assert "어느 부서나 시설" in plan.clarification
+
+
+def test_roster_reference_to_an_explicit_department_page_does_not_need_clarification():
+    question = "경제학과 소개 페이지를 근거로 거기에 등록된 교수 이름 세 분을 보여줘."
+    plan = finish_plan(rule_plan(question), question, [])
+    assert plan.route == "search"
+    assert plan.queries == [question]
+    assert plan.tasks[0].target.department_id == "econ"
+
+
+def test_public_faculty_contact_preserves_the_name_and_department_identity():
+    assert target_for("물리학과 김서현 교수님에게 연락할 이메일").instructor == "김서현"
+    assert target_for("기계공학전공 진수영 교수님의 랩 이름").department_id == "me"
+    assert target_for("스마트모빌리티 교수진").department_id == "smartmobility"
+    assert target_for("전공주임으로 취임한 교수는 누구인가요?").instructor is None
+
+
+def test_private_evaluation_submission_and_portal_navigation_are_distinct():
+    plan = rule_plan("제가 이번 학기에 강의평가를 제출했는지 확인해줘.")
+    assert plan.route == "refused" and "학교 포털" in plan.clarification
+    assert rule_plan("강의평가 제출했는지 포털에서 어떻게 확인해요?").route == "search"
+
+
+@pytest.mark.parametrize("question", ["그 교수님 이메일 주소 알려줘.", "그분 연구실 위치가 어디인지 알려주세요."])
+def test_unresolved_professor_reference_asks_for_the_person_before_search(question):
+    history = [{"role": "assistant", "content": "문병기 명예교수를 소개합니다."}]
+    plan = plan_question(openai_client=None, model="test", question=question, chat_history=history)
+    assert plan.route == "clarification" and not plan.tasks
+    assert "성함" in plan.clarification
+
+
+def test_professor_reference_can_use_a_single_explicit_name_from_user_history():
+    question = "그분 연구실 위치가 어디인지 알려주세요."
+    history = [{"role": "user", "content": "물리학과 문병기 명예교수의 학력을 알려줘"}]
+    plan = rule_plan(question, history)
+    assert plan.route == "search" and "문병기 명예교수" in plan.resolved_question
+
+
+def test_profile_search_rewrite_cannot_remove_the_named_person():
+    question = "기계공학부 진수영 교수님이 2023년 11월부터 방문연구원으로 근무했던 기관은 어디야?"
+    plan = finish_plan(rule_plan(question), question, ["기계공학부 2023년 방문연구원 근무 기관"])
+    assert plan.queries == [question]
+    assert plan.tasks[0].target.instructor == "진수영"
 
 
 def test_current_application_condition_survives_model_rewrite():
@@ -46,6 +108,15 @@ def test_latest_count_department_and_format_are_explicit():
     assert task.conditions.order_by == "published_at_desc" and plan.response_format == "표로"
 
 
+@pytest.mark.parametrize("department", ["컴공", "컴퓨터공학과", "컴퓨터공학부"])
+def test_computer_department_user_names_keep_the_ce_retrieval_scope(department):
+    question = f"{department} 졸업요건"
+    plan = finish_plan(rule_plan(question), question, [question])
+    assert plan.tasks[0].target.department_id == "ce"
+    assert plan.tasks[0].target.department == "컴퓨터공학전공"
+    assert "department" in plan.tasks[0].required_conditions
+
+
 def test_compound_query_does_not_apply_notice_conditions_to_library():
     q = "컴공 최신 공지 3개와 도서관 전화번호 알려줘"
     plan = finish_plan(rule_plan(q), q, ["컴공 최신 공지", "도서관 전화번호"])
@@ -60,6 +131,31 @@ def test_compound_lists_keep_their_own_requested_counts():
     assert [task.conditions.limit for task in plan.tasks] == [3, 5]
     # Each side keeps its own department; "컴공" names ce although the formal name is absent.
     assert [task.target.department_id for task in plan.tasks] == ["ce", "me"]
+
+
+@pytest.mark.parametrize("cohort", ["2024학번", "24학번", "2024학년도 입학생", "2024년 입학자"])
+def test_admission_cohort_is_not_a_grade_or_calendar_year(cohort):
+    q = f"{cohort} 컴퓨터공학전공 졸업학점 기준"
+    plan = finish_plan(rule_plan(q), q, [q])
+    task = plan.tasks[0]
+    assert task.target.admission_year == 2024
+    assert task.target.grade is None
+    assert task.conditions.year is None
+    assert "admission_year" in task.required_conditions
+
+
+def test_cohort_and_current_grade_and_requested_semester_are_independent():
+    q = "2024학년도 입학생 3학년 컴공의 2026학년도 2학기 수강신청"
+    task = finish_plan(rule_plan(q), q, [q]).tasks[0]
+    assert (task.target.admission_year, task.target.grade) == (2024, 3)
+    assert (task.conditions.year, task.conditions.term) == (2026, "2")
+
+
+def test_comparison_preserves_admission_years_written_as_entrance_years():
+    q = "2020학년도 입학생 인공지능전공과 2021학년도 입학생 컴퓨터공학전공의 전공필수 비교"
+    plan = finish_plan(rule_plan(q), q, ["2020학년도 입학생 인공지능전공 전공필수", "2021학년도 입학생 컴퓨터공학전공 전공필수"])
+    assert [t.target.admission_year for t in plan.tasks] == [2020, 2021]
+    assert all(t.target.grade is None for t in plan.tasks)
 
 
 def test_invented_student_group_is_not_adopted():
@@ -190,6 +286,35 @@ def test_each_shuttle_subquery_keeps_its_subject():
     q = "셔틀버스 노선과 오늘 실시간 도착 시간을 알려줘"
     plan = finish_plan(rule_plan(q), q, ["셔틀버스 노선", "오늘 실시간 도착 시간"])
     assert plan.queries == ["셔틀버스 노선", "셔틀버스 오늘 실시간 도착 시간"]
+
+
+@pytest.mark.parametrize(("first", "second"), [
+    ("셔틀 버스 노선", "셔틀버스 노선"),
+    ("컴공 졸업 기준", "컴공 졸업 조건"),
+    ("컴공 사무실 전화 번호", "컴공 사무실 전화번호"),
+])
+def test_equivalent_terms_keep_the_same_search_input_and_scope(first, second):
+    plans = [finish_plan(rule_plan(q), q, [q]) for q in (first, second)]
+    left, right = [plan.tasks[0] for plan in plans]
+    assert transform_query(left.text) == transform_query(right.text)
+    assert left.target == right.target
+    assert left.purpose == right.purpose
+
+
+@pytest.mark.parametrize("rewritten", ["수강신청 기간", "2026학년도 2학기 수강신청 기간"])
+def test_standalone_rewrite_cannot_drop_or_replace_requested_semester(rewritten):
+    q = "2025학년도 1학기 수강신청 기간은 언제였나요?"
+    task = finish_plan(rule_plan(q), q, [rewritten]).tasks[0]
+    assert task.text == q
+    assert (task.conditions.year, task.conditions.term) == (2025, "1")
+
+
+def test_standalone_rewrite_keeps_admission_year_as_a_cohort():
+    q = "24학번 컴퓨터공학전공 졸업학점"
+    task = finish_plan(rule_plan(q), q, ["컴퓨터공학전공 2024년 졸업학점"]).tasks[0]
+    assert task.text == q
+    assert task.target.admission_year == 2024
+    assert task.conditions.year is None
 
 
 def test_office_contact_needs_a_department_but_can_use_explicit_user_history():

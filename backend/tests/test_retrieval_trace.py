@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.deps import get_state
-from app.query_plan import QuestionPlan, SearchTask, Target
+from app.query_plan import QuestionPlan, SearchTask, Target, target_for
 from app.rate_limit import enforce_ask_rate_limit
 from app.retrieval import search
 from app.retrieval_trace import RetrievalTrace, candidate_key, source_identity

@@ -28,9 +28,12 @@ METADATA_NAMES = (
     "published_at", "posted_at", "date", "year", "term", "applicability_note",
     "source_link_kind", "structured_table",
     "request_query",
+    "validated_target", "query_conditions", "request_purpose",
+    "request_document_lookup",
     "request_coverage", "comparison_targets",
     "retrieval_incomplete", "unresolved_request",
     "catalog_table",
+    "reviewed_campus_source", "attachment_name", "attachment_url", "archive_member_original_name",
 )
 
 

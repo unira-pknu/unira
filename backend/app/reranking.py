@@ -6,6 +6,8 @@ import logging
 import time
 from typing import Any, Dict, List
 
+from .evidence_context import select_evidence
+
 logger = logging.getLogger(__name__)
 
 
@@ -39,7 +41,7 @@ class CrossEncoderReranker:
     def score(self, question: str, rows: List[Dict[str, Any]]) -> List[float]:
         if not rows:
             return []
-        pairs = [(question, _row_text(row)) for row in rows]
+        pairs = [(question, _row_text(row, question=question)) for row in rows]
         started = time.perf_counter()
         scores = self._model.predict(pairs, show_progress_bar=False)
         values = [float(score) for score in scores]
@@ -52,7 +54,7 @@ class CrossEncoderReranker:
         return values
 
 
-def _row_text(row: Dict[str, Any], max_chars: int = 1200) -> str:
+def _row_text(row: Dict[str, Any], max_chars: int = 1200, *, question: str = "") -> str:
     metadata = row.get("metadata") or {}
     title = (
         metadata.get("doc_title")
@@ -63,6 +65,10 @@ def _row_text(row: Dict[str, Any], max_chars: int = 1200) -> str:
         or ""
     )
     content = str(row.get("content") or "")
+    if question:
+        # Book chapters can put the answer after a long wrapper/timetable.
+        # The reranker must see that passage, not only the original prefix.
+        content = select_evidence(content, question=question, target_chars=max_chars, metadata=metadata)
     text = f"{title}\n{content}".strip()
     return text[:max_chars]
 

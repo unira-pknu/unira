@@ -62,10 +62,16 @@ def load_department_names(path: Optional[Path]) -> Tuple[str, ...]:
 
 DEPARTMENT_NAMES: Tuple[str, ...] = load_department_names(_registry_path())
 
-# Everyday names students use that appear nowhere in documents.
+# User names and older labels absent from today's department registry.
 ALIASES = {
     "컴공": ("컴퓨터·인공지능공학부", "컴퓨터공학전공"),
     "컴과": ("컴퓨터·인공지능공학부", "컴퓨터공학전공"),
+    # Full-form user names need the same dataset scope as the abbreviation.
+    # This is routing identity, not proof of equal curricula across cohorts.
+    "컴퓨터공학과": ("컴퓨터·인공지능공학부", "컴퓨터공학전공"),
+    "컴퓨터공학부": ("컴퓨터·인공지능공학부", "컴퓨터공학전공"),
+    "기계공학전공": ("기계공학전공", "기계공학부"),
+    "스마트모빌리티": ("스마트모빌리티공학과",),
 }
 # A chunk naming at least this many other departments is a slice of a
 # per-department table.

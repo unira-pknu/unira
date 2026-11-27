@@ -78,6 +78,8 @@ ABBREVIATIONS: dict[str, str] = {
 #         Q2 회귀·Q3 false confidence 일으킨 항목 9개. 9개 항목 제거됨
 #         (수업 빠, 비교과, 전과, 학자금, 장학금 신청, 복학, 휴학, 한국어, 외국인).
 SYNONYMS: dict[str, tuple[str, ...]] = {
+    # The indexed official OQEANOUS notices use the older Korean name.
+    "도쿄해양대": ("동경해양대학",),
     "공결":      ("출석인정",),
     # 유지 — Q7 실측 입증
     "교환학생":   ("교환수학", "해외수학"),
@@ -97,6 +99,16 @@ SYNONYMS: dict[str, tuple[str, ...]] = {
 _HANGUL_OR_ALNUM = "가-힣A-Za-z0-9"
 _MULTISPACE_RE = re.compile(r"\s+")
 _TRAILING_PUNCT_RE = re.compile(r"[?!.\s]+$")
+
+
+def normalize_search_terms(text: str) -> str:
+    """Use the same search labels for equivalent spellings of known topics."""
+    text = re.sub(r"졸업[ \t]*(?:요건|조건|기준)", "졸업요건", text)
+    return re.sub(
+        r"셔틀[ \t]+버스|전화[ \t]+번호|졸업[ \t]+학점",
+        lambda match: "".join(match[0].split()),
+        text,
+    )
 
 
 def _normalize(text: str) -> str:
@@ -152,11 +164,35 @@ def _expand_synonyms(
 
 def transform_query(question: str) -> str:
     """학생 질문 → 검색 친화 form. 멱등."""
-    text = _normalize(question)
-    text, _ = _strip_fillers(text)
+    text, _ = _strip_fillers(_normalize(question))
+    text = normalize_search_terms(text)
     text, _ = _expand_abbreviations(text)
     text, _ = _expand_synonyms(text)
     return _normalize(text)
+
+
+def named_document_request(question: str, title: str) -> bool:
+    """A named institution's notice can describe an audience unlike the user.
+
+    This permits document lookup, never a claim of personal eligibility. Keep
+    personal-application questions under the ordinary audience/school guards.
+    """
+    if not re.search(r"공지|공고|모집|프로그램", question):
+        return False
+    if re.search(r"제가|저는|나는|나도|저도|학부생|대학원생|신청할\s*수|지원할\s*수|가능(?:한가|한지|해|하나요|합니까)", question):
+        return False
+    expanded = transform_query(question)
+    names = re.findall(r"(?<![가-힣A-Za-z])([가-힣A-Za-z·]{2,}(?:대학교|대학|대))(?=\s|$|[0-9의,.?!]|프로그램)", expanded)
+    heading = title.replace("·", "")
+    for name in names:
+        stem = re.sub(r"(?:대학교|대학|대)$", "", name)
+        if stem.removeprefix("국립") == "부경":
+            continue
+        # A short generic name such as 해양대 must not match a different
+        # institution merely because it is a suffix of 동경해양대학.
+        if re.search(rf"(?<![가-힣A-Za-z]){re.escape(stem)}\s*(?:대학교|대학|대)(?=\s|$|[0-9의,.?!:()]|프로그램)", heading):
+            return True
+    return False
 
 
 def transform_query_debug(question: str) -> dict:
@@ -164,7 +200,7 @@ def transform_query_debug(question: str) -> dict:
     original = question
     after_norm = _normalize(question)
     after_strip, removed = _strip_fillers(after_norm)
-    after_abbr, abbrs = _expand_abbreviations(after_strip)
+    after_abbr, abbrs = _expand_abbreviations(normalize_search_terms(after_strip))
     after_syn, syns = _expand_synonyms(after_abbr)
     final = _normalize(after_syn)
     return {

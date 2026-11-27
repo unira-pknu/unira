@@ -9,6 +9,7 @@ from urllib.parse import parse_qs, urlencode, urljoin, urlsplit, urlunsplit
 from bs4 import BeautifulSoup
 
 from .base import DepartmentCMSAdapter
+from .numeric_cms import extract_body_content, _empty_content_info, _body_reference_links
 
 
 _MENU_PATH = re.compile(r"^/html/([^/]+)/([^/]+\.php)$", re.IGNORECASE)
@@ -21,6 +22,22 @@ def _query(url: str) -> dict[str, list[str]]:
 
 class HtmlPHPAdapter(DepartmentCMSAdapter):
     name = "html_php"
+    version = "1.1"
+
+    def select_body_root(self, soup, *, page_url="", base_url="", detail=False):
+        if detail:
+            return soup.select_one(".board_read .readcontent, .readcontent")
+        if urlsplit(page_url or base_url).hostname == "itc.pknu.ac.kr":
+            photo = soup.select_one('img[src*="/050000_fix_board_professor/"]')
+            if photo is not None:
+                root = photo.find_parent(class_="container")
+                if root is not None:
+                    return root
+        for selector in (".page_con", ".sub_contents", "#contents", "#content", "main", ".contents", ".content"):
+            root = soup.select_one(selector)
+            if root is not None:
+                return root
+        return None
 
     def discover_menus(self, html: str, base_url: str) -> list[dict[str, str]]:
         soup, base = BeautifulSoup(html, "lxml"), urlsplit(base_url)
@@ -61,7 +78,7 @@ class HtmlPHPAdapter(DepartmentCMSAdapter):
                       str(_query(urljoin(page_url, str(a.get("href") or ""))).get("mode", [""])[0]).lower() == "read"
                       and str(_query(urljoin(page_url, str(a.get("href") or ""))).get("idx", [""])[0]).isdigit()]
         board = bool(read_links or soup.select_one(".board_list, .board_wrap, .board-list"))
-        static = bool(soup.select_one("main, #contents, #content, .contents, .content, .sub_contents, .page_con"))
+        static = self.select_body_root(soup, page_url=page_url) is not None
         return {**common, "kind": "board" if board else "static_page",
                 "document_type": "notice" if board else "guide",
                 "confidence": 0.95 if board else (0.65 if static else 0.2),
@@ -139,8 +156,16 @@ class HtmlPHPAdapter(DepartmentCMSAdapter):
         self, soup: BeautifulSoup, *, fallback_title: str,
         page_url: str = "", base_url: str = "", site_prefix: str = "",
     ) -> dict[str, Any]:
-        title = soup.select_one("h1, h2, .page-title, .sub_title")
-        content = soup.select_one("main, #contents, #content, .contents, .content, .sub_contents, .page_con")
+        content = self.select_body_root(soup, page_url=page_url, base_url=base_url)
+        clean = BeautifulSoup(str(content), "lxml") if content is not None else None
+        if clean is not None:
+            for tab in clean.select(".tab_ul3"):
+                tab.decompose()
+        title = clean.select_one(".cont_title, h1, h2, .page-title, .sub_title") if clean else None
+        text = extract_body_content(clean, prefer_detail_body=False)
+        attachments = self.parse_attachments(clean, page_url=page_url, base_url=base_url, site_prefix=site_prefix)
+        references = _body_reference_links(clean, page_url or base_url)
         return {"title": title.get_text(" ", strip=True) if title else fallback_title,
-                "content": re.sub(r"\s+", " ", content.get_text(" ", strip=True)).strip() if content else "",
-                "attachments": []}
+                "content": text, "attachments": attachments,
+                **({"reference_links": references} if references else {}),
+                **_empty_content_info(clean, text, attachments)}

@@ -96,6 +96,8 @@ def extract_json_blocks(path: Path) -> list[dict]:
     doc = json.loads(path.read_text(encoding="utf-8-sig"))
     if not isinstance(doc, dict):
         raise ValueError("JSON root must be an object")
+    from scripts.preprocessing.main_structured import normalize_structured_main
+    doc = normalize_structured_main(doc)
 
     blocks: list[dict] = []
 

@@ -25,6 +25,26 @@ class AnchorTermsTests(unittest.TestCase):
 
 
 class RankNoticesTests(unittest.TestCase):
+    def test_yearless_monthly_notice_beats_other_months_and_other_years(self):
+        phrase = "모의토익"
+        term_rows = {phrase: [
+            {"title": "6월 모의 토익시험 고사장 안내", "url": "https://x/target", "published_at": "2023-06-29"},
+            {"title": "8월 모의토익 접수 안내", "url": "https://x/aug", "published_at": "2023-08-03"},
+            {"title": "2026년 6월 모의토익 안내", "url": "https://x/later", "published_at": "2026-06-01"},
+        ]}
+        self.assertEqual(title_anchor.notice_title_patterns("6월 모의 토익 고사장"),
+                         {phrase: "%모의%토익%"})
+        self.assertEqual(title_anchor.rank_notices(term_rows, title_year=2023, event_month=(2023, 6),
+                                                   phrase_terms=frozenset({phrase}))[0], "https://x/target")
+
+    def test_explicit_publication_year_does_not_get_replaced_by_the_admission_year(self):
+        notices = {"해양대학": [
+            {"title": "해양대학 2027년 입학생 모집", "url": "https://x/new", "published_at": "2026-11-01"},
+            {"title": "해양대학 2026년 입학생 모집", "url": "https://x/requested", "published_at": "2025-11-05"},
+            {"title": "해양대학 2026년 입학생 모집", "url": "https://x/requested"},
+        ]}
+        self.assertEqual(title_anchor.rank_notices(notices, published_year=2025), ["https://x/requested"])
+
     def test_newest_term_wins_among_equal_matches(self):
         term_rows = {"정효택": (
             rows("2025-2학기 [발전기금]정효택 장학생 모집 안내", "https://ce.pknu.ac.kr/ce/1814?action=view&no=9970000")

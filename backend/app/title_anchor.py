@@ -65,6 +65,30 @@ _GENERIC_ADMIN = frozenset({
     "안내", "모집", "선발", "지원", "공지", "확인", "내용", "경우", "처리", "방안", "문의",
     "조건", "자격", "절차", "필요", "가능", "여부",
 })
+_TITLE_PHRASES = (
+    ("모의", "토익"),
+    ("영어", "말하기", "대회"),
+    ("지역", "인재", "7", "급"),
+    ("다문화", "탈북", "학생"),
+    ("교양", "강좌", "공모전"),
+    ("학점", "교류"),
+    ("교류", "수학"),
+    ("학위", "청구", "논문"),
+    ("akf",),
+)
+
+
+def notice_title_patterns(question: str) -> dict[str, str]:
+    """Match official names even when a notice inserts spaces or punctuation."""
+    compact = "".join(_TOKEN_SPLIT_RE.split(question)).lower()
+    return {"".join(parts): "%" + "%".join(parts) + "%" for parts in _TITLE_PHRASES
+            if "".join(parts) in compact}
+
+
+def notice_month(question: str) -> tuple[int, int] | None:
+    dates = {(int(year), int(month)) for year, month in
+             re.findall(r"(?<!\d)(20\d{2})\s*년\s*(\d{1,2})\s*월", question) if 1 <= int(month) <= 12}
+    return next(iter(dates)) if len(dates) == 1 else None
 
 
 def anchor_terms(query_text: Optional[str], stopwords: Iterable[str], particle_suffixes: Sequence[str]) -> List[str]:
@@ -137,7 +161,9 @@ def notice_number(url: str) -> int:
     return int(match.group(1)) if match else 0
 
 
-def rank_notices(term_rows: Dict[str, List[Dict[str, object]]]) -> List[str]:
+def rank_notices(term_rows: Dict[str, List[Dict[str, object]]], *, published_year: int | None = None,
+                 title_year: int | None = None, event_month: tuple[int, int] | None = None,
+                 phrase_terms: frozenset[str] = frozenset()) -> List[str]:
     """URLs of the best-matching notices, best first, at most ANCHOR_NOTICES.
 
     `term_rows` maps each term to the source rows (needing "url" and
@@ -149,6 +175,9 @@ def rank_notices(term_rows: Dict[str, List[Dict[str, object]]]) -> List[str]:
     title_by_url: Dict[str, str] = {}
     term_by_url: Dict[str, int] = {}
     weights: Dict[str, float] = {}
+    matching_year_urls: set[str] = set()
+    postings: Dict[str, set[str]] = {}
+    matched_terms: Dict[str, set[str]] = {}
     for term, rows in term_rows.items():
         urls = {str(row.get("url") or "") for row in rows if row.get("url")}
         if not urls or len(urls) > MAX_TERM_DF or len(rows) >= TERM_FETCH_LIMIT:
@@ -159,22 +188,43 @@ def rank_notices(term_rows: Dict[str, List[Dict[str, object]]]) -> List[str]:
                 url = str(row["url"])
                 title_by_url[url] = str(row.get("title") or "")
                 term_by_url[url] = max(term_by_url.get(url, -1), _row_term(row))
+                matched_terms.setdefault(url, set()).add(term)
+                postings.setdefault(url, set()).update(str(row[k])[:10] for k in ("published_at", "date") if row.get(k))
+                if published_year is not None and any(str(row.get(key) or "").startswith(f"{published_year}-") for key in ("published_at", "date")):
+                    matching_year_urls.add(url)
     if not weights:
         return []
 
     scores: Dict[str, float] = {}
     for url, title in title_by_url.items():
-        scores[url] = sum(weight for term, weight in weights.items() if term.lower() in title.lower())
+        scores[url] = sum(weight for term, weight in weights.items()
+                          if term.lower() in title.lower() or term in (matched_terms[url] & phrase_terms))
+    if (title_year or event_month) and (matched := {url for url, terms in matched_terms.items() if terms & phrase_terms}):
+        # A year/subject-specific phrase outranks an accidental rare title word.
+        scores = {url: score for url, score in scores.items() if url in matched}
     best = max(scores.values())
     # A notice must match the strongest evidence at least half as well as
     # the best one does; otherwise a stray common-ish word drags in noise.
     # Among those, the newest term wins: a question naming a recurring notice
     # ("정효택 장학금", 29 posts since 2021) means this term's post.
-    ranked = sorted(
-        (url for url, score in scores.items() if score >= best * 0.5),
-        key=lambda url: (term_by_url[url], scores[url], notice_number(url)),
-        reverse=True,
-    )
+    preferred_year_urls = matching_year_urls & scores.keys()
+    eligible = [url for url, score in scores.items() if score >= best * 0.5
+                and (not preferred_year_urls or url in preferred_year_urls)]
+    def rank(url: str):
+        title = title_by_url[url]
+        years = re.findall(r"(?<!\d)(20\d{2})(?!\d)", title)
+        year_rank = int(str(title_year) in years) * 2
+        if phrase_terms and not years and any(date.startswith(f"{title_year}-") for date in postings[url]):
+            year_rank = 1
+        month_rank = 0
+        if event_month:
+            year, month = event_month
+            if re.search(rf"(?<!\d){month}\s*월", title):
+                month_rank = 2
+            elif any(d.startswith(f"{year}-{month:02d}-") for d in postings[url]):
+                month_rank = 1
+        return year_rank, month_rank, term_by_url[url], scores[url], notice_number(url)
+    ranked = sorted(eligible, key=rank, reverse=True)
     return ranked[:ANCHOR_NOTICES]
 
 

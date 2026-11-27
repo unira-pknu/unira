@@ -13,10 +13,12 @@ from urllib.parse import unquote, urlparse
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse, StreamingResponse
 
+from ..course_identity import instructor_names
 from ..deps import AppState, get_state
 from ..excerpts import extract_relevant_excerpt
 from ..evaluation import evidence_snapshot
 from ..evidence_context import supplement_neighbors
+from ..faculty import PERSON_FIELDS, PROFILE_FIELDS, profile_chunks
 from ..generation import generate_answer, generate_small_talk, stream_answer
 from ..query_rewrite import plan_question
 from ..query_plan import QuestionPlan, SearchTask, finish_plan, rule_plan
@@ -25,6 +27,7 @@ from ..source_scope import checked_rows, scope_reason
 from ..query_transform import transform_query
 from ..rate_limit import enforce_ask_rate_limit
 from ..retrieval import _dedupe_key, _rag_self_intro_first_stage_overrides, search
+from ..reviewed_campus_sources import source_rows as reviewed_campus_rows
 from ..schemas import AskRequest, AskResponse, Attachment, Source
 from ..search_status import SearchResults, SearchUnavailable
 from ..retrieval_trace import RetrievalTrace, source_identity
@@ -162,6 +165,27 @@ def _search_one(state: AppState, search_query: str, task: SearchTask | None = No
     """One embed+search() call for a single (already standalone) query
     string -- the same call _retrieve() always made, just factored out so
     it can run once per decomposed sub-query."""
+    if (task and task.conditions.kind == "search" and task.target.school == "부경대학교"
+            and task.target.department_id and task.target.instructor
+            and (PROFILE_FIELDS.search(task.text) or PERSON_FIELDS.search(task.text))
+            and instructor_names(task.text) == {task.target.instructor}):
+        try:
+            profiles = profile_chunks(state.supabase, department=task.target.department_id,
+                                      name=task.target.instructor, question=search_query,
+                                      top_k=state.settings.rag_top_k)
+            profiles = [row for row in profiles if scope_reason(row, task) is None]
+        except Exception:
+            logger.warning("faculty profile lookup failed; continuing with hybrid search", exc_info=True)
+        else:
+            if profiles:
+                reviewed = [row for row in reviewed_campus_rows(task.text) if scope_reason(row, task) is None]
+                trace = RetrievalTrace() if capture_trace else None
+                if trace is not None:
+                    trace.snapshot("faculty_profile_selected", profiles)
+                    if reviewed:
+                        trace.snapshot("reviewed_campus_sources", reviewed)
+                return SearchResults([*reviewed, *profiles][:state.settings.rag_top_k],
+                                     trace=trace.export() if trace is not None else None)
     embedding = state.embedder.encode_query(search_query)
     return search(
         state.supabase,
@@ -183,6 +207,7 @@ def _search_one(state: AppState, search_query: str, task: SearchTask | None = No
         max_chunks_per_url=state.settings.rag_max_chunks_per_url,
         max_lexical_chunks_per_url=state.settings.rag_max_lexical_chunks_per_url,
         query_text=search_query,
+        reviewed_query_text=task.text if task else None,
         per_rpc_metadata_filters={"match_rag_documents": {"ingestion_dataset": task.target.department_id}}
         if task and task.target.department_id else None,
         title_anchor=state.settings.rag_title_anchor_enabled,

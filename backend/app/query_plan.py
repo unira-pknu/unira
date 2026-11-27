@@ -10,22 +10,39 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 from . import department_focus as departments
-from .freshness import current_term, query_term
-from .course_identity import instructor_name, instructor_names, course_level, is_course_list, resolve_course_question
+from .freshness import current_term, query_term, says_this_term
+from .course_identity import PROFILE_REFERENCE, instructor_name, instructor_names, course_level, is_course_list, is_single_offering_question, resolve_course_question
+from .document_focus import tuition_row_key
+from .faculty import PERSON_FIELDS, PERSON_REFERENCE, PROFILE_FIELDS, ROSTER
+from .query_transform import normalize_search_terms
 
 KST = timezone(timedelta(hours=9))
-TOPICS = re.compile(r"휴학|복학|전과|복수전공|부전공|졸업|수강|공결|출석|성적|장학|등록금|교환학생|교환수학|기숙사|생활관|도서관|증명서|상담센터|보건진료소|와이파이|취업|강의계획|교재|(?<!인)공지(?!능)|캡스톤|학생증|셔틀버스")
+TOPICS = re.compile(r"휴학|복학|전과|복수전공|부전공|졸업|수강|공결|출석|성적|장학|등록금|교환학생|교환수학|기숙사|생활관|도서관|증명서|상담센터|보건진료소|와이파이|취업|강의계획|교재|(?<!인)공지(?!능)|캡스톤|학생증|셔틀[ \t]*버스")
 REFERENT = re.compile(r"거기|그곳|그거|그것|해당\s*(?:신청|프로그램)|그\s*(?:신청|프로그램|장학금|부서)")
 _GENERIC_OFFICE = re.compile(r"(?<![가-힣A-Za-z])(?:학부|학과|전공)\s*사무실")
+_CONTACT_RE = re.compile(r"전화\s*번호|연락처")
 SCHOOL_ALIASES = {"부경대": "부경대학교", "제주대": "제주대학교", "부산대": "부산대학교", "창원대": "창원대학교", "충북대": "충북대학교"}
 AUDIENCES = {"외국인": ("외국인", "유학생", "international student"), "내국인": ("내국인",),
              "대학원": ("대학원", "석사", "박사"), "학부": ("학부생", "학부과정"),
              "신입생": ("신입생", "신입학"), "편입생": ("편입생", "편입학"),
              "재학생": ("재학생",), "휴학생": ("휴학생",)}
-PROGRAM_CONTEXTS = {"현장실습": r"현장실습|실습생", "교류프로그램": r"교류\s*수학|교류\s*프로그램|대학생\s*교류",
+PROGRAM_CONTEXTS = {"현장실습": r"현장실습|실습생|워털루\s*(?:형\s*)?코업", "교류프로그램": r"학점\s*교류|교류\s*수학|교류\s*프로그램|대학생\s*교류",
                     "교환학생": r"교환학생|교환\s*수학", "한국어연수": r"한국어\s*연수",
-                    "대회참가": r"경진대회|경연대회|공모전", "해외연수": r"해외\s*연수|어학\s*연수",
+                    "대회참가": r"경진대회|경연대회|공모전", "성과발표회": r"성과\s*발표회",
+                    "해외연수": r"해외\s*연수|어학\s*연수",
                     "감염병": r"코로나|백신|감염병"}
+GRADE_RE = re.compile(r"(?<!\d)([1-6])\s*학년(?!도)")
+ADMISSION_RE = re.compile(r"(?<!\d)(20\d{2}|\d{2})\s*(?:학번|(?:학년도|년)\s*(?:신입학|입학))")
+
+
+def _admission_years(text: str) -> list[int]:
+    years = []
+    for match in ADMISSION_RE.finditer(text):
+        year = int(match[1])
+        if year < 100:
+            year += 2000 if year <= datetime.now(KST).year % 100 else 1900
+        years.append(year)
+    return years
 
 
 class Target(BaseModel):
@@ -104,7 +121,7 @@ def department_identity(text: str) -> tuple[str | None, str | None]:
 
 
 def _subject_names(text: str) -> set[str]:
-    return set(TOPICS.findall(text))
+    return set(TOPICS.findall(normalize_search_terms(text)))
 
 
 def _explicit_departments(text: str) -> list[str]:
@@ -168,12 +185,17 @@ def _ground_queries(original: str, queries: list[str], plan: QuestionPlan) -> li
     anchors = [*names, *institutions, *quoted]
     if any(not any(_mentions_entity(query, anchor) for query in queries) for anchor in anchors):
         return [original]
+    people = instructor_names(original)
+    if people and PROFILE_FIELDS.search(original):
+        rewritten_people = {name for query in queries for name in instructor_names(query)}
+        if not people <= rewritten_people:
+            return [original]
     topics = _subject_names(original)
     if len(topics) == 1 and not names and not institutions and not quoted:
         # E.g. "셔틀버스 노선" / "오늘 실시간 도착 시간": each sub-query
         # needs its subject, not just the generation prompt that sees both.
         topic = next(iter(topics))
-        queries = [query if topic in query else f"{topic} {query}" for query in queries]
+        queries = [query if topic in normalize_search_terms(query) else f"{topic} {query}" for query in queries]
     return queries
 
 
@@ -183,6 +205,13 @@ def resolve_context(question: str, history: list[dict]) -> tuple[str, bool]:
     if course_question != question:
         return course_question, False
     previous = next((t.get("content", "") for t in reversed(history) if t.get("role") == "user"), "")
+    if PERSON_REFERENCE.search(question) and (PROFILE_FIELDS.search(question) or PERSON_FIELDS.search(question)):
+        if not instructor_names(question):
+            if len(instructor_names(previous)) == 1:
+                return question + " / " + previous, False
+            return question, True
+    if ROSTER.search(question) and not PERSON_REFERENCE.search(question) and _explicit_departments(question):
+        return question, False
     if _GENERIC_OFFICE.search(question) and not _explicit_departments(question):
         if len(_explicit_departments(previous)) == 1:
             return question + " / " + previous, False
@@ -190,21 +219,21 @@ def resolve_context(question: str, history: list[dict]) -> tuple[str, bool]:
     if previous and slot_answer and not TOPICS.search(question) and len(_subject_names(previous)) == 1:
         return question + " / " + previous, False
     referential = bool(REFERENT.search(question))
-    generic = bool(re.search(r"신청|기한|마감|언제까지|전화번호|연락처", question)) and not TOPICS.search(question)
+    contact = bool(_CONTACT_RE.search(question))
+    generic = (contact or bool(re.search(r"신청|기한|마감|언제까지", question))) and not TOPICS.search(question)
     if not (referential or generic):
         return question, False
     # Named offices, departments and courses are already subjects.
     name = re.search(r"[가-힣A-Za-z·]+(?:센터|사무실|학과|전공|학부|프로그램|장학금|본부|[과처관원팀])", question)
     if name and not referential:
         return question, False
-    residual = re.sub(r"\d+\s*학년(?:인데|인|이야|입니다)?|저는|제가|저|신청|기한|기간|마감|언제(?:까지)?(?:예요|에요|인가요|입니까|야|죠)?|까지야|까지|전화번호|연락처|알려\s*줘|알려주세요|뭐|무엇|어떤|할\s*수|있어요|가능한지|가능해|해요|[?!.\s]", "", question)
+    residual = re.sub(r"\d+\s*학년(?:인데|인|이야|입니다)?|저는|제가|저|신청|기한|기간|마감|언제(?:까지)?(?:예요|에요|인가요|입니까|야|죠)?|까지야|까지|전화\s*번호|연락처|알려\s*줘|알려주세요|뭐|무엇|어떤|할\s*수|있어요|가능한지|가능해|해요|[?!.\s]", "", question)
     if len(residual) >= 2 and not referential:
         # An unfamiliar programme name should be resolved by the planner,
         # rather than rejected merely because it is absent from TOPICS.
         return question, False
     subjects = _subject_names(previous)
     # '도서관 전화번호와 증명서 발급' contains two possible referents.
-    contact = bool(re.search(r"전화번호|연락처", question))
     place = bool(re.search(r"도서관|보건진료소|상담센터|[가-힣]+(?:사무실|센터|학과|본부|과|처|관|팀)", previous))
     broad_scholarship = subjects == {"장학"} and not re.search(r"[가-힣]{2,}장학금", previous)
     if previous and len(subjects) == 1 and not broad_scholarship and (not contact or place):
@@ -221,11 +250,9 @@ def target_for(text: str) -> Target:
     subject = re.search(r"[가-힣A-Za-z0-9·]+(?:장학금|프로그램|센터|도서관)", text)
     if not subject and not TOPICS.search(text):
         subject = re.search(r"[가-힣A-Za-z·]{2,}(?:본부|사무실|과|처|관|팀)", text)
-    grade = re.search(r"([1-6])\s*학년", text)
-    admission = re.search(r"(?<!\d)(20\d{2}|\d{2})\s*학번", text)
-    admission_year = int(admission[1]) if admission else None
-    if admission_year is not None and admission_year < 100:
-        admission_year += 2000 if admission_year <= datetime.now(KST).year % 100 else 1900
+    grade = GRADE_RE.search(text)
+    admissions = _admission_years(text)
+    admission_year = admissions[0] if admissions else None
     return Target(school=school or "부경대학교", subject=subject[0] if subject else next(iter(sorted(_subject_names(text), key=len, reverse=True)), None),
                   department=name, department_id=identity, grade=int(grade[1]) if grade else None, admission_year=admission_year,
                   audiences=[key for key, words in AUDIENCES.items() if any(w in text.lower() for w in words)],
@@ -234,6 +261,7 @@ def target_for(text: str) -> Target:
 
 
 def purpose_for(text: str) -> str:
+    text = normalize_search_terms(text)
     if is_course_list(text):
         return "course_list"
     for purpose, pattern in (("contact", r"전화번호|연락처"), ("prerequisites", r"선수\s*과목"),
@@ -255,8 +283,10 @@ def conditions_for(text: str) -> Conditions:
     elif re.search(r"(?:오늘|지금|현재).{0,30}(?:신청\s*가능|신청할\s*수|모집\s*중|접수\s*중)|(?:신청\s*가능|모집\s*중|접수\s*중).{0,15}(?:목록|알려|있나)", text):
         kind = "open"
     count = re.search(r"(?<!\d)(\d{1,2})\s*(?:개|건)", text)
-    term_index = current_term() if re.search(r"이번\s*학기", text) else query_term(text)
-    year = re.search(r"(20\d{2})\s*(?:년|학년도)", text)
+    # An admission cohort is not the year of the notice/course being requested.
+    time_text = ADMISSION_RE.sub("", text)
+    term_index = current_term() if says_this_term(time_text) else query_term(time_text)
+    year = re.search(r"(20\d{2})\s*(?:년|학년도)", time_text)
     if kind == "courses":
         all_terms = re.search(r"(?:전체|모든)\s*학기|학기\s*상관없", text)
         named_term = re.search(r"[12]\s*학기|20\d{2}\s*[-/]\s*[12]|(?:이번|지난|다음)\s*학기", text)
@@ -280,12 +310,21 @@ def rule_plan(question: str, history: list[dict] | None = None) -> QuestionPlan:
     plan.response_format = fmt[0] if fmt else None
     if re.search(r"(?:시스템\s*프롬프트|데이터베이스\s*비밀번호).{0,20}(?:출력|알려|공개)|출처에\s*없어도.{0,40}답", question):
         plan.route, plan.clarification = "refused", "비공개 정보나 근거 없는 내용을 제공할 수 없습니다."
+    elif (re.search(r"내가|제가|본인|(?<![가-힣])(?:내|제)\s", question)
+          and re.search(r"(?:강의|수업)\s*평가.{0,48}(?:제출|완료)\s*(?:했|여부|내역|기록)", question)
+          and re.search(r"확인해|조회해|봐\s*줘|알려", question)
+          and not re.search(r"어떻게|어디|방법|경로|메뉴", question)):
+        plan.route = "refused"
+        plan.clarification = "개인별 강의평가 제출 내역은 조회할 수 없습니다. 본인 계정으로 학교 포털에서 직접 확인해 주세요."
     elif _GENERIC_OFFICE.search(resolved) and not _explicit_departments(resolved) and not TOPICS.search(resolved):
         plan.route, plan.missing_fields = "clarification", ["department"]
         plan.clarification = "어느 학부·학과·전공 사무실의 연락처가 필요하신가요?"
     elif ambiguous:
         plan.route, plan.missing_fields = "clarification", ["subject"]
-        plan.clarification = "어느 부서나 시설의 전화번호가 필요하신가요?" if re.search(r"전화번호|연락처", question) else "어떤 신청이나 프로그램에 대해 물으시는 건가요?"
+        if PERSON_REFERENCE.search(question):
+            plan.clarification = "어느 교수님을 말씀하시는지 성함이나 소속을 알려주세요."
+        else:
+            plan.clarification = "어느 부서나 시설의 전화번호가 필요하신가요?" if _CONTACT_RE.search(question) else "어떤 신청이나 프로그램에 대해 물으시는 건가요?"
     elif re.search(r"기숙사|생활관", resolved) and re.search(r"자격|신청\s*대상|입실\s*대상", resolved):
         audiences = target_for(resolved).audiences
         if not set(audiences) & {"신입생", "편입생", "재학생", "대학원", "학부"}:
@@ -297,7 +336,9 @@ def rule_plan(question: str, history: list[dict] | None = None) -> QuestionPlan:
 def finish_plan(plan: QuestionPlan, question: str, queries: list[str], payload: dict | None = None) -> QuestionPlan:
     if plan.route != "search":
         return plan
-    if is_course_list(plan.resolved_question):
+    if (is_course_list(plan.resolved_question) or is_single_offering_question(plan.resolved_question)
+            or tuition_row_key(plan.resolved_question)
+            or (PROFILE_REFERENCE.search(plan.resolved_question) and len(instructor_names(plan.resolved_question)) == 1)):
         # Exact catalogue lookups do not depend on a model's wording or omissions.
         queries = [plan.resolved_question]
         payload = None
@@ -318,7 +359,7 @@ def finish_plan(plan: QuestionPlan, question: str, queries: list[str], payload: 
     queries = _ground_queries(original, queries[:3], plan)
     if not queries:
         # A model cannot route a substantive university question to small talk.
-        if TOPICS.search(question):
+        if TOPICS.search(question) or ROSTER.search(original) or instructor_names(original):
             queries = [plan.resolved_question]
         else:
             plan.route = "small_talk"
@@ -326,13 +367,21 @@ def finish_plan(plan: QuestionPlan, question: str, queries: list[str], payload: 
     global_target = target_for(original)
     if len(_explicit_departments(original)) > 1:
         global_target.department, global_target.department_id = None, None
-    grades = set(re.findall(r"[1-6]\s*학년", original))
-    cohorts = set(re.findall(r"(?<!\d)(?:20\d{2}|\d{2})\s*학번", original))
+    grades = set(GRADE_RE.findall(original))
+    cohorts = set(_admission_years(original))
     if len(grades) > 1:
         global_target.grade = None
     if len(cohorts) > 1:
         global_target.admission_year = None
     global_conditions = conditions_for(original)
+    if len(queries) == 1:
+        rewritten = conditions_for(queries[0])
+        # A standalone rewrite cannot drop, substitute or invent a semester,
+        # notice year or admission cohort. Comparison tasks keep local dates.
+        requested_period = (global_conditions.year, global_conditions.term)
+        rewritten_period = (rewritten.year, rewritten.term)
+        if rewritten_period != requested_period or set(_admission_years(queries[0])) != cohorts:
+            queries = [original]
     # Never adopt a department/student type invented by the planner.
     for query in queries[:3]:
         target = target_for(query)
@@ -351,8 +400,8 @@ def finish_plan(plan: QuestionPlan, question: str, queries: list[str], payload: 
         target.audiences = [a for a in target.audiences if a in global_target.audiences] or global_target.audiences
         target.contexts = [c for c in target.contexts if c in global_target.contexts] or ([] if independent else global_target.contexts)
         # Do not copy the first side's cohort/grade onto every comparison task.
-        local_grades = set(re.findall(r"[1-6]\s*학년", query))
-        local_cohorts = set(re.findall(r"(?<!\d)(?:20\d{2}|\d{2})\s*학번", query))
+        local_grades = set(GRADE_RE.findall(query))
+        local_cohorts = set(_admission_years(query))
         if not (len(grades) > 1 and len(local_grades) == 1 and local_grades <= grades):
             target.grade = global_target.grade
         if not (len(cohorts) > 1 and len(local_cohorts) == 1 and local_cohorts <= cohorts):

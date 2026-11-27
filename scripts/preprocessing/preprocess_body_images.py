@@ -17,11 +17,39 @@ from bs4 import BeautifulSoup
 from scripts.preprocessing.storage import get_preprocessed_root
 from scripts.crawlers.common.body_images import collect_body_images, save_body_images
 from scripts.crawlers.departments.engine import build_session
+from scripts.crawlers.departments.adapters import get_adapter
+from scripts.crawlers.departments.config import load_registry
+from scripts.crawlers.departments.urls import resolve_url
 from scripts.preprocessing.extractors.image_ocr import VERSION, extract_image
 from scripts.preprocessing.body_image_layout import enrich_entry
 from scripts.crawlers.common.storage import get_dataset_paths, get_dataset_root, iter_dataset_roots
 
 ROOT = Path(__file__).resolve().parents[2]
+
+
+def saved_image_candidates(soup, doc, config=None):
+    if config is None:
+        return collect_body_images(soup)
+    root = get_adapter(config.adapter).select_body_root(
+        soup, page_url=doc.get('url', ''), base_url=config.base_url, detail=doc.get('type') == 'notice',
+    )
+    return collect_body_images(soup, root=root) if root is not None else []
+
+
+def matching_originals(candidates, records, page_url):
+    if len(candidates) != len(records):
+        return False
+    for candidate, record in zip(candidates, records):
+        if not record.get('saved_path') or not record.get('sha256'):
+            return False
+        try:
+            if (candidate['order'] != record.get('order')
+                    or resolve_url(candidate['src'], page_url) != record.get('source_url')):
+                return False
+        except ValueError:
+            # Inline images can be decoded locally again without a request.
+            return False
+    return True
 
 
 def write_json(path, data):
@@ -55,6 +83,7 @@ def main():
     except (OSError, subprocess.CalledProcessError) as exc:
         parser.error(f'Tesseract unavailable: {exc}')
     datasets = args.dataset or sorted({p.name for p in iter_dataset_roots(ROOT) if (p/'output/json').is_dir()})
+    registry = load_registry()
     report = []
     # Match crawler request behavior: direct, normal browser headers and no
     # inherited dead proxy. This does not loosen TLS verification or bypass
@@ -78,13 +107,17 @@ def main():
                     html = (output/'html'/path.relative_to(output/'json')).with_suffix('.html')
                     old = json.loads(target.read_text(encoding='utf-8')) if target.exists() else {}
                     records = doc.get('metadata', {}).get('body_images', [])
-                    if not records:
-                        candidates = collect_body_images(BeautifulSoup(html.read_text(encoding='utf-8'), 'html.parser'))
+                    if html.exists():
+                        candidates = saved_image_candidates(
+                            BeautifulSoup(html.read_text(encoding='utf-8'), 'html.parser'), doc, registry.get(dataset),
+                        )
                         prior = old.get('images', [])
                         # Reuse byte-addressed originals from a prior OCR run.
-                        # The HTML snapshot still supplies the expected image count;
+                        # Match the snapshot's image order and URLs as well as count;
                         # each reused file is hash-verified below before OCR.
-                        if len(prior) == len(candidates) and all(item.get('saved_path') and item.get('sha256') for item in prior):
+                        if matching_originals(candidates, records, doc['url']):
+                            pass
+                        elif matching_originals(candidates, prior, doc['url']):
                             records = prior
                         else:
                             records = save_body_images(candidates, session=session, page_url=doc['url'],

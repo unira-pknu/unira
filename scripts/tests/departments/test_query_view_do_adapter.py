@@ -23,6 +23,13 @@ BASE_URL = "https://fishsci.pknu.ac.kr/"
 
 
 class QueryViewDoAdapterTests(unittest.TestCase):
+    def test_static_diagram_uses_subcontent_instead_of_outer_navigation(self):
+        soup = BeautifulSoup('<main>전체 메뉴<div class="sub-content"><h2>교육과정</h2>'
+                             '<img src="/diagram.png"></div></main>', 'lxml')
+        parsed = get_adapter('query_view_do').parse_static(soup, fallback_title='교육과정')
+        self.assertEqual('image_only', parsed['content_state'])
+        self.assertNotIn('전체 메뉴', parsed['content'])
+
     @classmethod
     def setUpClass(cls) -> None:
         cls.adapter = get_adapter("query_view_do")
