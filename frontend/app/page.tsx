@@ -154,7 +154,7 @@ export default function HomePage() {
               ))}
             </h1>
             <p
-              className="text-xs sm:text-sm lg:text-base"
+              className="text-xs sm:text-sm lg:text-base break-keep text-balance"
               style={{ color: NAVY_MUTED }}
             >
               {hero.subtitle}

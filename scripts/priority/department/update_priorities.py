@@ -28,6 +28,7 @@ from scripts.priority.department.priority import (  # noqa: E402
     build_rule_feature_set,
     calculate_department_priority,
 )
+from scripts.crawlers.common.storage import department_datasets  # noqa: E402
 from scripts.db import connect_postgres  # noqa: E402
 from scripts.vectorization.datasets import get_vector_paths
 
@@ -133,7 +134,14 @@ def fetch_main_contents(conn: Any) -> list[str]:
         return [str(row["content"] or "") for row in cur.fetchall()]
 
 
-def fetch_department_documents(conn: Any) -> list[dict[str, Any]]:
+def fetch_department_documents(conn: Any, dataset: str) -> list[dict[str, Any]]:
+    """Active sources of one department dataset with their chunk text joined.
+
+    rag_* holds every department now. One query over all of them (about 155k
+    sources) hit the statement timeout on every daily run from 2026-11-03, so
+    the run stopped before notices, main pages and rules were loaded. The
+    source_dataset filter uses the per-dataset index from migration 016.
+    """
     query = """
         select
             s.id,
@@ -143,10 +151,11 @@ def fetch_department_documents(conn: Any) -> list[dict[str, Any]]:
         from public.rag_sources as s
         left join public.rag_chunks as c on c.source_id = s.id
         where s.status = 'active'
+          and s.metadata->>'source_dataset' = %s
         group by s.id
     """
     with conn.cursor() as cur:
-        cur.execute(query)
+        cur.execute(query, (dataset,))
         return list(cur.fetchall())
 
 
@@ -184,26 +193,24 @@ def log_preview(updates: list[dict[str, Any]], limit: int) -> None:
         log.info("[DRY-RUN] %.4f %s %s", row["priority_score"], row["id"], row.get("title") or "")
 
 
-def update_department_priorities(conn: Any, dry_run: bool, preview_limit: int) -> int:
+def update_department_priorities(
+    conn: Any,
+    dry_run: bool,
+    preview_limit: int,
+    datasets: Iterable[str] | None = None,
+) -> int:
+    """Score department sources one dataset at a time (all departments by default)."""
     rule_contents = fetch_rule_contents(conn)
     rule_features = build_rule_feature_set(rule_contents)
     main_contents = fetch_main_contents(conn)
     main_features = build_reference_feature_set(main_contents)
-    department_documents = fetch_department_documents(conn)
     log.info(
-        "loaded rule_chunks=%d rule_features=%d main_chunks=%d main_features=%d department_sources=%d",
+        "loaded rule_chunks=%d rule_features=%d main_chunks=%d main_features=%d",
         len(rule_contents),
         len(rule_features),
         len(main_contents),
         len(main_features),
-        len(department_documents),
     )
-
-    updates = build_updates(department_documents, rule_features, main_features)
-
-    if dry_run:
-        log_preview(updates, preview_limit)
-        return len(updates)
 
     update_sql = """
         update public.rag_sources
@@ -213,10 +220,22 @@ def update_department_priorities(conn: Any, dry_run: bool, preview_limit: int) -
             priority_updated_at = now()
         where id = %(id)s
     """
-    with conn.cursor() as cur:
-        cur.executemany(update_sql, updates)
-    conn.commit()
-    return len(updates)
+    preview: list[dict[str, Any]] = []
+    total = 0
+    for dataset in sorted(datasets if datasets is not None else department_datasets()):
+        updates = build_updates(fetch_department_documents(conn, dataset), rule_features, main_features)
+        log.info("[%s] scored department_sources=%d", dataset, len(updates))
+        total += len(updates)
+        if dry_run:
+            preview.extend(updates)
+            continue
+        with conn.cursor() as cur:
+            cur.executemany(update_sql, updates)
+        conn.commit()
+
+    if dry_run:
+        log_preview(preview, preview_limit)
+    return total
 
 
 def preview_from_index(

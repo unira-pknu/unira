@@ -1,0 +1,106 @@
+{
+  "schema_version": "1.0",
+  "dataset": "kukmun",
+  "updated_at": "2026-11-26T13:08:19+09:00",
+  "items": {
+    "http://kukmun.pknu.ac.kr/korean/7767": {
+      "source_id": "http://kukmun.pknu.ac.kr/korean/7767",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-15T10:13:32+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 56,
+      "name": "채용 게시판",
+      "updated_at": "2026-11-15T10:13:32+09:00"
+    },
+    "http://kukmun.pknu.ac.kr/korean/7768": {
+      "source_id": "http://kukmun.pknu.ac.kr/korean/7768",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-15T10:15:15+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 19,
+      "name": "공모전 및 대외활동",
+      "updated_at": "2026-11-15T10:15:15+09:00"
+    },
+    "http://kukmun.pknu.ac.kr/korean/5186": {
+      "source_id": "http://kukmun.pknu.ac.kr/korean/5186",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-15T10:18:52+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 299,
+      "name": "학부공지사항",
+      "updated_at": "2026-11-15T10:18:52+09:00"
+    },
+    "http://kukmun.pknu.ac.kr/korean/5187": {
+      "source_id": "http://kukmun.pknu.ac.kr/korean/5187",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-15T10:21:32+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 153,
+      "name": "일반대학원 공지사항",
+      "updated_at": "2026-11-15T10:21:32+09:00"
+    },
+    "http://kukmun.pknu.ac.kr/korean/5188": {
+      "source_id": "http://kukmun.pknu.ac.kr/korean/5188",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-15T10:24:38+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 170,
+      "name": "교육대학원 공지사항",
+      "updated_at": "2026-11-15T10:24:38+09:00"
+    },
+    "http://kukmun.pknu.ac.kr/korean/5189": {
+      "source_id": "http://kukmun.pknu.ac.kr/korean/5189",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-15T10:27:08+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 55,
+      "name": "글로벌정책대학원 공지사항",
+      "updated_at": "2026-11-15T10:27:08+09:00"
+    },
+    "http://kukmun.pknu.ac.kr/korean/5191": {
+      "source_id": "http://kukmun.pknu.ac.kr/korean/5191",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-15T10:28:01+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 22,
+      "name": "올차당",
+      "updated_at": "2026-11-15T10:28:01+09:00"
+    },
+    "http://kukmun.pknu.ac.kr/korean/5192": {
+      "source_id": "http://kukmun.pknu.ac.kr/korean/5192",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-15T10:28:40+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 17,
+      "name": "포갬",
+      "updated_at": "2026-11-15T10:28:40+09:00"
+    },
+    "http://kukmun.pknu.ac.kr/korean/5301": {
+      "source_id": "http://kukmun.pknu.ac.kr/korean/5301",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-15T10:28:57+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 6,
+      "name": "라온",
+      "updated_at": "2026-11-15T10:28:57+09:00"
+    }
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "schema_version": "1.0",
+  "dataset": "name",
+  "updated_at": "2026-11-26T13:41:59+09:00",
+  "items": {
+    "https://name.pknu.ac.kr/name/2500": {
+      "source_id": "https://name.pknu.ac.kr/name/2500",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-17T15:02:22+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 6,
+      "name": "대학원 규정",
+      "updated_at": "2026-11-17T15:02:22+09:00"
+    },
+    "https://name.pknu.ac.kr/name/2502": {
+      "source_id": "https://name.pknu.ac.kr/name/2502",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-17T15:03:15+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 9,
+      "name": "자료실",
+      "updated_at": "2026-11-17T15:03:15+09:00"
+    },
+    "https://name.pknu.ac.kr/name/2493": {
+      "source_id": "https://name.pknu.ac.kr/name/2493",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-17T15:04:06+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 13,
+      "name": "학부 규정",
+      "updated_at": "2026-11-17T15:04:06+09:00"
+    },
+    "https://name.pknu.ac.kr/name/2494": {
+      "source_id": "https://name.pknu.ac.kr/name/2494",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-17T15:04:42+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 7,
+      "name": "자료실",
+      "updated_at": "2026-11-17T15:04:42+09:00"
+    },
+    "https://name.pknu.ac.kr/name/6275": {
+      "source_id": "https://name.pknu.ac.kr/name/6275",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-17T15:08:46+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 39,
+      "name": "취업 공지사항",
+      "updated_at": "2026-11-17T15:08:46+09:00"
+    },
+    "https://name.pknu.ac.kr/name/6276": {
+      "source_id": "https://name.pknu.ac.kr/name/6276",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-21T11:30:55+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 774,
+      "name": "학사 공지사항",
+      "updated_at": "2026-11-21T11:30:55+09:00"
+    }
+  }
+}

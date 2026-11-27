@@ -13,7 +13,7 @@ from bs4 import BeautifulSoup
 from scripts.crawlers.main.collectors import tuition as crawler
 from scripts.crawlers.common.schema import attachment_text, validate_common_document
 from scripts.crawlers.main.collectors.guides import parse_guide_items_from_html
-from scripts.crawlers.main.collectors.academic_calendar import _site_id, parse_month
+from scripts.crawlers.main.collectors.academic_calendar import _event_line, _site_id, parse_month
 from scripts.crawlers.main.collectors.curriculum_files import _clean_page_text, _is_visually_blank, parse_curriculum_attachments
 from scripts.crawlers.main.collectors.major_program import collect_major_program, parse_major_program_page
 from scripts.crawlers.main.collectors.campus_buildings import parse_campus_buildings, parse_building_details
@@ -305,6 +305,18 @@ class AcademicCalendarTests(unittest.TestCase):
         self.assertEqual([event["source_record_id"] for event in events], [1])
         self.assertEqual(rejected[0]["reason"], "end date precedes start date")
         self.assertEqual(rejected[0]["raw_end_date"], "20260112")
+
+    def test_events_become_searchable_lines(self) -> None:
+        # Without a body only the title "학사일정" was indexed (2026-11-13).
+        rows = [
+            {"schSeq": 1, "schNm": "개강", "schCont": "개강",
+             "strDt": "20260901", "endDt": "20260901", "steId": "IEav5ISH"},
+            {"schSeq": 2, "schNm": "수강신청 변경", "schCont": "학부 재학생",
+             "strDt": "20260902", "endDt": "20260908", "steId": "IEav5ISH"},
+        ]
+        events, _ = parse_month(json.dumps({"list": rows}).encode(), year=2026, month=9, site_id="IEav5ISH")
+        self.assertEqual([_event_line(event) for event in events],
+                         ["2026-09-01 개강", "2026-09-02 – 2026-09-08 수강신청 변경 (학부 재학생)"])
 
     def test_unexpected_site_is_not_accepted(self) -> None:
         payload = json.dumps({"list": [{"steId": "other"}]}).encode()

@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0",
+  "dataset": "fisheries",
+  "updated_at": "2026-11-26T12:01:50+09:00",
+  "items": {
+    "http://fisheries.pknu.ac.kr/fisheries/7204": {
+      "source_id": "http://fisheries.pknu.ac.kr/fisheries/7204",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-26T11:59:50+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 170,
+      "name": "공지사항",
+      "updated_at": "2026-11-26T11:59:50+09:00"
+    },
+    "http://fisheries.pknu.ac.kr/fisheries/7208": {
+      "source_id": "http://fisheries.pknu.ac.kr/fisheries/7208",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-15T08:39:36+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 24,
+      "name": "자주묻는질문",
+      "updated_at": "2026-11-15T08:39:36+09:00"
+    },
+    "http://fisheries.pknu.ac.kr/fisheries/7197": {
+      "source_id": "http://fisheries.pknu.ac.kr/fisheries/7197",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-15T08:42:44+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 14,
+      "name": "자료실",
+      "updated_at": "2026-11-15T08:42:44+09:00"
+    }
+  }
+}

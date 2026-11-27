@@ -1,0 +1,62 @@
+{
+  "schema_version": "1.0",
+  "dataset": "marinesports",
+  "updated_at": "2026-11-26T13:21:11+09:00",
+  "items": {
+    "http://marinesports.pknu.ac.kr/marinesports/2041": {
+      "source_id": "http://marinesports.pknu.ac.kr/marinesports/2041",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-15T11:53:03+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 133,
+      "name": "대학원 공지사항",
+      "updated_at": "2026-11-15T11:53:03+09:00"
+    },
+    "http://marinesports.pknu.ac.kr/marinesports/8004": {
+      "source_id": "http://marinesports.pknu.ac.kr/marinesports/8004",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-15T11:55:43+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 20,
+      "name": "학부 공지사항",
+      "updated_at": "2026-11-15T11:55:43+09:00"
+    },
+    "http://marinesports.pknu.ac.kr/marinesports/2042": {
+      "source_id": "http://marinesports.pknu.ac.kr/marinesports/2042",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-15T11:55:48+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 1,
+      "name": "실기고사 공지사항",
+      "updated_at": "2026-11-15T11:55:48+09:00"
+    },
+    "http://marinesports.pknu.ac.kr/marinesports/2045": {
+      "source_id": "http://marinesports.pknu.ac.kr/marinesports/2045",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-15T11:59:32+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 56,
+      "name": "학과동정",
+      "updated_at": "2026-11-15T11:59:32+09:00"
+    },
+    "http://marinesports.pknu.ac.kr/marinesports/7832": {
+      "source_id": "http://marinesports.pknu.ac.kr/marinesports/7832",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-15T12:01:02+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 4,
+      "name": "현장실습 공지사항",
+      "updated_at": "2026-11-15T12:01:02+09:00"
+    }
+  }
+}

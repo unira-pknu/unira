@@ -196,7 +196,7 @@ supabase/migrations/
   001_... ~ 017_...                 # 이전 스키마/운영 이력
   018_split_dataset_tables.sql      # 일회성 테이블 분리
   019_... ~ 021_...                 # 중간 어휘 검색 RPC 이력
-  022_bound_search_candidates.sql   # 최신 어휘 검색 RPC/조회 인덱스
+  024_bound_search_candidates.sql   # 최신 어휘 검색 RPC/조회 인덱스
 ```
 
 ### Audit

@@ -2,6 +2,7 @@
 
 import unittest
 
+from app.query_transform import transform_query
 from app.retrieval import _lexical_fallback_query, _lexical_query_text, _query_term_groups
 
 
@@ -94,6 +95,66 @@ class LexicalFallbackTests(unittest.TestCase):
         # A bare common word would scan most of the table; keep the AND narrower.
         self.assertEqual(lexical("기준"), "기준")
         self.assertEqual(_lexical_fallback_query("졸업 기준"), "졸업 기준")
+
+
+class DepartmentScopeTests(unittest.TestCase):
+    # 2026-11-11: "컴퓨터·인공지능공학부" alone matched 21,077 chunks and timed out;
+    # AND-ed with the topic it is 313 chunks.
+    NAMES = ("컴공", "컴퓨터·인공지능공학부", "컴퓨터인공지능공학부")
+
+    def test_department_is_and_ed_with_the_topic(self):
+        # Office questions use the letterhead phrases (department AND office word).
+        for question in ("컴퓨터공학과 사무실이 어디야?", "컴퓨터·인공지능공학부 사무실 위치"):
+            with self.subTest(question=question):
+                for branch in lexical(question).split(" OR "):
+                    self.assertTrue(any(name in branch for name in ("컴퓨터", "인공지능")))
+                    self.assertIn("사무실", branch)
+
+    def test_honorific_and_list_words_go_next_to_the_department(self):
+        self.assertEqual(lexical("컴퓨터공학과 교수님 목록"), " OR ".join(f"{name} 교수" for name in self.NAMES))
+
+    def test_department_never_stands_alone_in_a_topic_query(self):
+        # Graduation questions search compound terms only; the department filter
+        # of the rag search scopes them (see the graduation test above).
+        query = lexical("컴공 졸업요건")
+        self.assertIn("졸업소요학점", query)
+        self.assertNotRegex(query, r"(^| OR )(컴공|컴퓨터·인공지능공학부|컴퓨터인공지능공학부)( OR |$)")
+
+    def test_department_alone_skips_the_keyword_search(self):
+        self.assertEqual(lexical("컴공"), "")
+        self.assertEqual(lexical("컴공 위치"), "")
+
+    def test_list_words_stay_without_a_department(self):
+        # Bare "교수" matches 112k chunks; keep the narrower AND.
+        self.assertEqual(lexical("교수님 목록"), "교수님 목록")
+
+
+class PortalTermTests(unittest.TestCase):
+    def test_portal_searches_the_system_name_and_address(self):
+        # 2026-11-11: "부경대 포털 주소" matched neither "포털시스템" nor the URL token.
+        query = lexical("부경대학교 포털 주소")
+        self.assertIn("포털시스템", query)
+        self.assertIn("portal.pknu.ac.kr", query)
+        self.assertNotRegex(query, r"(^| OR )포털( OR |$)")
+
+
+class CreditExchangeTermTests(unittest.TestCase):
+    def test_credit_exchange_is_not_a_credits_question(self):
+        # 2026-11-10: "학점교류" searched "학점 OR 소요학점 OR 이수학점" and timed out.
+        self.assertNotIn("학점", [term for term, _ in _query_term_groups("충북대학교 학점교류 신청 방법")])
+        self.assertEqual(lexical("충북대학교 학점교류 신청 방법"), "충북대학교 학점교류 신청")
+
+    def test_a_real_credits_question_about_exchange_still_counts(self):
+        self.assertIn("학점", [term for term, _ in _query_term_groups("학점교류 학점 인정 몇 학점까지")])
+
+
+class DormitoryTermTests(unittest.TestCase):
+    def test_dormitory_searches_the_school_word(self):
+        # 2026-11-06: "기숙사" alone ranked exchange notices about other universities' dorms first.
+        query = transform_query("기숙사 신청은 어떻게 해?")
+        self.assertIn("학생생활관", query)
+        self.assertEqual(lexical(query), "학생생활관")
+        self.assertIn("생활관", [term for term, _ in _query_term_groups(query)])
 
 
 if __name__ == "__main__":

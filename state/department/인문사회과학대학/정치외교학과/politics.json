@@ -1,0 +1,128 @@
+{
+  "schema_version": "1.0",
+  "dataset": "politics",
+  "updated_at": "2026-11-26T14:06:47+09:00",
+  "items": {
+    "http://politics.pknu.ac.kr/politics/8669": {
+      "source_id": "http://politics.pknu.ac.kr/politics/8669",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-21T13:03:45+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 10,
+      "name": "먼저 걸어본 길",
+      "updated_at": "2026-11-21T13:03:45+09:00"
+    },
+    "http://politics.pknu.ac.kr/politics/3781": {
+      "source_id": "http://politics.pknu.ac.kr/politics/3781",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-26T14:02:51+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 676,
+      "name": "학부 공지사항",
+      "updated_at": "2026-11-26T14:02:51+09:00"
+    },
+    "http://politics.pknu.ac.kr/politics/3785": {
+      "source_id": "http://politics.pknu.ac.kr/politics/3785",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-21T13:07:56+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 6,
+      "name": "졸업요건",
+      "updated_at": "2026-11-21T13:07:56+09:00"
+    },
+    "http://politics.pknu.ac.kr/politics/3787": {
+      "source_id": "http://politics.pknu.ac.kr/politics/3787",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-21T13:10:55+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 104,
+      "name": "취업정보",
+      "updated_at": "2026-11-21T13:10:55+09:00"
+    },
+    "http://politics.pknu.ac.kr/politics/3788": {
+      "source_id": "http://politics.pknu.ac.kr/politics/3788",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-21T13:11:33+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 8,
+      "name": "서식자료실",
+      "updated_at": "2026-11-21T13:11:33+09:00"
+    },
+    "http://politics.pknu.ac.kr/politics/3789": {
+      "source_id": "http://politics.pknu.ac.kr/politics/3789",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-21T13:12:01+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 9,
+      "name": "FAQ",
+      "updated_at": "2026-11-21T13:12:01+09:00"
+    },
+    "http://politics.pknu.ac.kr/politics/3791": {
+      "source_id": "http://politics.pknu.ac.kr/politics/3791",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-21T13:12:06+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 1,
+      "name": "대학원 규정",
+      "updated_at": "2026-11-21T13:12:06+09:00"
+    },
+    "http://politics.pknu.ac.kr/politics/3792": {
+      "source_id": "http://politics.pknu.ac.kr/politics/3792",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-21T13:15:38+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 97,
+      "name": "공지사항",
+      "updated_at": "2026-11-21T13:15:38+09:00"
+    },
+    "http://politics.pknu.ac.kr/politics/3796": {
+      "source_id": "http://politics.pknu.ac.kr/politics/3796",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-21T13:17:49+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 48,
+      "name": "공지사항",
+      "updated_at": "2026-11-21T13:17:49+09:00"
+    },
+    "http://politics.pknu.ac.kr/politics/3798": {
+      "source_id": "http://politics.pknu.ac.kr/politics/3798",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-21T13:18:38+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 8,
+      "name": "모의UN",
+      "updated_at": "2026-11-21T13:18:38+09:00"
+    },
+    "http://politics.pknu.ac.kr/politics/3802": {
+      "source_id": "http://politics.pknu.ac.kr/politics/3802",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-21T13:22:05+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 53,
+      "name": "학생회소식",
+      "updated_at": "2026-11-21T13:22:05+09:00"
+    }
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "schema_version": "1.0",
+  "dataset": "oceaneng",
+  "updated_at": "2026-11-23T12:57:19+09:00",
+  "items": {
+    "https://oceaneng.pknu.ac.kr/oceaneng/937": {
+      "source_id": "https://oceaneng.pknu.ac.kr/oceaneng/937",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-23T12:41:42+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 28,
+      "name": "입학관련FAQ",
+      "updated_at": "2026-11-23T12:41:42+09:00"
+    },
+    "https://oceaneng.pknu.ac.kr/oceaneng/942": {
+      "source_id": "https://oceaneng.pknu.ac.kr/oceaneng/942",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-23T12:47:26+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 513,
+      "name": "공지사항",
+      "updated_at": "2026-11-23T12:47:26+09:00"
+    },
+    "https://oceaneng.pknu.ac.kr/oceaneng/953": {
+      "source_id": "https://oceaneng.pknu.ac.kr/oceaneng/953",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-23T12:50:07+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 629,
+      "name": "교내프로그램안내",
+      "updated_at": "2026-11-23T12:50:07+09:00"
+    },
+    "https://oceaneng.pknu.ac.kr/oceaneng/954": {
+      "source_id": "https://oceaneng.pknu.ac.kr/oceaneng/954",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-23T12:53:42+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 167,
+      "name": "교외프로그램안내",
+      "updated_at": "2026-11-23T12:53:42+09:00"
+    },
+    "https://oceaneng.pknu.ac.kr/oceaneng/960": {
+      "source_id": "https://oceaneng.pknu.ac.kr/oceaneng/960",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-23T12:56:32+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 99,
+      "name": "연구성과",
+      "updated_at": "2026-11-23T12:56:32+09:00"
+    }
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "dataset": "mbe",
+  "updated_at": "2026-11-23T11:03:25+09:00",
+  "items": {
+    "http://mbe.pknu.ac.kr/mbe/5478": {
+      "source_id": "http://mbe.pknu.ac.kr/mbe/5478",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-23T10:53:21+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 302,
+      "name": "학과",
+      "updated_at": "2026-11-23T10:53:21+09:00"
+    },
+    "http://mbe.pknu.ac.kr/mbe/5479": {
+      "source_id": "http://mbe.pknu.ac.kr/mbe/5479",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-23T10:56:36+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 183,
+      "name": "일반대학원",
+      "updated_at": "2026-11-23T10:56:36+09:00"
+    },
+    "http://mbe.pknu.ac.kr/mbe/8658": {
+      "source_id": "http://mbe.pknu.ac.kr/mbe/8658",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-23T10:57:03+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 8,
+      "name": "글로벌수산대학원",
+      "updated_at": "2026-11-23T10:57:03+09:00"
+    },
+    "http://mbe.pknu.ac.kr/mbe/5480": {
+      "source_id": "http://mbe.pknu.ac.kr/mbe/5480",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-23T10:59:27+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 39,
+      "name": "취업정보",
+      "updated_at": "2026-11-23T10:59:27+09:00"
+    }
+  }
+}

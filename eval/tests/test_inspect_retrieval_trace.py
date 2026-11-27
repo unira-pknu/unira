@@ -26,6 +26,7 @@ def case(stage_names=(), request_stages=(), *, mode="applied", complete=True, pa
     }}
 
 
+# "request" is reserved by pytest (the fixture), so the request-level stages are "request_stages".
 @pytest.mark.parametrize("stages,request_stages,mode,expected", [
     ([], [], "no_candidates", "not_observed_in_candidates"),
     (["vector_returned"], [], "no_candidates", "filtered_before_candidate_pool"),

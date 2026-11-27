@@ -30,6 +30,30 @@ export async function listChats(): Promise<ChatRow[]> {
   return (data ?? []) as ChatRow[];
 }
 
+export interface ChatSearchHit {
+  chat_id: string;
+  role: "user" | "assistant";
+  content: string;
+  created_at: string;
+}
+
+/** 내 대화(질문·답) 내용에서 글자를 찾는다. RLS 로 본인 채팅 메시지만 조회된다. 최신 순. */
+export async function searchChatMessages(query: string, limit = 200): Promise<ChatSearchHit[]> {
+  const q = query.trim();
+  if (!q) return [];
+  // LIKE 특수문자(%, _, \)는 글자 그대로 찾도록 막는다.
+  const escaped = q.replace(/[\\%_]/g, (c) => `\\${c}`);
+  const { data, error } = await supabase
+    .from("chat_messages")
+    .select("chat_id, role, content, created_at")
+    .ilike("content", `%${escaped}%`)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+  return (data ?? []) as ChatSearchHit[];
+}
+
 export async function createChat(title: string, userId: string): Promise<ChatRow> {
   const { data, error } = await supabase
     .from("chats")

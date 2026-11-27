@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "dataset": "microbiology",
+  "updated_at": "2026-11-23T11:25:15+09:00",
+  "items": {
+    "http://microbiology.pknu.ac.kr/microbiology/388": {
+      "source_id": "http://microbiology.pknu.ac.kr/microbiology/388",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-23T11:12:54+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 1,
+      "name": "학사서식",
+      "updated_at": "2026-11-23T11:12:54+09:00"
+    },
+    "http://microbiology.pknu.ac.kr/microbiology/390": {
+      "source_id": "http://microbiology.pknu.ac.kr/microbiology/390",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-23T11:17:01+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 168,
+      "name": "공지사항",
+      "updated_at": "2026-11-23T11:17:01+09:00"
+    },
+    "http://microbiology.pknu.ac.kr/microbiology/516": {
+      "source_id": "http://microbiology.pknu.ac.kr/microbiology/516",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-23T11:19:14+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 7022,
+      "name": "부경대학교 공지사항",
+      "updated_at": "2026-11-23T11:19:14+09:00"
+    },
+    "http://microbiology.pknu.ac.kr/microbiology/391": {
+      "source_id": "http://microbiology.pknu.ac.kr/microbiology/391",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-23T11:22:45+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 33,
+      "name": "취업정보",
+      "updated_at": "2026-11-23T11:22:45+09:00"
+    }
+  }
+}

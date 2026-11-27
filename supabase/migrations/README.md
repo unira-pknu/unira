@@ -46,7 +46,9 @@ do not skip or mark versions as applied based on the manual shortcut.
 
 Each RPC also has a `_lexical` variant. Department sources have `department_id` and `department_name` (required), plus `college_name`, `department_homepage` and `department_majors`. These attributes are exposed in search metadata; `metadata_filter={"department_id":"ce"}` limits department search. Existing category/subcategory fields remain.
 
-`021_lexical_late_hydration.sql` updates only the five lexical RPC families (two- and three-argument signatures).
+023 and 024 were written as 021 and 022 on a parallel branch and applied to production on 2026-11-24, after the e5 files 021 and 022. They were renumbered when the branches merged; they touch only the lexical RPCs and source indexes, so their order relative to the e5 files does not matter.
+
+`023_lexical_late_hydration.sql` updates only the five lexical RPC families (two- and three-argument signatures).
 It ranks IDs/scores with the existing per-source cap before loading full text/metadata, and avoids copying full
 source metadata into the scoped source-ID bitmap. Source-only filters retain chunk-override semantics;
 other metadata filters retain the merged-JSON check. It preserves rows, vectors, indexes, grants and timeouts.
@@ -57,20 +59,31 @@ per-source window (but before the final limit), avoiding repeated source lookups
 Apply it as one transaction after 020; do not replay older schema migrations. Pair it with the backend's
 specific graduation-credit/deferral query variants so broad words do not match tens of thousands of chunks.
 
-`022_bound_search_candidates.sql` preserves the lexical RPC signatures and caps the pool scored for common
+`024_bound_search_candidates.sql` preserves the lexical RPC signatures and caps the pool scored for common
 terms. The per-source limit of three still applies to ranked candidates. A broad query can omit matches
 beyond the pool, so compare recall as well as latency on the same questions. It also adds active-source title
 indexes for substring and exact menu lookup, plus indexes for syllabus codes and faculty profile categories.
-Apply after 021 in a maintenance window. Building the indexes can block ingestion writes. Verify both overloads
+Apply after 023 in a maintenance window. Building the indexes can block ingestion writes. Verify both overloads
 and the selective/very common-term cases on a representative database before rollout. The migration leaves
 rows, vectors, compute size and global timeout settings untouched. To restore the previous ranking functions,
-reapply 021. The added indexes can continue serving the exact lookups.
+reapply 023. The added indexes can continue serving the exact lookups.
 
 `018_split_dataset_tables.sql` is a one-time maintenance migration for a DB with 016 applied; the RPC-only 017 is optional on the manual direct path. It locks ingestion tables, copies sources/chunks with unchanged IDs and embeddings, checks exact copied values and total row counts, deletes the moved originals, backfills department attributes from the registry snapshot, retires empty `pknu_student_life_*` tables and builds destination search indexes. The large department/rule HNSW indexes are reused. Everything commits atomically; errors roll back the migration. It never changes auth/chat tables or local `files/` data.
 
 Routing uses original `metadata.source_dataset`, including attachments where `is_notice=false`. Original `ingestion_dataset` stays unchanged to preserve stable upsert keys. Future loads use the live department registry and the same routing. Keep an operational backup and run this migration with ingestion stopped. New tables retain RLS and grant backend `service_role` access; browser policies are not added.
 
 The two old student-life public RPC names temporarily query `pknu_main_*` for existing deployed clients. Physical student-life tables are removed. Update a deployed backend's explicit `RPC_NAMES` override to the five canonical names and redeploy to include syllabus search.
+
+## e5 embeddings (021)
+
+`021_e5_embeddings.sql` adds a 768-dim `intfloat/multilingual-e5-base` vector per chunk in side tables `<family>_chunks_e5` (id → `<family>_chunks.id`, on delete cascade; `content_hash`; `halfvec(768)`), their empty HNSW indexes, and `match_<family>_documents_e5`. Nothing existing is altered, so it can be applied while the service runs on the 384-dim functions.
+
+1. Apply `021_e5_embeddings.sql`.
+2. On the GPU server: `python -m scripts.vectorization.backfill_e5 --count-only`, a trial with `--families rule --limit 500`, then the full run. It can be stopped and restarted; rerun it after crawls until the loader writes e5 vectors itself.
+3. Check `pg_indexes` for the five `*_chunks_e5_embedding_hnsw_idx` indexes and `EXPLAIN` one `match_*_documents_e5` call (expect an index scan on the side table).
+4. Switch the backend with the five settings in `backend/.env.example` (`VECTOR_RPC_SUFFIX=_e5` …) and compare the regression eval. Setting `VECTOR_RPC_SUFFIX` back to empty returns to the 384-dim search.
+
+A side row counts only while its `content_hash` equals the chunk's; an edited chunk is left out of e5 search until the backfill embeds it again.
 
 ## Execution order
 

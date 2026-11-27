@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "dataset": "safety",
+  "updated_at": "2026-11-26T14:37:50+09:00",
+  "items": {
+    "http://safety.pknu.ac.kr/safety/3580": {
+      "source_id": "http://safety.pknu.ac.kr/safety/3580",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-26T14:25:58+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 533,
+      "name": "학부게시판",
+      "updated_at": "2026-11-26T14:25:58+09:00"
+    },
+    "http://safety.pknu.ac.kr/safety/2082": {
+      "source_id": "http://safety.pknu.ac.kr/safety/2082",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-26T14:29:06+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 397,
+      "name": "대학원게시판",
+      "updated_at": "2026-11-26T14:29:06+09:00"
+    },
+    "http://safety.pknu.ac.kr/safety/2080": {
+      "source_id": "http://safety.pknu.ac.kr/safety/2080",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-26T14:32:11+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 132,
+      "name": "취업게시판",
+      "updated_at": "2026-11-26T14:32:11+09:00"
+    },
+    "http://safety.pknu.ac.kr/safety/2088": {
+      "source_id": "http://safety.pknu.ac.kr/safety/2088",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-26T14:37:32+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 247,
+      "name": "Q & A",
+      "updated_at": "2026-11-26T14:37:32+09:00"
+    }
+  }
+}

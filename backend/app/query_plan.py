@@ -103,6 +103,14 @@ def department_identity(text: str) -> tuple[str | None, str | None]:
     aliases = [name for alias, names in departments.ALIASES.items() if alias in normalized for name in names]
     names = aliases + [name for name in departments.DEPARTMENT_NAMES if departments.normalize(name) in normalized]
     if not names:
+        # Students say "컴퓨터공학과"/"전자공학과"; the registry has 컴퓨터공학전공/전자공학전공.
+        # 2026-11-11: unresolved, the department search ranked other departments'
+        # 교수진 pages first and "컴퓨터공학과 교수님 목록" found nothing.
+        names = [name for name in departments.DEPARTMENT_NAMES
+                 if departments._stem(name) != name and departments.normalize(departments._stem(name)) + "과" in normalized]
+        if names:
+            names = [max(names, key=lambda name: len(departments._stem(name)))]
+    if not names:
         return None, None
     name = max(names, key=len) if not aliases else aliases[-1]
     for entry in department_catalog():
@@ -128,9 +136,23 @@ def _explicit_departments(text: str) -> list[str]:
 def _mentions_entity(query: str, entity: str) -> bool:
     # Only explicit aliases may expand. A quoted title mentioning a department
     # must still match the whole title; an AI course is not the AI major.
+    # The alias itself counts too: "컴공 최신 공지" mentions 컴공, but comparing
+    # only its expansions dropped every sub-query and merged a compound question
+    # back into one ("컴공 공지 3개와 도서관 전화번호", 2026-11-12).
     variants = (entity, *departments.ALIASES.get(entity, ()))
     variants = tuple(departments.normalize(value) for value in variants)
     return departments.mentions(query, variants)
+
+
+def _names_department(text: str, department: str) -> bool:
+    """Whether the user's own words name `department`, also as 컴공 or 컴퓨터공학과."""
+    normalized = departments.normalize(text)
+    if departments.normalize(department) in normalized:
+        return True
+    if any(alias in normalized and department in names for alias, names in departments.ALIASES.items()):
+        return True
+    stem = departments._stem(department)
+    return stem != department and departments.normalize(stem) + "과" in normalized
 
 
 def _ground_queries(original: str, queries: list[str], plan: QuestionPlan) -> list[str]:
@@ -366,7 +388,7 @@ def finish_plan(plan: QuestionPlan, question: str, queries: list[str], payload: 
         if len(_explicit_departments(query)) > 1:
             target.department, target.department_id = None, None
         if target.department and target.department not in (global_target.department, None):
-            if departments.normalize(target.department) not in departments.normalize(original):
+            if not _names_department(original, target.department):
                 target.department, target.department_id = global_target.department, global_target.department_id
         independent = re.search(r"도서관|증명서|보건진료소|상담센터|학생증", query)
         if not target.department and not independent:

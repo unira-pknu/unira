@@ -196,6 +196,9 @@ def _search_one(state: AppState, search_query: str, task: SearchTask | None = No
         per_rpc_first_stage_k=_rag_self_intro_first_stage_overrides(search_query),
         rpc_concurrency=state.settings.rag_rpc_concurrency,
         min_similarity=state.settings.rag_min_similarity,
+        vector_rpc_suffix=state.settings.vector_rpc_suffix,
+        similarity_floor=state.settings.embedding_similarity_floor,
+        similarity_ceiling=state.settings.embedding_similarity_ceiling,
         priority_weight=state.settings.rag_priority_weight,
         dataset_priority_weight=state.settings.rag_dataset_priority_weight,
         source_kind_weight=state.settings.rag_source_kind_weight,
@@ -332,6 +335,10 @@ def _retrieve(
                 continue
             if syllabus_request is not None:
                 result = search_syllabus(state.supabase, syllabus_request, top_k=state.settings.rag_top_k)
+                if syllabus_request.soft and not result.rows and not result.answerable:
+                    # "강의실" without a matching course ("공용 강의실 대여"): not a syllabus question.
+                    normal_indices.append(index)
+                    continue
                 rows_by_query[index] = checked_rows(result.rows, task)
                 if request_trace is not None:
                     task_traces.append({"task_index": index, "route": "syllabus", "capture_scope": "returned_rows_only"})

@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "dataset": "future",
+  "updated_at": "2026-11-26T12:04:03+09:00",
+  "items": {
+    "https://future.pknu.ac.kr/future/5042": {
+      "source_id": "https://future.pknu.ac.kr/future/5042",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-15T09:02:31+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 7,
+      "name": "자주하는질문 FAQ",
+      "updated_at": "2026-11-15T09:02:31+09:00"
+    },
+    "https://future.pknu.ac.kr/future/5285": {
+      "source_id": "https://future.pknu.ac.kr/future/5285",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-15T09:06:59+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 51,
+      "name": "공지사항",
+      "updated_at": "2026-11-15T09:06:59+09:00"
+    },
+    "https://future.pknu.ac.kr/future/5283": {
+      "source_id": "https://future.pknu.ac.kr/future/5283",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-15T09:07:38+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 10,
+      "name": "학사안내",
+      "updated_at": "2026-11-15T09:07:38+09:00"
+    },
+    "https://future.pknu.ac.kr/future/5284": {
+      "source_id": "https://future.pknu.ac.kr/future/5284",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-15T09:08:05+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 6,
+      "name": "비교과안내",
+      "updated_at": "2026-11-15T09:08:05+09:00"
+    }
+  }
+}

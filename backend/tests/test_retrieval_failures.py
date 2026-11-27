@@ -23,8 +23,8 @@ CONTENT = ("교류수학 신청은 학생포털에서 진행합니다. 학생은
            "해당 학기 공지의 대상자 조건에 따라 확인해야 합니다.")
 
 
-def hit(name="evidence", dataset="pknu_main"):
-    return {"id": name, "source_id": name, "title": "교류수학 안내", "content": CONTENT,
+def hit(name="evidence", dataset="pknu_main", title="교류수학 안내"):
+    return {"id": name, "source_id": name, "title": title, "content": CONTENT,
             "url": "https://www.pknu.ac.kr/" + name, "similarity": 0.9,
             "metadata": {"source_dataset": dataset, "source_kind": "page"}}
 

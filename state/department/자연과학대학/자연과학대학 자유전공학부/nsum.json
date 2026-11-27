@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "dataset": "nsum",
+  "updated_at": "2026-11-23T12:23:46+09:00",
+  "items": {
+    "https://nsum.pknu.ac.kr/nsum/7173": {
+      "source_id": "https://nsum.pknu.ac.kr/nsum/7173",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-23T12:21:16+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 164,
+      "name": "공지사항",
+      "updated_at": "2026-11-23T12:21:16+09:00"
+    },
+    "https://nsum.pknu.ac.kr/nsum/7167": {
+      "source_id": "https://nsum.pknu.ac.kr/nsum/7167",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-23T12:23:41+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 7,
+      "name": "자료실",
+      "updated_at": "2026-11-23T12:23:41+09:00"
+    }
+  }
+}

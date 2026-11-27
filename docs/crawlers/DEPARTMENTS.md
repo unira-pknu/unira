@@ -397,12 +397,12 @@ Worker 3/4 터미널에서 Ctrl+C 후 정상 종료를 확인하고 같은 manif
 ## 저장 구조와 실시간 로그
 
 저장 경로는 레지스트리의 `storage_path`를 따릅니다.
+수집 기록(어디까지 읽었는지)은 `files/` 밖의 `state/department/<storage_path>.json`에 둡니다(예: `state/department/정보융합대학/컴퓨터·인공지능공학부/ce.json`).
 소속 수준이 필요 없는 경우 생략하며, 홈페이지를 공유하는 전공은 한 데이터셋으로 저장합니다.
 
 ```text
 files/department/
   정보융합대학/컴퓨터·인공지능공학부/ce/
-    state.json
     output/
       json/<카테고리>/<문서 ID>.json
       html/<카테고리>/<문서 ID>.html

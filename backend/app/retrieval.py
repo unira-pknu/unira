@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
+from contextvars import ContextVar
+from dataclasses import dataclass
 import hashlib
 import logging
 import re
@@ -126,6 +128,10 @@ QUERY_TERM_GROUPS = {
     # how the source page actually phrases it ("무인발급기(기)"), which don't
     # share a literal substring so plain full-text search can't bridge them.
     "증명서발급": ("무인발급기", "무인발급기기", "자동발급기", "제증명", "증명서 발급"),
+    # The guide's IT-service table says "포털시스템 ... https://portal.pknu.ac.kr";
+    # "부경대 포털 주소" matched neither token and got www.pknu.ac.kr (2026-11-11).
+    # Bare "포털" only triggers (LEXICAL_EXCLUDED_VARIANTS).
+    "포털": ("포털", "포털시스템", "학생포털", "portal.pknu.ac.kr"),
     # 실제 사용자 질문 사례("컴공학과사무실", 띄어쓰기 없는 구어체 줄임말)가
     # 이 그룹 없이는 검색 후보에 전혀 안 걸리는 것을 확인함 -- 임베딩도
     # "컴공"과 "컴퓨터·인공지능공학부"를 가깝게 못 보고, lexical fallback도
@@ -159,6 +165,9 @@ STRICT_QUERY_TERMS = {
     "성적",
     "교직",
     "현장실습",
+    # A dormitory question answered from a chunk that never says "학생생활관"
+    # is about some other university's dormitory (exchange-study notices).
+    "생활관",
 }
 
 DATASET_PRIORITIES = {
@@ -266,6 +275,34 @@ _RRF_K = 60
 _LEXICAL_SIMILARITY_CEILING = 0.75
 
 
+@dataclass(frozen=True)
+class _VectorSource:
+    """Which stored vectors the query embedding is compared with."""
+    suffix: str = ""  # "_e5": <family>_chunks_e5 and match_<family>_documents_e5
+    floor: float = 0.0
+    ceiling: float = 1.0
+
+
+# Set by search() for the duration of one call, so the title/notice helpers that
+# read chunk vectors directly (_fetch_notice_chunks) read the same kind as the
+# vector RPCs without passing it through every helper's signature.
+_VECTOR_SOURCE: ContextVar[_VectorSource] = ContextVar("vector_source", default=_VectorSource())
+
+
+def rescale_similarity(value: Any, floor: float, ceiling: float = 1.0) -> Any:
+    """Map cosine similarity [floor, ceiling] onto [0, 1], capped at 1
+    (see Settings.embedding_similarity_floor)."""
+    if (not floor and ceiling == 1.0) or not isinstance(value, (int, float)):
+        return value
+    return min(1.0, (float(value) - floor) / (ceiling - floor))
+
+
+def raw_min_similarity(min_similarity: float, floor: float, ceiling: float = 1.0) -> float:
+    """The cosine similarity an RPC must compare with so that the rescaled value
+    is at least min_similarity."""
+    return floor + min_similarity * (ceiling - floor)
+
+
 def _lexical_rrf_norm(rank_index: int) -> float:
     """0-based rank -> RRF weight, normalized against the best-possible (rank 0) value."""
     return (_RRF_K + 1) / (_RRF_K + rank_index + 1)
@@ -293,7 +330,7 @@ def _lexical_synthetic_similarity(rank_index: int, min_similarity: float) -> flo
 # form to detect that a question is "about" that concept at all. Only the
 # lexical OR-query builder below excludes them, since it's the one place a
 # single overly-common token turns into a near-full-table scan.
-LEXICAL_EXCLUDED_VARIANTS = {"졸업", "전공", "학점", "컴퓨터공학과", "컴퓨터공학부", "인공지능공학부"}
+LEXICAL_EXCLUDED_VARIANTS = {"졸업", "전공", "학점", "컴퓨터공학과", "컴퓨터공학부", "인공지능공학부", "포털"}
 # GIN must read/recheck every row containing both 졸업 and 학점 for a phrase
 # query. Use precise compound lexemes here; the vector channel still covers
 # spaced table headings, and remains independent of this lexical query.
@@ -307,7 +344,8 @@ _LEXICAL_STOPWORDS = {
     "관련", "관련해서", "관련된", "관하여", "대해", "대해서", "대한",
     "알려줘", "알려주세요", "알려줄래요", "알려주실래요",
     "궁금해요", "궁금합니다", "궁금한데요", "궁금해",
-    "어디에", "어디서", "어디", "어떻게", "무엇인가요", "뭐예요", "뭔가요",
+    "어디에", "어디서", "어디", "어디야", "어디예요", "어디인가요", "어딘가요",
+    "어떻게", "무엇인가요", "뭐예요", "뭔가요",
     "있나요", "있어요", "있습니까", "됩니까", "되나요", "인가요", "인가",
     "하나요", "합니까", "하는지", "하는가요",
     "부탁드립니다", "부탁해요", "부탁드려요", "싶어요", "싶습니다",
@@ -453,16 +491,52 @@ def _lexical_query_text(
             return f'본수강신청 "{year}학년도 {semester}학기" OR 본수강신청 "{year} {semester}학기"'
     if not specific_terms:
         return _lexical_fallback_query(query_text or "") or _normalize_text(query_text or "")
+    scope_terms = [(term, variants) for term, variants in specific_terms if term in _LEXICAL_SCOPE_TERMS]
+    topic_parts = _lexical_variant_parts([item for item in specific_terms if item not in scope_terms])
+    scope_parts = _lexical_variant_parts(scope_terms)
+    if scope_parts:
+        if not topic_parts:
+            rest = _normalize_text(query_text or "")
+            for _, variants in scope_terms:
+                for variant in sorted(variants, key=len, reverse=True):
+                    rest = rest.replace(variant, " ")
+            # AND-ed with the department these may go even when nothing else is
+            # left: "컴공 교수" is 2,094 chunks, bare "교수" 112k (timeout).
+            words = [word[:-1] if word.endswith("님") and len(word) > 2 else word
+                     for word in _lexical_fallback_query(rest).split()]
+            rest = " ".join(word for word in words if word not in _LEXICAL_SCOPED_FILLER)
+            topic_parts = [rest] if rest else []
+        if topic_parts:
+            # websearch_to_tsquery has no parentheses; AND binds tighter than OR.
+            return " OR ".join(dict.fromkeys(f"{scope} {topic}" for scope in scope_parts for topic in topic_parts))
+        # Only the department ("컴공", "컴공 위치"): any of its 21k chunks would
+        # do, so skip the keyword channel and leave it to vector search.
+        return ""
+    parts = topic_parts
+    if not parts:
+        return _lexical_fallback_query(query_text or "") or _normalize_text(query_text or "")
+    return " OR ".join(dict.fromkeys(parts))
+
+
+# A department name says *where* to look, not *what*. Since every department's
+# site was loaded, "컴퓨터·인공지능공학부" alone matches 21,077 rag chunks (was
+# 1,405) and the lexical RPC passed its 8s statement timeout (measured
+# 2026-11-11: 4.2s alone, over 8s next to the other channels); in #65 that
+# turned "컴퓨터공학과 사무실이 어디야?" into a 503. AND-ed with the topic
+# ("사무실") it matches 313 chunks in 85ms.
+_LEXICAL_SCOPE_TERMS = frozenset({"컴공학과"})
+_LEXICAL_SCOPED_FILLER = frozenset({"위치", "목록", "명단"})
+
+
+def _lexical_variant_parts(terms: list[tuple[str, tuple[str, ...]]]) -> list[str]:
     parts: list[str] = []
-    for _, variants in specific_terms:
+    for _, variants in terms:
         for variant in variants:
             variant = variant.strip()
             if not variant or variant in LEXICAL_EXCLUDED_VARIANTS:
                 continue
             parts.append(f'"{variant}"' if " " in variant else variant)
-    if not parts:
-        return _lexical_fallback_query(query_text or "") or _normalize_text(query_text or "")
-    return " OR ".join(dict.fromkeys(parts))
+    return list(dict.fromkeys(parts))
 
 
 class Reranker(Protocol):
@@ -667,9 +741,17 @@ def _is_noisy_row(row: Dict[str, Any]) -> bool:
     return bool(_noise_flags(row))
 
 
+# Compounds that contain a group word without being about it. "학점교류" read as
+# a credits question: the lexical query became "학점 OR 소요학점 OR 이수학점"
+# (statement timeout) and the institution-name fallback never ran.
+_TERM_GROUP_FALSE_FRIENDS = ("학점교류", "학점 교류")
+
+
 def _query_term_groups(query_text: Optional[str]) -> list[tuple[str, tuple[str, ...]]]:
     normalized = _normalize_text(query_text or "")
-    if not normalized:
+    for compound in _TERM_GROUP_FALSE_FRIENDS:
+        normalized = normalized.replace(compound, " ")
+    if not normalized.strip():
         return []
     return [
         (term, variants)
@@ -1086,6 +1168,7 @@ def _fetch_rpc_responses(
     lexical_query: Optional[str],
     max_workers: int = 1,
     metadata_filters: Optional[Dict[str, Dict[str, Any]]] = None,
+    vector_rpc_suffix: str = "",
 ) -> Dict[str, RpcResult]:
     """Call every vector RPC (and its `<name>_lexical` companion when there is
     a lexical query), at most `max_workers` at a time; with 1 they run in the
@@ -1093,6 +1176,7 @@ def _fetch_rpc_responses(
     (response, elapsed_ms, error); a failed call carries its exception instead
     of raising, so successful vector/lexical channels remain independent."""
     calls: Dict[str, Dict[str, Any]] = {}
+    vector_names = set(rpc_names)
     for rpc_name in rpc_names:
         calls[rpc_name] = {**base_payload, "match_count": candidate_counts[rpc_name]}
         if metadata_filters and rpc_name in metadata_filters:
@@ -1116,7 +1200,10 @@ def _fetch_rpc_responses(
             # Client construction can fail too; keep that failure local to
             # this channel rather than raising from future.result().
             rpc_client = _worker_client(client) if use_worker_client else client
-            response = rpc_client.rpc(name, calls[name]).execute()
+            # Results stay keyed by the configured name; only the vector call
+            # goes to the suffixed function (lexical RPCs have no variant).
+            called = name + vector_rpc_suffix if name in vector_names else name
+            response = rpc_client.rpc(called, calls[name]).execute()
             if not isinstance(response.data, list) or any(not isinstance(row, dict) for row in response.data):
                 raise ValueError("invalid search RPC response")
             return response, (time.perf_counter() - started) * 1000, None
@@ -1244,7 +1331,13 @@ def _fetch_notice_chunks(
     text_filter: str = "",
 ) -> Optional[Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]]:
     """Source rows and their chunks (with embeddings; only the first
-    `first_chunks` of each if given), or None on failure."""
+    `first_chunks` of each if given), or None on failure.
+
+    With the e5 vectors on, each chunk's `embedding` comes from its
+    <chunk_table>_e5 row (one request via the foreign key), and is None when
+    that row is missing or was computed from older content."""
+    suffix = _VECTOR_SOURCE.get().suffix
+    vector_column = f"content_hash, e5:{chunk_table}{suffix}(content_hash, embedding)" if suffix else "embedding"
     try:
         sources = (
             client.table(source_table)
@@ -1254,7 +1347,7 @@ def _fetch_notice_chunks(
         ).data or []
         query = (
             client.table(chunk_table)
-            .select("id, source_id, chunk_id, chunk_index, content, metadata, embedding")
+            .select(f"id, source_id, chunk_id, chunk_index, content, metadata, {vector_column}")
             .in_("source_id", source_ids)
         )
         if first_chunks is not None:
@@ -1262,6 +1355,11 @@ def _fetch_notice_chunks(
         if text_filter:
             query = query.ilike("content", f"%{text_filter}%")
         chunks = query.limit(400).execute().data or []
+        if suffix:
+            for chunk in chunks:
+                stored = chunk.pop("e5", None) or {}
+                current = stored.get("content_hash") == chunk.get("content_hash")
+                chunk["embedding"] = stored.get("embedding") if current else None
     except Exception:
         logger.warning("retrieval: notice chunk fetch failed table=%s", chunk_table, exc_info=True)
         return None
@@ -1282,11 +1380,14 @@ def _notice_chunk_rows(
     """Chunks shaped like the vector RPC's rows (source columns + chunk, real
     cosine similarity), run through the normal per-row pipeline."""
     source_by_id = {source["id"]: source for source in sources}
+    vectors = _VECTOR_SOURCE.get()
     rows: List[Dict[str, Any]] = []
     for chunk in chunks:
         source = source_by_id.get(chunk.get("source_id"))
         vector = title_anchor.parse_vector(chunk.get("embedding"))
-        if source is None or vector is None:
+        # cosine() zips the two lists, so a 384-dim row against a 768-dim query
+        # would give a wrong score instead of an error.
+        if source is None or vector is None or len(vector) != len(embedding):
             continue
         row = {
             "id": chunk["id"],
@@ -1305,7 +1406,7 @@ def _notice_chunk_rows(
                 "priority_score": source.get("priority_score") or 0.0,
                 "priority_details": source.get("priority_details") or {},
             },
-            "similarity": title_anchor.cosine(embedding, vector),
+            "similarity": rescale_similarity(title_anchor.cosine(embedding, vector), vectors.floor, vectors.ceiling),
         }
         processed, outcome = _process_candidate_row(
             row, rpc_name, query_text, query_terms,
@@ -1565,6 +1666,71 @@ def _focused_document_chunks(
                 if index == 0:
                     row["_focused_document"] = True
                 extra.append(row)
+    return extra
+
+
+# A department site's own guide pages answer "교수님 목록", "사무실 어디야",
+# "졸업요건" directly, but neither channel finds them: the 교수진 page is a list
+# of names and e-mails, 7,223rd of ce's chunks by cosine for "컴퓨터·인공지능공학부
+# 교수님 목록", and its body never names the department for keyword search
+# (measured 2026-11-11). With the department known, its page whose title names
+# the topic joins the reranker candidates. Question pattern -> title words.
+_DEPARTMENT_GUIDE_TOPICS = (
+    (re.compile(r"교수"), ("교수",)),
+    (re.compile(r"사무실|위치|오시는|찾아가|건물|연락처|전화|팩스"), ("오시는", "찾아오", "위치", "연락처")),
+    (re.compile(r"졸업\s*(?:요건|조건|학점|기준)"), ("졸업요건",)),
+    (re.compile(r"교육\s*과정|교과\s*과정|커리큘럼|전공\s*(?:필수|공통)|필수\s*과목|공통\s*과목"), ("교육과정", "교과과정")),
+)
+DEPARTMENT_GUIDE_SOURCES = 4
+
+
+def _department_guide_chunks(
+    client: Client,
+    embedding: List[float],
+    candidates: List[Dict[str, Any]],
+    query_text: Optional[str],
+    query_terms: list[tuple[str, tuple[str, ...]]],
+    priority_weight: float,
+    dataset_priority_weight: float,
+    source_kind_weight: float,
+    rag_filter: Dict[str, Any],
+) -> List[Dict[str, Any]]:
+    department = (rag_filter or {}).get("ingestion_dataset")
+    words = [word for pattern, title_words in _DEPARTMENT_GUIDE_TOPICS
+             if pattern.search(query_text or "") for word in title_words]
+    if not department or not words:
+        return []
+    try:
+        sources = (
+            client.table("rag_sources")
+            .select("id, url")
+            .eq("status", "active")
+            .contains("metadata", {"ingestion_dataset": department})
+            # Board posts ("지도교수 배정 안내") carry a query string; guide pages don't.
+            .not_.like("url", "%?%")
+            .or_(",".join(f"title.ilike.*{word}*" for word in dict.fromkeys(words)))
+            .limit(DEPARTMENT_GUIDE_SOURCES)
+            .execute()
+        ).data or []
+    except Exception:
+        logger.warning("retrieval: department guide lookup failed dataset=%s", department, exc_info=True)
+        return []
+    ids = [source["id"] for source in sources]
+    if not ids:
+        return []
+    fetched = _fetch_notice_chunks(client, "rag_sources", "rag_chunks", ids)
+    if fetched is None:
+        return []
+    present = {_dedupe_key(row) for row in candidates}
+    extra = [
+        row for row in _notice_chunk_rows(
+            "match_rag_documents", *fetched, embedding, query_text, query_terms,
+            priority_weight, dataset_priority_weight, source_kind_weight,
+        )
+        if _dedupe_key(row) not in present
+    ]
+    logger.info("retrieval: department guide dataset=%s words=%s sources=%d added=%d",
+                department, words, len(ids), len(extra))
     return extra
 
 
@@ -1891,7 +2057,18 @@ def _focus_department(
     return kept
 
 
-def search(
+def search(client: Client, **options: Any) -> SearchResults:
+    """See _search. Sets which stored vectors the helpers compare with."""
+    token = _VECTOR_SOURCE.set(_VectorSource(options.get("vector_rpc_suffix", ""),
+                                             options.get("similarity_floor", 0.0),
+                                             options.get("similarity_ceiling", 1.0)))
+    try:
+        return _search(client, **options)
+    finally:
+        _VECTOR_SOURCE.reset(token)
+
+
+def _search(
     client: Client,
     *,
     rpc_names: List[str],
@@ -1901,6 +2078,9 @@ def search(
     per_rpc_first_stage_k: Optional[Dict[str, int]] = None,
     rpc_concurrency: int = 1,
     min_similarity: float,
+    vector_rpc_suffix: str = "",
+    similarity_floor: float = 0.0,
+    similarity_ceiling: float = 1.0,
     priority_weight: float = 0.30,
     dataset_priority_weight: float = 0.15,
     source_kind_weight: float = 0.10,
@@ -1945,7 +2125,9 @@ def search(
         )
     payload = {
         "query_embedding": _vector_literal(embedding),
-        "min_similarity": min_similarity,
+        # The RPC compares raw cosine similarity; min_similarity is on the
+        # rescaled scale (see Settings.embedding_similarity_floor).
+        "min_similarity": raw_min_similarity(min_similarity, similarity_floor, similarity_ceiling),
         "metadata_filter": metadata_filter or {},
     }
 
@@ -1963,8 +2145,14 @@ def search(
     # Settings.rag_rpc_concurrency for why). Ranking below is unchanged.
     fetched = _fetch_rpc_responses(
         client, rpc_names, payload, candidate_counts, lexical_query, max_workers=rpc_concurrency,
-        metadata_filters=per_rpc_metadata_filters,
+        metadata_filters=per_rpc_metadata_filters, vector_rpc_suffix=vector_rpc_suffix,
     )
+    if similarity_floor or similarity_ceiling != 1.0:
+        for rpc_name in rpc_names:
+            response, _elapsed_ms, error = fetched[rpc_name]
+            if error is None:
+                for row in response.data:
+                    row["similarity"] = rescale_similarity(row.get("similarity"), similarity_floor, similarity_ceiling)
 
     per_rpc_rows: List[Tuple[str, List[Dict[str, Any]]]] = []
     merged: List[Dict[str, Any]] = []
@@ -2266,6 +2454,20 @@ def search(
             dataset_priority_weight,
             source_kind_weight,
             metadata_filters={name: (per_rpc_metadata_filters or {}).get(name, metadata_filter or {}) for name in rpc_names},
+        )
+    )
+
+    candidates.extend(
+        _department_guide_chunks(
+            client,
+            embedding,
+            candidates,
+            query_text,
+            query_terms,
+            priority_weight,
+            dataset_priority_weight,
+            source_kind_weight,
+            (per_rpc_metadata_filters or {}).get("match_rag_documents", metadata_filter or {}),
         )
     )
 

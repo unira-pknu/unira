@@ -21,12 +21,13 @@ var/
 
 Department datasets use the following contract inside the registry-selected
 `files/department/<storage_path>/` directory. Main-site documents use category
-folders under `files/pknu_main/`; their states live in `_state/<logical-dataset>.json`.
+folders under `files/pknu_main/`. Crawl state is kept outside `files/` (which holds only
+collected files) in `state/`: `state/department/<storage_path>.json`, `state/rule.json`,
+`state/pknu_notice.json`, `state/pknu_student_life.json`. These are committed so the GitHub
+Actions crawls continue from the last run; `*.bak` and `*.lock` next to them stay local.
 
 ```text
 files/department/<storage_path>/
-  state.json
-  state.json.bak
   output/
     json/<category>/<slug>.json
     html/<category>/<slug>.html
@@ -37,20 +38,22 @@ files/department/<storage_path>/
     runs/<run_id>.json
 ```
 
-`state.json` has `schema_version`, `dataset`, `updated_at`, and `items`. Each
+A state file has `schema_version`, `dataset`, `updated_at`, and `items`. Each
 item contains at least `source_id`, `slug`, `content_hash`, `last_seen_at`,
 `miss_count`, and `status`, while retaining dataset-specific keys. State is
 written to a temporary file in the same directory, flushed, and atomically
 replaced. Before replacement, a valid previous state is copied to
-`state.json.bak`. If the current state is corrupt, the backup is loaded; if both
+`<state>.json.bak`. If the current state is corrupt, the backup is loaded; if both
 are invalid the crawler fails instead of silently resetting state.
 
-Legacy root state files are detected automatically and copied into the new
-location without deleting the source or overwriting an existing target:
+Older state locations are detected automatically and copied into `state/`
+without deleting the source or overwriting an existing target (the previous
+location under `files/` is tried first, then older root files):
 
-- `state.json` → `files/department/정보융합대학/컴퓨터·인공지능공학부/ce/state.json`
-- `state_pknu_notice.json` → `files/pknu_main/_state/pknu_notice.json`
-- `state_pknu_student_life.json` → `files/pknu_main/_state/pknu_student_life.json`
+- `files/department/<storage_path>/state.json` → `state/department/<storage_path>.json`
+- `files/rule/state.json` → `state/rule.json`
+- `files/pknu_main/_state/pknu_notice.json` (or root `state_pknu_notice.json`) → `state/pknu_notice.json`
+- `files/pknu_main/_state/pknu_student_life.json` (or root `state_pknu_student_life.json`) → `state/pknu_student_life.json`
 
 Review the migration without changing files (the default), or apply it:
 
@@ -69,7 +72,7 @@ under `deleted/<category>/<slug>/`. Archival performs a collision preflight and
 stops if any destination already exists.
 
 To roll back a state migration, stop the crawler, retain the generated
-`files/<dataset>/state.json` for inspection, and restore either the untouched
+`state/<dataset>.json` for inspection, and restore either the untouched
 legacy root state or `state.json.bak`. Output rollback consists only of pointing
 readers at the prior output root because automatic output migration is not
 performed.
@@ -341,7 +344,7 @@ the current definitions and execution policy; do not replay the directory on an 
 ```text
 supabase/migrations/000_inspect_database.sql          # read-only inspection
 supabase/migrations/018_split_dataset_tables.sql      # one-time five-family transition
-supabase/migrations/022_bound_search_candidates.sql   # latest canonical lexical RPCs
+supabase/migrations/024_bound_search_candidates.sql   # latest canonical lexical RPCs
 ```
 
 Audit scripts:

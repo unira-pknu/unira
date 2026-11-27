@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "dataset": "semiconductor",
+  "updated_at": "2026-11-26T14:55:07+09:00",
+  "items": {
+    "https://semiconductor.pknu.ac.kr/semiconductor/6018": {
+      "source_id": "https://semiconductor.pknu.ac.kr/semiconductor/6018",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-26T14:51:32+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 22,
+      "name": "장학안내",
+      "updated_at": "2026-11-26T14:51:32+09:00"
+    },
+    "https://semiconductor.pknu.ac.kr/semiconductor/5508": {
+      "source_id": "https://semiconductor.pknu.ac.kr/semiconductor/5508",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-26T14:53:59+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 122,
+      "name": "학과소식",
+      "updated_at": "2026-11-26T14:53:59+09:00"
+    },
+    "https://semiconductor.pknu.ac.kr/semiconductor/5518": {
+      "source_id": "https://semiconductor.pknu.ac.kr/semiconductor/5518",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-26T14:54:30+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 8,
+      "name": "채용정보",
+      "updated_at": "2026-11-26T14:54:30+09:00"
+    },
+    "https://semiconductor.pknu.ac.kr/semiconductor/5834": {
+      "source_id": "https://semiconductor.pknu.ac.kr/semiconductor/5834",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-26T14:54:55+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 5,
+      "name": "학과뉴스",
+      "updated_at": "2026-11-26T14:54:55+09:00"
+    }
+  }
+}

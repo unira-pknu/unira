@@ -12,7 +12,6 @@ import { displayNameOf, useAuth } from "@/app/context/AuthContext";
 import { AskError, askBackend, type AskStage, type ChatTurn } from "@/app/lib/api";
 import { prepareSources } from "./mergeSources";
 import { sourceKindLabel } from "./sourceLabel";
-import PopularQuestions from "@/app/components/PopularQuestions";
 import {
   createChat,
   deleteChat,
@@ -24,6 +23,7 @@ import {
   type MessageFeedback,
   listChats,
   parseStoredSources,
+  searchChatMessages,
   updateChatTitle,
 } from "@/app/lib/chatHistory";
 
@@ -63,6 +63,30 @@ interface HistoryItem {
   title: string;
 }
 
+// 채팅 검색: 찾은 글자 앞뒤로 보여 줄 길이와, 답변 마크다운 기호를 걷어 낸 한 줄.
+const SEARCH_SNIPPET_RADIUS = 28;
+function searchSnippet(content: string, query: string): string {
+  const plain = content.replace(/[*_#>`|]+/g, "").replace(/\s+/g, " ").trim();
+  const at = plain.toLowerCase().indexOf(query.toLowerCase());
+  if (at < 0) return plain.slice(0, SEARCH_SNIPPET_RADIUS * 2);
+  const start = Math.max(0, at - SEARCH_SNIPPET_RADIUS);
+  const end = Math.min(plain.length, at + query.length + SEARCH_SNIPPET_RADIUS);
+  return (start > 0 ? "…" : "") + plain.slice(start, end) + (end < plain.length ? "…" : "");
+}
+
+/** 찾은 글자를 굵게. 대소문자는 무시한다. */
+function Highlighted({ text, query }: { text: string; query: string }) {
+  const at = text.toLowerCase().indexOf(query.toLowerCase());
+  if (!query || at < 0) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, at)}
+      <strong style={{ color: "var(--clr-navy)" }}>{text.slice(at, at + query.length)}</strong>
+      {text.slice(at + query.length)}
+    </>
+  );
+}
+
 const CHAT_TITLE_MAX_LEN = 80;
 const SIDEBAR_DEFAULT_WIDTH = 210;
 const SIDEBAR_MIN_WIDTH = 180;
@@ -75,6 +99,11 @@ function chatTitleFromQuestion(question: string): string {
 }
 
 /** persisted chat row id (uuid v4) */
+/** 손가락으로 쓰는 화면(휴대폰·태블릿)이면 true. 마우스가 있는 컴퓨터는 창 크기와 상관없이 false. */
+function usesTouchKeyboard(): boolean {
+  return typeof window !== "undefined" && window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+}
+
 function isPersistedChatId(id: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
 }
@@ -120,6 +149,11 @@ const IconSend = () => (
   <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
     <line x1="8" y1="14" x2="8" y2="3" />
     <polyline points="3,8 8,3 13,8" />
+  </svg>
+);
+const IconStop = () => (
+  <svg width="11" height="11" viewBox="0 0 12 12" fill="currentColor">
+    <rect x="1" y="1" width="10" height="10" rx="2" />
   </svg>
 );
 const IconStar = () => (
@@ -375,15 +409,18 @@ function SourceCard({ source }: { source: Source }) {
             </span>
           )}
         </div>
-        <a
-          href={source.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="shrink-0 text-[11px] sm:text-xs font-semibold transition-opacity hover:opacity-75"
-          style={{ color: SOURCE_CARD_NAVY }}
-        >
-          원문 보기 ↗
-        </a>
+        {/* 주소 없는 자료는 url 이 "#"이라 누르면 채팅 화면으로 돌아갔다 */}
+        {/^https?:\/\//.test(source.url) && (
+          <a
+            href={source.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="shrink-0 text-[11px] sm:text-xs font-semibold transition-opacity hover:opacity-75"
+            style={{ color: SOURCE_CARD_NAVY }}
+          >
+            원문 보기 ↗
+          </a>
+        )}
       </div>
 
       {/* Body — 제목 + 첨부파일만 (원문 발췌 박스는 길어서 제거, 원문은 "원문 보기"로 확인).
@@ -491,6 +528,15 @@ function stageText(stage: AskStage, count?: number): string {
   return "질문을 이해하고 있어요";
 }
 
+// 서버의 "못 찾음" 고정 문장(backend routers/ask.py NO_INFO_ANSWER). 짧은 답에만 범위 안내를 붙인다 —
+// 길게 답하다 일부만 못 찾았다고 한 답에는 붙이지 않는다.
+const NO_INFO_TEXT = "관련 정보를 찾을 수 없습니다";
+const NO_INFO_HINT_MAX_CHARS = 160;
+function isNoInfoAnswer(content: string): boolean {
+  const text = content.trim();
+  return text.includes(NO_INFO_TEXT) && text.length <= NO_INFO_HINT_MAX_CHARS;
+}
+
 function AnswerContent({ content }: { content: string }) {
   return (
     <div
@@ -561,6 +607,13 @@ function AssistantMessage({
         {/* 답변 카드 */}
         <div className="glass-card rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col gap-3 sm:gap-4 w-full">
           <AnswerContent content={shownContent} />
+
+          {/* 못 찾았을 때: 무엇을 물으면 되는지 안내(발표 피드백 "범위를 적어 유도") */}
+          {isNoInfoAnswer(shownContent) && (
+            <p className="text-[11px] sm:text-xs leading-relaxed break-keep" style={{ color: "var(--clr-text-muted)" }}>
+              {chatMeta.noInfoHint}
+            </p>
+          )}
 
           {/* 메시지 레벨 첨부파일 */}
           {msg.attachments && msg.attachments.length > 0 && (
@@ -693,6 +746,12 @@ export default function ChatContent() {
   }, [authLoading, user, router]);
 
   const [history, setHistory] = useState<HistoryItem[]>(sidebarHistory);
+  // 채팅 검색. searchHits: 대화 내용에서 찾은 채팅 id → 보여 줄 한 줄(최신 메시지 기준).
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchHits, setSearchHits] = useState<Map<string, string>>(new Map());
+  const [searchLoading, setSearchLoading] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [activeId, setActiveId] = useState<string>(() => sidebarHistory[0]?.id ?? "");
   const persistChatIdRef = useRef<string | null>(null);
   /** 두 번째 메시지가 첫 createChat 완료 전에 시작될 때 동일 채팅 행을 재사용 */
@@ -761,7 +820,9 @@ export default function ChatContent() {
   };
 
   const bottomRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  // 지금 화면에서 기다리는 답변 요청. 중단 버튼이 이 요청을 끊는다.
+  const askAbortRef = useRef<AbortController | null>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   // 지금 보고 있는 화면의 번호. 새 채팅·기록 불러오기마다 1씩 올라간다.
@@ -890,6 +951,58 @@ export default function ChatContent() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, chatState]);
 
+  // ── 채팅 검색: 치고 0.3초 뒤 대화 내용에서 찾는다(제목은 화면 목록에서 바로 거른다) ──
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (!searchOpen || !q || !user) {
+      setSearchHits(new Map());
+      setSearchLoading(false);
+      return;
+    }
+    let active = true;
+    setSearchLoading(true);
+    const timer = setTimeout(() => {
+      searchChatMessages(q)
+        .then((rows) => {
+          if (!active) return;
+          const hits = new Map<string, string>();
+          for (const row of rows) {
+            if (!hits.has(row.chat_id)) hits.set(row.chat_id, searchSnippet(row.content, q));
+          }
+          setSearchHits(hits);
+        })
+        .catch((err) => {
+          console.error("[chat] searchChatMessages failed:", err);
+          if (active) setSearchHits(new Map());
+        })
+        .finally(() => {
+          if (active) setSearchLoading(false);
+        });
+    }, 300);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [searchQuery, searchOpen, user]);
+
+  const closeSearch = () => {
+    setSearchOpen(false);
+    setSearchQuery("");
+  };
+
+  const searchText = searchOpen ? searchQuery.trim() : "";
+  const visibleHistory = searchText
+    ? history.filter((item) => item.title.toLowerCase().includes(searchText.toLowerCase()) || searchHits.has(item.id))
+    : history;
+
+  // ── 입력칸 높이: 내용에 맞춰 늘리되 약 6줄까지 ─────────────────
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 132)}px`;
+  }, [inputValue]);
+
   // ── AI 응답 요청 (공통) ───────────────────────────────────────
   // history: 이 질문 앞까지의 같은 채팅 대화(오래된 것부터). 이어지는 질문 이해용.
   // resend: 답을 못 받은 질문을 다시 보낼 때. 질문은 이미 저장돼 있어 다시 저장하지 않는다.
@@ -937,13 +1050,18 @@ export default function ChatContent() {
       }
     }
 
+    const controller = new AbortController();
+    askAbortRef.current = controller;
+    // 중단했을 때 화면에 남길, 지금까지 쓰인 답.
+    let writtenSoFar = "";
     try {
       if (sameView()) setLive({ stage: "planning", text: "" });
-      const { answer, sources, retrievalStatus } = await askBackend(question, history, undefined, {
+      const { answer, sources, retrievalStatus } = await askBackend(question, history, controller.signal, {
         onStage: (stage, count) => {
           if (sameView()) setLive((prev) => ({ text: prev?.text ?? "", stage, count }));
         },
         onText: (text) => {
+          writtenSoFar = text;
           if (sameView()) setLive((prev) => ({ stage: prev?.stage ?? "writing", count: prev?.count, text }));
         },
       });
@@ -993,6 +1111,28 @@ export default function ChatContent() {
         }
       }
     } catch (err) {
+      if (controller.signal.aborted) {
+        // 사용자가 중단: 오류가 아니다. 쓰인 데까지는 보여 주되 저장하지 않는다(완성된 답이 아님).
+        if (sameView()) {
+          setLive(null);
+          const partial = writtenSoFar.trim();
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: uid(),
+              role: "assistant",
+              content: partial ? `${partial}\n\n_(답변을 중단했어요)_` : "_답변을 중단했어요._",
+              attachments: [],
+            },
+          ]);
+          setChatState("idle");
+        } else if (returnedTo(persistedChatId)) {
+          // 다른 채팅에 갔다가 돌아와서 중단한 경우: 화면은 저장된 기록이라 상태만 푼다.
+          setLive(null);
+          setChatState("idle");
+        }
+        return;
+      }
       console.error("[chat] askBackend failed:", err);
       if (sameView()) setLive(null);
       if (sameView() || returnedTo(persistedChatId)) {
@@ -1001,8 +1141,14 @@ export default function ChatContent() {
         setChatState("error");
       }
     } finally {
+      if (askAbortRef.current === controller) askAbortRef.current = null;
       if (persistedChatId) setChatPending(persistedChatId, false);
     }
+  };
+
+  // ── 답변 중단 ─────────────────────────────────────────────────
+  const handleStop = () => {
+    askAbortRef.current?.abort();
   };
 
   // ── 답을 못 받은 마지막 질문 다시 보내기 ─────────────────────────
@@ -1262,21 +1408,52 @@ export default function ChatContent() {
               새 채팅
             </button>
 
-            {/* 검색 */}
-            <button
-              className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-colors hover:bg-white/50"
-              style={{ color: "var(--clr-text-muted)" }}
-            >
-              <IconSearch />
-              검색
-            </button>
+            {/* 검색 — 채팅 제목과 대화 내용에서 찾는다 */}
+            {searchOpen ? (
+              <div
+                className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm"
+                style={{ background: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.9)" }}
+              >
+                <span style={{ color: "var(--clr-text-muted)" }}>
+                  <IconSearch />
+                </span>
+                <input
+                  ref={searchInputRef}
+                  autoFocus
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === "Escape" && closeSearch()}
+                  placeholder="채팅 검색"
+                  aria-label="채팅 검색"
+                  className="flex-1 min-w-0 bg-transparent outline-none text-sm placeholder:text-gray-400"
+                  style={{ color: "var(--clr-text)" }}
+                />
+                <button
+                  onClick={closeSearch}
+                  aria-label="검색 닫기"
+                  className="flex-shrink-0 text-xs px-1 leading-none"
+                  style={{ color: "var(--clr-text-muted)" }}
+                >
+                  ✕
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setSearchOpen(true)}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-colors hover:bg-white/50"
+                style={{ color: "var(--clr-text-muted)" }}
+              >
+                <IconSearch />
+                검색
+              </button>
+            )}
 
             {/* 최근 항목 */}
             <p
               className="px-3 pt-3 pb-1 text-xs font-semibold uppercase tracking-wide"
               style={{ color: "var(--clr-text-muted)" }}
             >
-              {sidebar.recentLabel}
+              {searchText ? (searchLoading ? "찾는 중…" : `검색 결과 ${visibleHistory.length}개`) : sidebar.recentLabel}
             </p>
 
             {/* 히스토리 목록 */}
@@ -1288,8 +1465,12 @@ export default function ChatContent() {
                 >
                   로그인하면 채팅 기록을 저장할 수 있어요
                 </p>
+              ) : searchText && !searchLoading && visibleHistory.length === 0 ? (
+                <p className="px-3 py-2 text-xs" style={{ color: "var(--clr-text-muted)" }}>
+                  &lsquo;{searchText}&rsquo;이(가) 들어간 채팅이 없어요
+                </p>
               ) : (
-                history.map((item) => (
+                visibleHistory.map((item) => (
                 <div key={item.id} className="relative group">
                   {renameId === item.id ? (
                     <input
@@ -1318,7 +1499,20 @@ export default function ChatContent() {
                         fontWeight: activeId === item.id ? 600 : 400,
                       }}
                     >
-                      <span className="truncate flex-1">{item.title}</span>
+                      {searchText ? (
+                        <span className="flex-1 min-w-0 flex flex-col">
+                          <span className="truncate">
+                            <Highlighted text={item.title} query={searchText} />
+                          </span>
+                          {searchHits.get(item.id) && (
+                            <span className="truncate text-[11px] font-normal" style={{ color: "var(--clr-text-muted)" }}>
+                              <Highlighted text={searchHits.get(item.id)!} query={searchText} />
+                            </span>
+                          )}
+                        </span>
+                      ) : (
+                        <span className="truncate flex-1">{item.title}</span>
+                      )}
                       {pendingChats.has(item.id) && (
                         <span
                           className="ml-1 w-1.5 h-1.5 rounded-full animate-pulse flex-shrink-0"
@@ -1613,6 +1807,7 @@ export default function ChatContent() {
           {/* 사이드바 토글 — 항상 표시 (모바일: 열기 버튼) */}
           <button
             onClick={() => setSidebarOpen((v) => !v)}
+            aria-label="채팅 목록 열고 닫기"
             className="p-1.5 rounded-lg hover:bg-white/40 transition-colors flex-shrink-0"
             style={{ color: "var(--clr-text-muted)" }}
           >
@@ -1642,12 +1837,7 @@ export default function ChatContent() {
 
           {/* 빈 상태 */}
           {messages.length === 0 && chatState === "idle" && (
-            <div className="flex-1 flex flex-col items-center justify-center gap-4 px-4 text-center">
-              <p className="text-xs sm:text-sm" style={{ color: "var(--clr-text-muted)" }}>
-                궁금한 내용을 아래 입력창에 입력해 보세요.
-              </p>
-              <PopularQuestions onSelect={startConversation} />
-            </div>
+            <div className="flex-1" />
           )}
 
           {messages.map((msg, index) =>
@@ -1655,7 +1845,7 @@ export default function ChatContent() {
               /* ── 사용자 말풍선 ── */
               <div key={msg.id} className="flex flex-col items-end gap-1.5">
                 <span
-                  className="max-w-[80%] sm:max-w-xs md:max-w-md px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl text-xs sm:text-sm leading-relaxed"
+                  className="max-w-[80%] sm:max-w-xs md:max-w-md px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl text-xs sm:text-sm leading-relaxed whitespace-pre-wrap break-words"
                   style={{
                     background: "rgba(255,255,255,0.55)",
                     color: "var(--clr-text)",
@@ -1769,29 +1959,49 @@ export default function ChatContent() {
 
         {/* ── 입력창 + 면책 문구 ──────────────────────────────── */}
         <div className="flex-shrink-0 px-3 pb-3 sm:px-5 sm:pb-4 flex flex-col gap-1.5 sm:gap-2">
-          <div className="glass-input flex items-center rounded-xl sm:rounded-2xl px-3 sm:px-4 py-1.5 sm:py-2 shadow-sm gap-1.5 sm:gap-2">
-            {/* 텍스트 입력 */}
-            <input
+          <div className="glass-input flex items-end rounded-xl sm:rounded-2xl px-3 sm:px-4 py-1.5 sm:py-2 shadow-sm gap-1.5 sm:gap-2">
+            {/* 텍스트 입력: 답변 중에도 다음 질문을 미리 쓸 수 있다(보내기만 막힘).
+                컴퓨터는 Enter 보내기·Shift+Enter 줄바꿈, 휴대폰은 Shift가 없어 Enter 줄바꿈·버튼으로 보내기.
+                휴대폰 판단은 화면 너비가 아니라 터치 화면 여부: 너비(isMobile)로 보면 컴퓨터에서
+                창을 좁혔을 때도 Enter가 줄바꿈이 됐다. */}
+            <textarea
               ref={inputRef}
-              type="text"
+              rows={1}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
+              onKeyDown={(e) => {
+                // 한글 조합 중 Enter는 글자 확정용이라 보내지 않는다(마지막 글자 중복 방지).
+                if (e.key !== "Enter" || e.shiftKey || e.nativeEvent.isComposing || usesTouchKeyboard()) return;
+                e.preventDefault();
+                handleSend();
+              }}
               placeholder=""
-              disabled={chatState === "loading"}
-              className="flex-1 min-w-0 bg-transparent outline-none text-xs sm:text-sm py-1.5 sm:py-2 font-semibold placeholder:text-gray-400 disabled:opacity-60"
+              className="flex-1 min-w-0 resize-none bg-transparent outline-none text-xs sm:text-sm py-1.5 sm:py-2 font-semibold leading-relaxed placeholder:text-gray-400"
               style={{ color: "var(--clr-text)" }}
             />
 
-            {/* 전송 버튼 */}
-            <button
-              onClick={handleSend}
-              disabled={!inputValue.trim() || chatState === "loading"}
-              className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-white transition-opacity disabled:opacity-35"
-              style={{ background: "var(--clr-navy)" }}
-            >
-              <IconSend />
-            </button>
+            {/* 전송 버튼 — 답변 중에는 중단 버튼 */}
+            {chatState === "loading" ? (
+              <button
+                onClick={handleStop}
+                aria-label="답변 중단"
+                title="답변 중단"
+                className="flex-shrink-0 mb-0.5 sm:mb-0.5 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-white"
+                style={{ background: "var(--clr-navy)" }}
+              >
+                <IconStop />
+              </button>
+            ) : (
+              <button
+                onClick={handleSend}
+                disabled={!inputValue.trim()}
+                aria-label="보내기"
+                className="flex-shrink-0 mb-0.5 sm:mb-0.5 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-white transition-opacity disabled:opacity-35"
+                style={{ background: "var(--clr-navy)" }}
+              >
+                <IconSend />
+              </button>
+            )}
           </div>
 
           {/* 면책 문구 */}

@@ -7,8 +7,10 @@ import json
 import logging
 import subprocess
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
+from typing import Iterable
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
@@ -26,7 +28,7 @@ from scripts.preprocessing.preprocessing_pipeline import (  # noqa: E402
     selected_datasets,
 )
 from scripts.preprocessing.file_preprocessing import ARCHIVE_EXTS, ensure_output_path, archive_output_relative_path  # noqa: E402
-from scripts.vectorization.load_to_supabase import load as load_to_supabase  # noqa: E402
+from scripts.vectorization.load_to_supabase import PriorityRefreshError, load as load_to_supabase  # noqa: E402
 from scripts.vectorization.vectorization import (  # noqa: E402
     DATASET_PATHS,
     DEFAULT_BATCH_SIZE,
@@ -111,7 +113,50 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Limit attachment preprocessing to extensions such as pdf hwp xlsx.",
     )
+    parser.add_argument(
+        "--department-shard",
+        metavar="N/M",
+        help="Crawl the N-th of M equal slices of the department datasets (ce excluded: "
+        "the daily run covers it) instead of --dataset. All department sites share one "
+        "school server, so the daily department run takes one slice per day.",
+    )
+    parser.add_argument(
+        "--between-datasets-delay",
+        type=float,
+        default=5.0,
+        help="Seconds to wait between department crawls (school server load).",
+    )
+    parser.add_argument(
+        "--max-consecutive-crawl-failures",
+        type=int,
+        default=3,
+        help="Stop crawling after this many departments fail in a row: the server is "
+        "probably refusing us, so stop instead of hammering it; tomorrow resumes.",
+    )
+    parser.add_argument(
+        "--completed-file",
+        type=Path,
+        help="Department shard: append each department name here once it is crawled and "
+        "loaded, so the workflow can save exactly those crawl states even if the job is cut off.",
+    )
+    parser.add_argument(
+        "--time-budget-minutes",
+        type=float,
+        default=None,
+        help="Department shard: do not start another department after this many minutes; "
+        "the rest wait for the slice's next turn.",
+    )
     return parser
+
+
+def department_shard(spec: str, departments: Iterable[str]) -> list[str]:
+    """The N-th of M slices of the departments, by a stable sorted order."""
+    index_text, _, count_text = spec.partition("/")
+    index, count = int(index_text), int(count_text)
+    if count <= 0 or not 0 <= index < count:
+        raise ValueError(f"--department-shard must be N/M with 0 <= N < M, got {spec!r}")
+    ordered = sorted(name for name in departments if name != "ce")
+    return ordered[index::count]
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -140,6 +185,19 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         parser.error("--load-batch-size must be positive")
     if args.skip_crawl and not args.since:
         parser.error("--skip-crawl requires --since")
+    if args.department_shard:
+        try:
+            department_shard(args.department_shard, DEPARTMENT_DATASETS)
+        except ValueError as error:
+            parser.error(str(error))
+    if args.between_datasets_delay < 0:
+        parser.error("--between-datasets-delay must not be negative")
+    if args.max_consecutive_crawl_failures <= 0:
+        parser.error("--max-consecutive-crawl-failures must be positive")
+    if args.time_budget_minutes is not None and args.time_budget_minutes <= 0:
+        parser.error("--time-budget-minutes must be positive")
+    if args.department_shard and args.skip_crawl:
+        parser.error("--department-shard crawls each department; it cannot be combined with --skip-crawl")
     return args
 
 
@@ -182,6 +240,12 @@ def crawl_dataset(name: str, args: argparse.Namespace) -> None:
         if args.student_life_mode in {"guide", "all"} and args.student_life_limit:
             command.extend(["--limit", str(args.student_life_limit)])
         run_command(command)
+        if args.student_life_mode == "all":
+            # 학사일정·교육과정·수강신청·전공제도 use their own collectors, outside
+            # the student-life CLI; written under 대학생활 so process_recent picks them up.
+            from scripts.crawlers.main.categories.student_life import SPECIAL_PAGE_IDS
+            run_command([python, "-m", "scripts.crawlers.main.run", "--page-ids",
+                         *(str(page_id) for page_id in SPECIAL_PAGE_IDS)])
     elif name == "rule":
         run_command(
             [
@@ -398,30 +462,117 @@ def vectorize_recent(
 
 
 def load_recent(vectorized_datasets: list[str], args: argparse.Namespace) -> None:
+    # A failed priority refresh used to end the run at the first dataset (ce),
+    # so notices, main pages and rules went unloaded for days (2026-11-03).
+    # Load every dataset first, then fail the run so the job still shows red.
+    refresh_failed: list[str] = []
     for dataset in vectorized_datasets:
         index_path = DATASET_PATHS[dataset]["output_root"] / "index.jsonl"
         log.info("[%s] Loading recent vector index to database", dataset)
-        count = load_to_supabase(
-            index_path=index_path,
-            batch_size=args.load_batch_size,
-            dataset=dataset,
-            replace_sources=True,
-        )
+        try:
+            count = load_to_supabase(
+                index_path=index_path,
+                batch_size=args.load_batch_size,
+                dataset=dataset,
+                replace_sources=True,
+            )
+        except PriorityRefreshError:
+            log.exception("[%s] loaded, priority refresh failed; continuing with the next dataset", dataset)
+            refresh_failed.append(dataset)
+            continue
         log.info("[%s] Loaded %d rows", dataset, count)
+    if refresh_failed:
+        raise RuntimeError(f"priority refresh failed after loading: {', '.join(refresh_failed)}")
 
 
 def main(argv: list[str] | None = None) -> None:
     args = parse_args(argv)
     configure_logging()
 
+    if args.department_shard:
+        dataset_names = department_shard(args.department_shard, DEPARTMENT_DATASETS)
+        log.info("Department shard %s: %s", args.department_shard, ", ".join(dataset_names))
+        run_department_shard(dataset_names, args)
+        return
+
     dataset_names = selected_datasets(args.dataset)
+    crawl_failed: list[str] = []
     if args.skip_crawl:
         run_started_at = datetime.fromisoformat(args.since)
     else:
         run_started_at = datetime.now()
-        for dataset in dataset_names:
-            crawl_dataset(dataset, args)
+        crawl_failed = crawl_datasets(dataset_names, args)
+    try:
+        process_recent(dataset_names, run_started_at, args)
+    finally:
+        if crawl_failed:
+            log.error("Crawl failed for: %s", ", ".join(crawl_failed))
+    if crawl_failed:
+        raise RuntimeError(f"crawl failed for {len(crawl_failed)} dataset(s): {', '.join(crawl_failed)}")
 
+
+def crawl_datasets(dataset_names: list[str], args: argparse.Namespace) -> list[str]:
+    """Crawl the fixed daily set (ce, notices, rules); the first failure stops the run."""
+    for dataset in dataset_names:
+        crawl_dataset(dataset, args)
+    return []
+
+
+def run_department_shard(dataset_names: list[str], args: argparse.Namespace) -> None:
+    """Crawl and load one department at a time, recording each finished one.
+
+    The first run of 2026-11-10 crawled every department before loading any and
+    was cut off by the job timeout after 11 of 34: nothing was loaded and no
+    crawl state was saved, so the next run would have started from scratch
+    again. Finishing department by department keeps whatever got done.
+
+    All department sites share one school server, so sites are spaced out and
+    a run of crawl failures (the server probably refusing us) stops the slice.
+    """
+    started = time.monotonic()
+    failed: list[str] = []
+    consecutive = 0
+    for position, dataset in enumerate(dataset_names):
+        if args.time_budget_minutes is not None and time.monotonic() - started >= args.time_budget_minutes * 60:
+            log.warning(
+                "Time budget of %.0f minutes used; left for the next turn: %s",
+                args.time_budget_minutes, ", ".join(dataset_names[position:]),
+            )
+            break
+        if position and args.between_datasets_delay:
+            time.sleep(args.between_datasets_delay)
+        run_started_at = datetime.now()
+        try:
+            crawl_dataset(dataset, args)
+        except subprocess.CalledProcessError:
+            log.exception("[%s] crawl failed", dataset)
+            failed.append(dataset)
+            consecutive += 1
+            if consecutive >= args.max_consecutive_crawl_failures:
+                log.error(
+                    "%d departments failed in a row; stopping so the school server is not hammered. "
+                    "Skipped today: %s", consecutive, ", ".join(dataset_names[position + 1:]) or "-",
+                )
+                break
+            continue
+        consecutive = 0
+        try:
+            process_recent([dataset], run_started_at, args)
+        except Exception:
+            # Its crawl state is not recorded, so the next turn reads the same pages again.
+            log.exception("[%s] crawled but preprocessing/loading failed", dataset)
+            failed.append(dataset)
+            continue
+        if args.completed_file:
+            with args.completed_file.open("a", encoding="utf-8") as handle:
+                handle.write(dataset + "\n")
+        log.info("[%s] done (%d/%d)", dataset, position + 1, len(dataset_names))
+    if failed:
+        raise RuntimeError(f"{len(failed)} department(s) failed: {', '.join(failed)}")
+
+
+def process_recent(dataset_names: list[str], run_started_at: datetime, args: argparse.Namespace) -> None:
+    """Preprocess, vectorize and load whatever the crawl wrote since it started."""
     since_ts = run_started_at.timestamp() - 1.0
     targets = collect_targets(dataset_names, since_ts)
     manifest_path = args.manifest or (
@@ -440,18 +591,19 @@ def main(argv: list[str] | None = None) -> None:
         return
 
     log.info("Preprocessing %d recently updated files", total)
-    run_pipeline(
-        dataset=args.dataset,
-        changed_only=False,
-        dry_run=args.dry_run,
-        chunk_size=args.chunk_size,
-        chunk_overlap=args.chunk_overlap,
-        pdf_ocr_mode=args.pdf_ocr,
-        ocr_language=args.ocr_language,
-        ocr_dpi=args.ocr_dpi,
-        file_exts=args.file_exts,
-        targets=targets,
-    )
+    for pipeline_dataset in (dataset_names if args.department_shard else [args.dataset]):
+        run_pipeline(
+            dataset=pipeline_dataset,
+            changed_only=False,
+            dry_run=args.dry_run,
+            chunk_size=args.chunk_size,
+            chunk_overlap=args.chunk_overlap,
+            pdf_ocr_mode=args.pdf_ocr,
+            ocr_language=args.ocr_language,
+            ocr_dpi=args.ocr_dpi,
+            file_exts=args.file_exts,
+            targets=targets,
+        )
 
     if args.skip_vectorization:
         return

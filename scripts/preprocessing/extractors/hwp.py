@@ -17,8 +17,15 @@ from pathlib import Path
 from scripts.preprocessing.extractors.common import normalize_text
 from scripts.preprocessing.text_cleaning import clean_extracted_text
 
-# Preserve the HTML/table conversion even for very large documents.
-HWP_EXTRACT_TIMEOUT = None
+# Preserve the HTML/table conversion even for very large documents. A run with a
+# hard time limit (GitHub Actions) sets HWP_EXTRACT_TIMEOUT_SECONDS: one .hwp took
+# 2.5 hours there (2026-11-19) and the department step ran out of time.
+def _timeout_from_env() -> float | None:
+    value = os.environ.get("HWP_EXTRACT_TIMEOUT_SECONDS", "").strip()
+    return float(value) if value and float(value) > 0 else None
+
+
+HWP_EXTRACT_TIMEOUT = _timeout_from_env()
 
 
 def _hwp_command(command_name: str) -> list[str] | None:

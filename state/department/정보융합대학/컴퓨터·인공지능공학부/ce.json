@@ -1,0 +1,73 @@
+{
+  "schema_version": "1.0",
+  "dataset": "ce",
+  "updated_at": "2026-11-26T15:21:50+09:00",
+  "items": {
+    "https://ce.pknu.ac.kr/ce/1814": {
+      "source_id": "https://ce.pknu.ac.kr/ce/1814",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-26T15:20:39+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 2184,
+      "name": "학부공지",
+      "updated_at": "2026-11-26T15:20:39+09:00"
+    },
+    "https://ce.pknu.ac.kr/ce/1815": {
+      "source_id": "https://ce.pknu.ac.kr/ce/1815",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-23T13:51:04+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 665,
+      "name": "대학원공지",
+      "updated_at": "2026-11-23T13:51:04+09:00"
+    },
+    "https://ce.pknu.ac.kr/ce/2425": {
+      "source_id": "https://ce.pknu.ac.kr/ce/2425",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-10-28T12:13:36+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 81,
+      "name": "산업대학원공지",
+      "updated_at": "2026-10-28T12:13:36+09:00"
+    },
+    "https://ce.pknu.ac.kr/ce/2426": {
+      "last_no": 39,
+      "name": "교육대학원공지",
+      "updated_at": "2026-05-06T02:52:58+09:00",
+      "source_id": "https://ce.pknu.ac.kr/ce/2426",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": null,
+      "miss_count": 0,
+      "status": "active"
+    },
+    "https://ce.pknu.ac.kr/ce/1817": {
+      "last_no": 25,
+      "name": "자료실",
+      "updated_at": "2026-05-06T02:54:32+09:00",
+      "source_id": "https://ce.pknu.ac.kr/ce/1817",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": null,
+      "miss_count": 0,
+      "status": "active"
+    },
+    "https://ce.pknu.ac.kr/ce/1813": {
+      "source_id": "https://ce.pknu.ac.kr/ce/1813",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-18T14:14:15+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 1645,
+      "name": "진로·취업 공지사항",
+      "updated_at": "2026-11-18T14:14:15+09:00"
+    }
+  }
+}

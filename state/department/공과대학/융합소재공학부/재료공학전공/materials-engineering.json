@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "dataset": "materials-engineering",
+  "updated_at": "2026-11-26T13:23:50+09:00",
+  "items": {
+    "https://materials-engineering.pknu.ac.kr/materials-eng/5775": {
+      "source_id": "https://materials-engineering.pknu.ac.kr/materials-eng/5775",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-17T13:45:40+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 98,
+      "name": "공지사항",
+      "updated_at": "2026-11-17T13:45:40+09:00"
+    },
+    "https://materials-engineering.pknu.ac.kr/materials-eng/5777": {
+      "source_id": "https://materials-engineering.pknu.ac.kr/materials-eng/5777",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-17T13:48:27+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 28,
+      "name": "취업게시판",
+      "updated_at": "2026-11-17T13:48:27+09:00"
+    }
+  }
+}

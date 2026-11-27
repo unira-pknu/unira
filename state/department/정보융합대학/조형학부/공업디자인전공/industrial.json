@@ -1,0 +1,62 @@
+{
+  "schema_version": "1.0",
+  "dataset": "industrial",
+  "updated_at": "2026-11-26T12:17:47+09:00",
+  "items": {
+    "https://industrial.pknu.ac.kr/industrial/3715": {
+      "source_id": "https://industrial.pknu.ac.kr/industrial/3715",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-15T09:47:05+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 119,
+      "name": "공지사항",
+      "updated_at": "2026-11-15T09:47:05+09:00"
+    },
+    "https://industrial.pknu.ac.kr/industrial/3720": {
+      "source_id": "https://industrial.pknu.ac.kr/industrial/3720",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-15T09:50:23+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 15,
+      "name": "교원게시판",
+      "updated_at": "2026-11-15T09:50:23+09:00"
+    },
+    "https://industrial.pknu.ac.kr/industrial/3855": {
+      "source_id": "https://industrial.pknu.ac.kr/industrial/3855",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-15T09:50:34+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 3,
+      "name": "졸업요건",
+      "updated_at": "2026-11-15T09:50:34+09:00"
+    },
+    "https://industrial.pknu.ac.kr/industrial/3856": {
+      "source_id": "https://industrial.pknu.ac.kr/industrial/3856",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-15T09:54:14+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 38,
+      "name": "교육대학원 게시판",
+      "updated_at": "2026-11-15T09:54:14+09:00"
+    },
+    "https://industrial.pknu.ac.kr/industrial/3857": {
+      "source_id": "https://industrial.pknu.ac.kr/industrial/3857",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-15T09:56:54+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 38,
+      "name": "산업대학원 게시판",
+      "updated_at": "2026-11-15T09:56:54+09:00"
+    }
+  }
+}

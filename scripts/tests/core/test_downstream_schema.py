@@ -415,6 +415,50 @@ class VectorizationRegressionTests(unittest.TestCase):
             loader.refresh_priority_scores("rule")
             update.assert_called_once()
 
+    def test_department_priority_refresh_is_scoped_to_the_loaded_department(self):
+        from unittest.mock import MagicMock
+        from scripts.vectorization import load_to_supabase as loader
+        with patch.object(loader, "connect_postgres", return_value=MagicMock()), \
+             patch("scripts.priority.department.update_priorities.update_department_priorities",
+                   return_value=1) as update:
+            loader.refresh_priority_scores("ce")
+            loader.refresh_priority_scores("rag")
+        self.assertEqual([["ce"], None], [call.args[3] for call in update.call_args_list])
+
+    def test_department_priorities_are_fetched_one_dataset_at_a_time(self):
+        # 2026-11-03: one query over every department timed out the daily load.
+        from unittest.mock import MagicMock
+        from scripts.priority.department import update_priorities as department
+        conn = MagicMock()
+        cursor = conn.cursor.return_value.__enter__.return_value
+        cursor.fetchall.return_value = [{"id": "src_1", "title": "공지", "metadata": {}, "content": "본문"}]
+        with patch.object(department, "fetch_rule_contents", return_value=[]), \
+             patch.object(department, "fetch_main_contents", return_value=[]):
+            self.assertEqual(2, department.update_department_priorities(conn, False, 10, ["me", "ce"]))
+        fetches = [call for call in cursor.execute.call_args_list if "string_agg" in call.args[0]]
+        self.assertEqual([("ce",), ("me",)], [call.args[1] for call in fetches])
+        self.assertTrue(all("source_dataset' = %s" in call.args[0] for call in fetches))
+        self.assertEqual(2, conn.commit.call_count)
+
+    def test_recent_load_keeps_going_after_a_priority_failure_then_fails(self):
+        from types import SimpleNamespace
+        from scripts.vectorization import preprocessing_pipeline_recent as recent
+        from scripts.vectorization.load_to_supabase import PriorityRefreshError
+        loaded = []
+
+        def fake_load(*, index_path, batch_size, dataset, replace_sources):
+            loaded.append(dataset)
+            if dataset == "ce":
+                raise PriorityRefreshError("ce priority refresh failed")
+            return 1
+
+        paths = {name: {"output_root": Path("x")} for name in ("ce", "pknu_notice", "rule")}
+        with patch.object(recent, "load_to_supabase", side_effect=fake_load), \
+             patch.dict(recent.DATASET_PATHS, paths):
+            with self.assertRaisesRegex(RuntimeError, "ce"):
+                recent.load_recent(["ce", "pknu_notice", "rule"], SimpleNamespace(load_batch_size=200))
+        self.assertEqual(["ce", "pknu_notice", "rule"], loaded)
+
     def test_all_ingestion_preflights_every_dataset_and_refreshes_each_family_once(self):
         from scripts.vectorization import load_to_supabase as loader
         with tempfile.TemporaryDirectory() as directory:

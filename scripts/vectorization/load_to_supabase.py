@@ -52,6 +52,10 @@ class NoSearchContent(ValueError):
     """A record contains no body text or only extraction-fallback metadata."""
 
 
+class PriorityRefreshError(RuntimeError):
+    """The rows are committed; only recomputing their priority scores failed."""
+
+
 @lru_cache(maxsize=8192)
 def _cached_body_status(path: str, size: int, mtime_ns: int) -> bool:
     return has_searchable_body(json.loads(Path(path).read_text(encoding="utf-8-sig")))
@@ -685,11 +689,13 @@ def refresh_priority_scores(dataset: str) -> None:
 
     family = dataset if dataset in TABLE_FAMILIES else table_family(dataset)
     if family == "rag":
-        # Scores every active rag_sources row, so it covers all departments.
+        # Scores one department at a time; a department dataset ("ce") rescores
+        # only that department, the family name ("rag") all of them.
         from scripts.priority.department.update_priorities import update_department_priorities
 
+        datasets = None if dataset == family else [dataset]
         with connect_postgres(row_factory=_dict_row, prepare_threshold=None) as conn:
-            count = update_department_priorities(conn, False, 10)
+            count = update_department_priorities(conn, False, 10, datasets)
     elif family == "rule":
         from scripts.priority.rule.update_priorities import update_rule_priorities
 
@@ -785,7 +791,12 @@ def load(
     log.info("[%s] loaded=%d excluded_empty_or_fallback=%d", dataset, total, excluded)
     if refresh_priorities:
         for family in families:
-            refresh_priority_scores(family)
+            try:
+                refresh_priority_scores(dataset if family == "rag" else family)
+            except Exception as error:
+                raise PriorityRefreshError(
+                    f"[{dataset}] rows were loaded but the {family} priority refresh failed"
+                ) from error
 
     return total
 

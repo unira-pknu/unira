@@ -14,6 +14,12 @@ CATEGORY = "대학생활"
 LEGACY_PAGE_IDS = frozenset(i for i in STUDENT_LIFE_PAGE_IDS
                            if ROUTES[i].handler in PAGE_HANDLERS | {"tuition"})
 ROUTE_REPORT = main_root(PROJECT_ROOT) / "_runs" / "student_life_route_inventory.json"
+# Student-life pages with their own collectors (학사일정 calendar, 교육과정·수강신청
+# files, 전공제도 OCR). The student-life CLI leaves them out, so until 2026-11-13
+# no scheduled crawl collected them and 학사일정/전공제도 had never reached the DB.
+# The weekly crawl runs them through scripts.crawlers.main.run. 434 is the guide,
+# already collected by --mode guide.
+SPECIAL_PAGE_IDS = tuple(sorted(set(STUDENT_LIFE_PAGE_IDS) - LEGACY_PAGE_IDS - {434}))
 
 
 def _tuition(session, _page_id, _full_resync):

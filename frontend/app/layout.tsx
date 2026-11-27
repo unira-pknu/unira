@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 export async function generateViewport(): Promise<Viewport> {
   const userAgent = (await headers()).get("user-agent") ?? "";
   const isIOS = /iPhone|iPad|iPod/.test(userAgent);
-  return { themeColor: "#c6daf0", ...(isIOS ? { maximumScale: 1 } : {}) };
+  return { themeColor: "#dde7f5", ...(isIOS ? { maximumScale: 1 } : {}) };
 }
 
 export default function RootLayout({

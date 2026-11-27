@@ -4,7 +4,7 @@
 
 | 문제 | 반영한 작업 | 재평가 기준 |
 |---|---|---|
-| 키워드 검색 | 포털·성적·이수학점의 일반 어휘가 구체적인 질문을 덮었던 사례에 복합어 검색을 적용했다. [022 SQL](../../supabase/migrations/022_bound_search_candidates.sql)은 빈 검색을 건너뛰고, 활성 문서 후보 중 제한된 범위를 평가한다. 제목 검색에도 인덱스를 추가했다. | 503 세 문항을 1개 동시 실행으로 재검증한다. 이어서 100문항에서 RPC 오류 문항 수, 503, 지연 시간, 정답 근거 확보를 함께 비교한다. |
+| 키워드 검색 | 포털·성적·이수학점의 일반 어휘가 구체적인 질문을 덮었던 사례에 복합어 검색을 적용했다. [024 SQL](../../supabase/migrations/024_bound_search_candidates.sql)은 빈 검색을 건너뛰고, 활성 문서 후보 중 제한된 범위를 평가한다. 제목 검색에도 인덱스를 추가했다. | 503 세 문항을 1개 동시 실행으로 재검증한다. 이어서 100문항에서 RPC 오류 문항 수, 503, 지연 시간, 정답 근거 확보를 함께 비교한다. |
 | 강의계획서 | 단일 학수번호와 분반을 질문에서 읽어 전용 경로에 유지한다. 코드가 있을 때 날짜·평가 질문 문구는 과목명 일치 조건에서 제외한다. 제목·파일명·메타데이터의 학기와 분반을 읽고 평가표·주차·상담시간을 우선한다. | 12개 모두 확인한다. 특히 일반물리학실험 학점, 조선시대의역사와문화 중간고사 주차, 비교문화론 출결, 전공탐색과진로설계 P/F를 지정 분반으로 확인한다. |
 | 정적 메뉴 | 본교의 공식 메뉴 제목과 소속 학과의 메뉴 제목을 사용해 좁혀 찾고 해당 문서의 본문 근거를 후보에 보존한다. | 대연·용당 오시는 길, 게시물 부착, ISIC, 증명서, 학적부 정정·재입학·국가장학 기준, 전공 연혁과 사무실 안내가 정확한 공식 메뉴를 인용하는지 확인한다. |
 | 대상·시점·첨부 | 질문이 지정한 공지 연도를 제목 후보 순위에 반영한다. 정규 학점교류와 별도 사업, 하계와 동계, 명시된 규정 개정판을 구분한다. | 충남대 학생 신청 마감, 인천대 하계 수강료, 2025 졸업사정·WEST, 2026 도서관 세칙의 출처 시점과 주체를 각각 확인한다. |
@@ -22,7 +22,7 @@
 021까지 적용된 검증 DB에 새 SQL을 적용한 뒤, 검증용 `backend/.env`가 그 DB를 가리키는 환경에서 같은 100문항을 실행한다. `DATABASE_URL`은 해당 검증 DB의 연결 문자열이고 아래 SQL 명령에는 `psql`이 필요하다.
 
 ```powershell
-psql "$env:DATABASE_URL" -v ON_ERROR_STOP=1 --single-transaction -f supabase/migrations/022_bound_search_candidates.sql
+psql "$env:DATABASE_URL" -v ON_ERROR_STOP=1 --single-transaction -f supabase/migrations/024_bound_search_candidates.sql
 .\.venv\Scripts\python.exe -m eval.tools.eval_local --questions eval/cases/full_scope_20261124.jsonl --case-id full_syllabus_001 --case-id full_academic_012 --case-id full_rule_002 --output eval/results/full_scope_after_022_503.jsonl --workers 1 --max-calls 12 --data-snapshot "validation-db-022"
 .\.venv\Scripts\python.exe -m eval.tools.eval_local --questions eval/cases/full_scope_20261124.jsonl --output eval/results/full_scope_after_022.jsonl --workers 3 --max-calls 300 --data-snapshot "validation-db-022"
 ```

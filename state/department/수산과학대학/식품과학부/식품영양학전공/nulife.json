@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "dataset": "nulife",
+  "updated_at": "2026-11-26T13:44:46+09:00",
+  "items": {
+    "https://nulife.pknu.ac.kr/nulife/4403": {
+      "source_id": "https://nulife.pknu.ac.kr/nulife/4403",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-17T15:26:23+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 274,
+      "name": "학과",
+      "updated_at": "2026-11-17T15:26:23+09:00"
+    },
+    "https://nulife.pknu.ac.kr/nulife/4404": {
+      "source_id": "https://nulife.pknu.ac.kr/nulife/4404",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-17T15:27:56+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 33,
+      "name": "대학원",
+      "updated_at": "2026-11-17T15:27:56+09:00"
+    },
+    "https://nulife.pknu.ac.kr/nulife/4405": {
+      "source_id": "https://nulife.pknu.ac.kr/nulife/4405",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-17T15:28:48+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 14,
+      "name": "취업정보",
+      "updated_at": "2026-11-17T15:28:48+09:00"
+    },
+    "https://nulife.pknu.ac.kr/nulife/4406": {
+      "source_id": "https://nulife.pknu.ac.kr/nulife/4406",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-17T15:33:18+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 76,
+      "name": "자료실",
+      "updated_at": "2026-11-17T15:33:18+09:00"
+    }
+  }
+}

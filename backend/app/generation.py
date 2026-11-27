@@ -107,6 +107,11 @@ def _format_source_block(rows: List[Dict[str, Any]], max_chars_per_chunk: int, q
         posted = _posted_date(metadata)
         lines.append(f"[{index}]")
         lines.append(f"제목: {str(title).strip() or '제목 없음'}")
+        department = _source_department(metadata)
+        if department:
+            # 2026-11-11: the 교수진 page never names its department, so
+            # "컴퓨터공학과 교수님들" got "관련 정보를 찾을 수 없습니다" 2 of 3 times.
+            lines.append(f"출처 학과: {department}")
         if posted:
             lines.append(f"게시일: {posted}")
         if (metadata.get("rpc_name") == "match_pknu_notice_documents"
@@ -118,7 +123,9 @@ def _format_source_block(rows: List[Dict[str, Any]], max_chars_per_chunk: int, q
                 lines.append(f"첨부 파일: {attachment}")
             if member := metadata.get("archive_member_original_name"):
                 lines.append(f"압축 파일 내 열람 문서: {member}")
-        lines.append(f"URL: {str(uri).strip() or 'URL 없음'}")
+        # Named so the model doesn't answer "홈페이지 주소" with the page that
+        # merely mentions the site (2026-11-11: libweb vs main/290).
+        lines.append(f"자료 페이지 URL: {str(uri).strip() or 'URL 없음'}")
         if homepage := profile_homepage(row, question, content):
             lines.append(f"공개 프로필 홈페이지: {homepage}")
         publisher = metadata.get("department_name") or metadata.get("department_id")
@@ -161,6 +168,16 @@ def _format_source_block(rows: List[Dict[str, Any]], max_chars_per_chunk: int, q
         lines.append(content or "(본문 없음)")
         lines.append("")
     return "\n".join(lines).rstrip()
+
+
+def _source_department(metadata: Dict[str, Any]) -> str:
+    """Department-site documents: "컴퓨터·인공지능공학부 (컴퓨터공학전공, 인공지능전공)"."""
+    name = str(metadata.get("department_name") or "").strip()
+    if not name:
+        return ""
+    majors = metadata.get("department_majors") or []
+    majors = ", ".join(str(major).strip() for major in majors if str(major).strip()) if isinstance(majors, list) else str(majors)
+    return f"{name} ({majors})" if majors else name
 
 
 def _posted_date(metadata: Dict[str, Any]) -> str:
@@ -229,6 +246,11 @@ def build_user_message(
         "직접 확인될 때만 해당 학점을 제시하세요. 다른 학번의 학점을 먼저 답한 뒤 확인이 필요하다고 덧붙이지 마세요.\n"
         "- 생략 표시가 있는 구간은 문서 전체가 아닙니다. 표는 제목·열 제목·동일 행의 값을 함께 읽고, 생략된 행·빈 셀·잘린 조건을 추정하지 마세요.\n"
         "- 미확인 요청이 있으면 다른 자료로 대신 답하지 말고 필요한 조건을 짧게 확인하세요.\n"
+        # 2026-11-11: "중앙도서관 홈페이지 주소" got the school's 도서관 소개 page
+        # (main/290) although its body names http://libweb.pknu.ac.kr.
+        "- 사이트·홈페이지·시스템 주소를 물으면 참고 자료 본문에 적힌 그 사이트의 주소(예: http://...)를 답하세요. "
+        "'자료 페이지 URL'은 그 자료가 실린 페이지일 뿐 그 사이트의 주소가 아닙니다. "
+        "어느 자료 본문에도 주소가 없을 때만 '안내 페이지'라고 밝혀 쓰세요.\n"
         "- 일정·기간·금액·운행 조건은 질문에서 지정한 시점에 적용되는 근거를 사용하세요. 시점이 지정되지 않으면 최신 적용 자료를 우선하세요. "
         "과거 일정이나 운행 조건을 답할 때는 근거에서 확인한 적용 학기·연도를 같은 항목에 밝히고, 현재 적용 여부가 확인되지 않으면 명시하세요. "
         "오늘보다 이전에 끝난 신청 기간을 인용할 때는 이미 종료된 과거 일정이라고 명시하세요. "

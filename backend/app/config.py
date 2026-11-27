@@ -40,6 +40,24 @@ class Settings(BaseSettings):
     embedding_model: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
     embedding_device: str = "cpu"
     expected_dimensions: int = 384
+    # e5 models need "query: " in front of the question (scripts/vectorization/
+    # backfill_e5.py stores passages with "passage: ").
+    embedding_query_prefix: str = ""
+    # Appended to each vector RPC name: "_e5" calls match_<family>_documents_e5
+    # (migration 021). rpc_names and everything keyed by them stay unchanged.
+    vector_rpc_suffix: str = ""
+    # Cosine similarity below which a vector hit counts as unrelated. MiniLM
+    # scores spread over 0-1, but e5 puts even unrelated text around 0.7-0.8, which
+    # would rank every vector hit above lexical-only hits (capped at 0.75) and
+    # shrink the priority weights' effect. Vector similarities are rescaled to
+    # (s - floor) / (ceiling - floor) so the rest of ranking keeps the scale it was
+    # tuned on; rag_min_similarity applies to the rescaled value. A floor alone
+    # moves e5's scores but keeps them packed (0.82-0.87 for 10th-90th percentile
+    # of top-30 hits vs MiniLM 0.44-0.72, measured 2026-11-18), which would leave
+    # the priority weights deciding the order; the ceiling widens them again.
+    # 0 / 1 = unchanged.
+    embedding_similarity_floor: float = Field(default=0.0, ge=0.0, lt=1.0)
+    embedding_similarity_ceiling: float = Field(default=1.0, gt=0.0, le=1.0)
 
     # Retrieval
     rag_top_k: int = 10

@@ -1,0 +1,84 @@
+{
+  "schema_version": "1.0",
+  "dataset": "mse",
+  "updated_at": "2026-11-23T12:00:50+09:00",
+  "items": {
+    "http://mse.pknu.ac.kr/mse/5615": {
+      "source_id": "http://mse.pknu.ac.kr/mse/5615",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-23T11:42:44+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 177,
+      "name": "취업자료실",
+      "updated_at": "2026-11-23T11:42:44+09:00"
+    },
+    "http://mse.pknu.ac.kr/mse/5618": {
+      "source_id": "http://mse.pknu.ac.kr/mse/5618",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-23T11:46:24+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 764,
+      "name": "학과 공지사항",
+      "updated_at": "2026-11-23T11:46:24+09:00"
+    },
+    "http://mse.pknu.ac.kr/mse/5619": {
+      "source_id": "http://mse.pknu.ac.kr/mse/5619",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-23T11:49:35+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 149,
+      "name": "일반대학원 공지사항",
+      "updated_at": "2026-11-23T11:49:35+09:00"
+    },
+    "http://mse.pknu.ac.kr/mse/5620": {
+      "source_id": "http://mse.pknu.ac.kr/mse/5620",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-23T11:51:40+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 62,
+      "name": "산업대학원 공지사항",
+      "updated_at": "2026-11-23T11:51:40+09:00"
+    },
+    "http://mse.pknu.ac.kr/mse/5621": {
+      "source_id": "http://mse.pknu.ac.kr/mse/5621",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-23T11:53:39+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 18,
+      "name": "해기사",
+      "updated_at": "2026-11-23T11:53:39+09:00"
+    },
+    "http://mse.pknu.ac.kr/mse/5624": {
+      "source_id": "http://mse.pknu.ac.kr/mse/5624",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-23T11:57:43+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 10,
+      "name": "매뉴얼",
+      "updated_at": "2026-11-23T11:57:43+09:00"
+    },
+    "http://mse.pknu.ac.kr/mse/5625": {
+      "source_id": "http://mse.pknu.ac.kr/mse/5625",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-23T12:00:22+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 35,
+      "name": "기타",
+      "updated_at": "2026-11-23T12:00:22+09:00"
+    }
+  }
+}

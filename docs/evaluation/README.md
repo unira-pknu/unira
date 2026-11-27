@@ -36,11 +36,11 @@ manifest의 `completions`에는 질문 ID별 실제 응답 모델, 종료 사유
 
 프로그램 조회·셔틀 이용·실시간 정보의 부분 답변을 묶어서 확인하려면 다음과 같이 실행합니다.
 출력 경로는 매번 새 이름을 지정하고, `--data-snapshot`에는 실제 적재 이력을 기록합니다.
-검색 함수 변경은 [021 마이그레이션](../../supabase/migrations/021_lexical_late_hydration.sql)을 참고합니다.
+검색 함수 변경은 [023 마이그레이션](../../supabase/migrations/023_lexical_late_hydration.sql)을 참고합니다.
 자동 채점 모델은 평가 대상 답변 모델과 별도로 지정합니다.
 
 ```powershell
-.\.venv\Scripts\python.exe -m eval.tools.eval_local --questions eval/cases/regression.jsonl --case-id notice_attachment_001 --case-id student_life_001 --case-id partial_003 --output eval/results/targeted_quality_new.jsonl --max-calls 10 --data-snapshot "적재-이력-ID+021"
+.\.venv\Scripts\python.exe -m eval.tools.eval_local --questions eval/cases/regression.jsonl --case-id notice_attachment_001 --case-id student_life_001 --case-id partial_003 --output eval/results/targeted_quality_new.jsonl --max-calls 10 --data-snapshot "적재-이력-ID+023"
 ```
 반복 수정에 사용한 질문의 점수를 독립 평가나 전체 정답률로 제시하지 않습니다. 자동 채점의
 `judge_error`가 남으면 채점이 완료된 것으로 간주하지 않습니다.
@@ -139,6 +139,39 @@ npm --prefix frontend run lint
 
 기본 평가 입력은 빠른 확인용 `smoke.jsonl`입니다. 전체 평가에는 검수를 마친
 `regression.jsonl`을 지정합니다.
+
+## 임베딩·재정렬 모델 비교
+
+`eval/tools/embedding_benchmark.py`는 우리 문서로 임베딩 모델과 재정렬 모델을 비교합니다.
+DB는 읽기만 하고, 결과는 `var/embedding_bench/`(git 제외)에 저장합니다.
+
+- 시험 자료: 학칙·본교 안내 조각 전체, regression의 정답 문서, 학과 안내 페이지, 무작위 공지·학과 조각
+- 질문: 정답 문서 주소가 있는 regression 문항과 실제로 실패했던 질문
+- 점수: 정답 문서가 1·5·10위 안에 드는 비율과 MRR(같은 글의 조각은 하나로 셈)
+
+GPU가 있는 곳(학교 서버)에서 실행합니다. CPU로는 큰 모델 하나에 몇 시간이 걸립니다.
+
+```powershell
+.\backend\.venv\Scripts\python.exe -m eval.tools.embedding_benchmark corpus
+.\backend\.venv\Scripts\python.exe -m eval.tools.embedding_benchmark run
+```
+
+2026-11-12 CPU 측정에서 현재 모델(paraphrase-multilingual-MiniLM-L12-v2)은 질문 64개 중
+정답 문서를 10위 안에 올린 비율이 12%였습니다.
+
+불러오지 못하는 모델(예: `.bin`만 있는 bge-m3와 torch 2.6 미만)은 `skipped`로 기록하고
+나머지 모델은 계속 비교합니다.
+
+### e5 유사도 눈금 (`EMBEDDING_SIMILARITY_FLOOR` / `_CEILING`)
+
+e5는 상위 30개의 유사도가 좁은 범위(약 0.82–0.87)에 몰립니다. 검색 순위는 유사도에 중요도 점수와
+키워드 결과의 가짜 유사도(0.30–0.75)를 섞는데, 모두 MiniLM의 퍼짐(약 0.44–0.72)에 맞춰져 있습니다.
+백엔드는 e5 점수를 `(s − floor) ÷ (ceiling − floor)`로 바꿉니다. 두 값은 같은 regression 질문으로
+두 모델의 검색 결과를 받아 분위가 같아지도록 맞춥니다(DB 읽기 전용, `backfill_e5` 뒤에 실행).
+
+```powershell
+python -m eval.tools.similarity_scale
+```
 
 ## 100개 질문 초안
 

@@ -49,6 +49,11 @@ def build_session(referer: str = GUIDE_URL) -> requests.Session:
     session.verify = False
     session.mount("https://", LegacySSLAdapter())
     session.mount("http://", LegacySSLAdapter())
+    # Body-image downloads go through departments.tls.get_with_tls_policy, which
+    # otherwise mounts its verifying adapter on this session. With verify=False
+    # every later request then fails ("Cannot set verify_mode to CERT_NONE when
+    # check_hostname is enabled"); on 2026-11-10 that failed 50 of 64 student-life pages.
+    session._pknu_tls_mounted = True
     session.headers.update(
         {
             "User-Agent": (
