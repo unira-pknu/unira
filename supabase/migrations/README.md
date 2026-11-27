@@ -85,6 +85,8 @@ The two old student-life public RPC names temporarily query `pknu_main_*` for ex
 
 `022_e5_search_plan.sql` makes the functions read the side table through its HNSW index. `025_e5_small_department_search.sql` adds an exact path for an `ingestion_dataset` filter: a department with up to 10000 active chunks is searched chunk by chunk instead of through the index, which rejected most rows for small departments (43-65 s on Small compute).
 
+`026_e5_department_vectors.sql` adds `rag_chunks_e5_dataset`, a copy of the rag e5 vectors of each department up to 50000 chunks, stored department by department. With a cold cache the 025 exact path still read one row per chunk (7.6-7.8 s for 9000-chunk departments, PostgREST stops at 8 s). After applying it, fill the copy on the GPU server with `python -m scripts.vectorization.backfill_e5 --build-dataset-copy` outside crawl hours; until a department is copied its searches use the 025 paths. The regular backfill keeps copied departments current. Rerun the build after many chunks were added so each department's rows are adjacent again.
+
 A side row counts only while its `content_hash` equals the chunk's; an edited chunk is left out of e5 search until the backfill embeds it again.
 
 ## Execution order

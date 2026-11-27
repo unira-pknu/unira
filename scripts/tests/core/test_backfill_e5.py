@@ -23,6 +23,7 @@ class FakeCursor:
     def __init__(self, conn):
         self.conn = conn
         self.result = None
+        self.rowcount = 0
 
     def __enter__(self):
         return self
@@ -156,6 +157,49 @@ class DeletedChunkTests(unittest.TestCase):
         with self.assertRaises(errors.ForeignKeyViolation):
             backfill.fill_family(conn, "rag", encode, round_size=3, total=3)
         self.assertEqual(backfill.WRITE_ATTEMPTS, conn.rollbacks)
+
+
+class DatasetCopyTests(unittest.TestCase):
+    """Migration 026: the rag department copy."""
+
+    def test_rag_rounds_also_write_the_copy_in_the_same_transaction(self):
+        conn = FakeConn([(f"id{i}", "h", "본문") for i in range(3)])
+        backfill.fill_family(conn, "rag", encode, round_size=3, total=3, dataset_copy=True)
+        merged = [s for s in conn.sql if s.startswith("insert into")]
+        self.assertEqual(["rag_chunks_e5 ", "rag_chunks_e5_dataset "],
+                         [s.split("public.")[1].split("(")[0] for s in merged])
+        self.assertEqual(1, conn.commits)  # one commit covers both
+
+    def test_copy_is_written_only_for_rag_and_only_when_asked(self):
+        for family, flag in (("rag", False), ("rule", True)):
+            conn = FakeConn([("id0", "h", "본문")])
+            backfill.fill_family(conn, family, encode, round_size=1, total=1, dataset_copy=flag)
+            self.assertFalse(any("rag_chunks_e5_dataset" in s for s in conn.sql), family)
+
+    def test_copy_merge_keeps_only_departments_already_copied(self):
+        sql = backfill.dataset_copy_merge_sql()
+        self.assertIn("where exists (select 1 from public.rag_chunks_e5_dataset d", sql)
+        self.assertIn("on conflict (id) do update", sql)
+
+    def test_departments_selected_by_size_or_by_name(self):
+        counts = {"stat": 7109, "ce": 112518, "nulife": 9243, None: 5}
+        self.assertEqual(["nulife", "stat"], backfill.select_copy_datasets(counts, 50000))
+        self.assertEqual(["ce"], backfill.select_copy_datasets(counts, 50000, ["ce"]))
+        with self.assertRaises(ValueError):
+            backfill.select_copy_datasets(counts, 50000, ["nope"])
+
+    def test_full_build_truncates_once_and_commits_per_department(self):
+        conn = FakeConn([])
+        backfill.build_dataset_copy(conn, ["nulife", "stat"], replace_all=True)
+        self.assertEqual(1, sum(s.startswith("truncate") for s in conn.sql))
+        self.assertFalse(any(s.startswith("delete") for s in conn.sql))
+        self.assertEqual(3, conn.commits)
+
+    def test_named_build_replaces_only_those_departments(self):
+        conn = FakeConn([])
+        backfill.build_dataset_copy(conn, ["stat"], replace_all=False)
+        self.assertFalse(any(s.startswith("truncate") for s in conn.sql))
+        self.assertEqual(1, sum(s.startswith("delete") for s in conn.sql))
 
 
 class RunTests(unittest.TestCase):

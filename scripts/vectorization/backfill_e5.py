@@ -17,6 +17,19 @@ vectors without the crawl jobs (CPU-only GitHub runners) computing them.
 
 The text embedded is the chunk content, the same text the current 384-dim vectors
 were computed from (vectorization.py embeds record["text"], loaded as content).
+
+Department copy (migration 026): rag_chunks_e5_dataset holds the rag e5 vectors of
+each selected department on adjacent pages, so a department-filtered search reads
+them in a few runs instead of one random read per chunk.
+
+    python -m scripts.vectorization.backfill_e5 --build-dataset-copy            # every department up to 50000 chunks
+    python -m scripts.vectorization.backfill_e5 --build-dataset-copy --datasets stat nulife
+
+Building all departments empties the copy first and refills it one department
+at a time (searches use the 025 paths meanwhile); naming departments replaces
+only those. Afterwards the regular rounds keep the copy current for the
+departments it holds. Run the build again after a department's chunks move or
+when many new chunks were added, so its rows are adjacent again.
 """
 
 from __future__ import annotations
@@ -44,6 +57,11 @@ FAMILIES = ("rule", "pknu_main", "pknu_syllabus", "pknu_notice", "rag")
 MAX_SEQ_LENGTH = 512  # e5-base limit; longer chunks are cut, as in the benchmark
 # One run at a time: the scheduled run must not start a second pass beside a long one.
 LOCK_PATH = PROJECT_ROOT / "var" / "backfill_e5.lock"
+DATASET_COPY_TABLE = "rag_chunks_e5_dataset"
+# Larger departments use the HNSW path: they are 2% or more of rag, so it reaches
+# match_count rows after a few hundred index rows (0.3-5 s cold, 2026-11-27), and
+# copying them would double the size of the copy.
+DATASET_COPY_MAX_CHUNKS = 50000
 
 Encoder = Callable[[list[str]], Sequence[Sequence[float]]]
 
@@ -87,6 +105,79 @@ def merge_sql(family: str) -> str:
     )
 
 
+def dataset_copy_merge_sql() -> str:
+    # Rows staged for rag, for departments the copy already holds (026). A chunk
+    # whose department has no copy is searched through the 025 paths.
+    return (
+        f"insert into public.{DATASET_COPY_TABLE} (id, dataset, content_hash, embedding) "
+        "select s.id, src.metadata ->> 'ingestion_dataset', s.content_hash, s.embedding "
+        "from e5_stage s join public.rag_chunks c on c.id = s.id "
+        "join public.rag_sources src on src.id = c.source_id "
+        f"where exists (select 1 from public.{DATASET_COPY_TABLE} d "
+        "where d.dataset = src.metadata ->> 'ingestion_dataset') "
+        "on conflict (id) do update set dataset = excluded.dataset, "
+        "content_hash = excluded.content_hash, embedding = excluded.embedding"
+    )
+
+
+DATASET_COUNTS_SQL = (
+    "select src.metadata ->> 'ingestion_dataset', count(*) from public.rag_sources src "
+    "join public.rag_chunks c on c.source_id = src.id "
+    "where src.status = 'active' and src.metadata ? 'ingestion_dataset' "
+    "group by 1 order by 1"
+)
+
+DATASET_COPY_INSERT_SQL = (
+    f"insert into public.{DATASET_COPY_TABLE} (id, dataset, content_hash, embedding) "
+    "select e.id, %(dataset)s, e.content_hash, e.embedding "
+    "from public.rag_sources src join public.rag_chunks c on c.source_id = src.id "
+    "join public.rag_chunks_e5 e on e.id = c.id and e.content_hash = c.content_hash "
+    "where src.status = 'active' and src.metadata @> %(filter)s::jsonb "
+    "on conflict (id) do update set dataset = excluded.dataset, "
+    "content_hash = excluded.content_hash, embedding = excluded.embedding"
+)
+
+
+def select_copy_datasets(counts: dict[str, int], max_chunks: int, wanted: Sequence[str] | None = None) -> list[str]:
+    """Departments to copy: the named ones, or every one up to max_chunks chunks."""
+    if wanted:
+        unknown = sorted(set(wanted) - set(counts))
+        if unknown:
+            raise ValueError("unknown datasets: " + ", ".join(unknown))
+        return sorted(set(wanted))
+    return sorted(name for name, total in counts.items() if name and total <= max_chunks)
+
+
+def build_dataset_copy(conn, datasets: Sequence[str], *, replace_all: bool) -> int:
+    """Fill the copy one department per transaction; returns rows written."""
+    import json
+
+    written = 0
+    if replace_all:
+        with conn.cursor() as cur:
+            cur.execute(f"truncate public.{DATASET_COPY_TABLE}")
+        conn.commit()
+    for name in datasets:
+        started = time.perf_counter()
+        with conn.cursor() as cur:
+            if not replace_all:
+                cur.execute(f"delete from public.{DATASET_COPY_TABLE} where dataset = %(dataset)s", {"dataset": name})
+            cur.execute(DATASET_COPY_INSERT_SQL, {"dataset": name, "filter": json.dumps({"ingestion_dataset": name})})
+            rows = cur.rowcount
+        conn.commit()
+        written += max(rows, 0)
+        log.info("copy %s: %d rows (%.0f s)", name, rows, time.perf_counter() - started)
+    return written
+
+
+def has_dataset_copy(conn) -> bool:
+    with conn.cursor() as cur:
+        cur.execute("select to_regclass(%s)", (f"public.{DATASET_COPY_TABLE}",))
+        present = cur.fetchone()[0] is not None
+    conn.commit()
+    return present
+
+
 def halfvec_literal(vector: Sequence[float]) -> str:
     # halfvec keeps about 3 significant digits; 5 is plenty and keeps rows small.
     return "[" + ",".join(f"{float(value):.5g}" for value in vector) + "]"
@@ -118,8 +209,11 @@ def acquire_run_lock(path: Path):
 WRITE_ATTEMPTS = 3
 
 
-def write_round(conn, family: str, rows, vectors) -> None:
+def write_round(conn, family: str, rows, vectors, *, dataset_copy: bool = False) -> None:
     """Stage one round and merge it, committing on `conn`.
+
+    With dataset_copy (rag, migration 026 applied) the same staged rows also
+    update the department copy, in the same transaction.
 
     The merge joins the chunk table, but a loader can still delete a chunk after
     the join saw it and before the foreign key check, so a round may fail with
@@ -138,6 +232,8 @@ def write_round(conn, family: str, rows, vectors) -> None:
                     for (chunk_id, content_hash, _content), vector in zip(rows, vectors):
                         copy.write_row((chunk_id, content_hash, halfvec_literal(vector)))
                 cur.execute(merge_sql(family))
+                if dataset_copy and family == "rag":
+                    cur.execute(dataset_copy_merge_sql())
             conn.commit()
             return
         except errors.ForeignKeyViolation:
@@ -149,7 +245,7 @@ def write_round(conn, family: str, rows, vectors) -> None:
 
 
 def fill_family(conn, family: str, encode: Encoder, *, round_size: int, limit: int | None = None,
-                total: int | None = None, read_conn=None) -> int:
+                total: int | None = None, read_conn=None, dataset_copy: bool = False) -> int:
     """Embed this family's pending chunks; returns how many were written.
 
     Pending rows stream from a server-side cursor on `read_conn` (one long read
@@ -175,7 +271,7 @@ def fill_family(conn, family: str, encode: Encoder, *, round_size: int, limit: i
             break
         vectors = encode(passage_texts([row[2] for row in rows]))
         validate_vectors(vectors, len(rows), E5_DIMENSIONS)
-        write_round(conn, family, rows, vectors)
+        write_round(conn, family, rows, vectors, dataset_copy=dataset_copy)
         written += len(rows)
         elapsed = time.perf_counter() - started
         rate = written / elapsed if elapsed else 0.0
@@ -218,6 +314,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--round-size", type=int, default=1024, help="chunks per database round (one commit)")
     parser.add_argument("--limit", type=int, default=None, help="stop after this many chunks per family")
     parser.add_argument("--count-only", action="store_true", help="only print how many chunks are left")
+    parser.add_argument("--build-dataset-copy", action="store_true",
+                        help="rebuild the rag department copy (migration 026) instead of embedding")
+    parser.add_argument("--datasets", nargs="+", default=None, help="with --build-dataset-copy: only these departments")
+    parser.add_argument("--max-dataset-chunks", type=int, default=DATASET_COPY_MAX_CHUNKS,
+                        help="with --build-dataset-copy: skip departments with more chunks")
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s", datefmt="%H:%M:%S")
     if hasattr(sys.stdout, "reconfigure"):
@@ -233,6 +334,17 @@ def main(argv: list[str] | None = None) -> int:
         # Rounds wait on HNSW inserts; the session default (2 min) is for searches.
         conn.execute("set statement_timeout = '15min'")
         conn.commit()
+        if args.build_dataset_copy:
+            if not has_dataset_copy(conn):
+                log.error("public.%s is missing; apply migration 026 first", DATASET_COPY_TABLE)
+                return 1
+            counts = dict(conn.execute(DATASET_COUNTS_SQL).fetchall())
+            conn.commit()
+            datasets = select_copy_datasets(counts, args.max_dataset_chunks, args.datasets)
+            log.info("copying %d departments, %d chunks", len(datasets), sum(counts[d] for d in datasets))
+            written = build_dataset_copy(conn, datasets, replace_all=not args.datasets)
+            log.info("department copy: %d rows", written)
+            return 0
         pending = {family: conn.execute(count_sql(family)).fetchone()[0] for family in args.families}
         conn.commit()
         if args.count_only:
@@ -244,6 +356,8 @@ def main(argv: list[str] | None = None) -> int:
             # days, without loading the model.
             log.info("all e5 vectors are current")
             return 0
+        # Rag rounds also refresh the department copy once migration 026 is applied.
+        dataset_copy = bool(pending.get("rag")) and has_dataset_copy(conn)
         device = args.device or default_device()
         log.info("model %s on %s", E5_MODEL, device)
         encode = load_encoder(device, args.batch_size)
@@ -255,7 +369,7 @@ def main(argv: list[str] | None = None) -> int:
             for family, total in pending.items():
                 if total:
                     fill_family(conn, family, encode, round_size=args.round_size, limit=args.limit,
-                                total=total, read_conn=read_conn)
+                                total=total, read_conn=read_conn, dataset_copy=dataset_copy)
                     read_conn.commit()
     return 0
 
