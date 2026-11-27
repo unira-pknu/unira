@@ -83,6 +83,8 @@ The two old student-life public RPC names temporarily query `pknu_main_*` for ex
 3. Check `pg_indexes` for the five `*_chunks_e5_embedding_hnsw_idx` indexes and `EXPLAIN` one `match_*_documents_e5` call (expect an index scan on the side table).
 4. Switch the backend with the five settings in `backend/.env.example` (`VECTOR_RPC_SUFFIX=_e5` …) and compare the regression eval. Setting `VECTOR_RPC_SUFFIX` back to empty returns to the 384-dim search.
 
+`022_e5_search_plan.sql` makes the functions read the side table through its HNSW index. `025_e5_small_department_search.sql` adds an exact path for an `ingestion_dataset` filter: a department with up to 10000 active chunks is searched chunk by chunk instead of through the index, which rejected most rows for small departments (43-65 s on Small compute).
+
 A side row counts only while its `content_hash` equals the chunk's; an edited chunk is left out of e5 search until the backfill embeds it again.
 
 ## Execution order
