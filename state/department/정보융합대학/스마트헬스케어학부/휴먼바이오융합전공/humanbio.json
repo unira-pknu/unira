@@ -1,29 +1,29 @@
 {
   "schema_version": "1.0",
   "dataset": "humanbio",
-  "updated_at": "2026-11-23T09:46:20+09:00",
+  "updated_at": "2026-11-28T11:32:50+09:00",
   "items": {
     "https://humanbio.pknu.ac.kr/humanbio/2886": {
       "source_id": "https://humanbio.pknu.ac.kr/humanbio/2886",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-11-23T09:44:15+09:00",
+      "last_seen_at": "2026-11-28T11:30:54+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 407,
+      "last_no": 411,
       "name": "공지사항",
-      "updated_at": "2026-11-23T09:44:15+09:00"
+      "updated_at": "2026-11-28T11:30:54+09:00"
     },
     "https://humanbio.pknu.ac.kr/humanbio/5898": {
       "source_id": "https://humanbio.pknu.ac.kr/humanbio/5898",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-11-23T09:44:41+09:00",
+      "last_seen_at": "2026-11-28T11:31:06+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 171,
+      "last_no": 172,
       "name": "대학원 공지사항",
-      "updated_at": "2026-11-23T09:44:41+09:00"
+      "updated_at": "2026-11-28T11:31:06+09:00"
     },
     "https://humanbio.pknu.ac.kr/humanbio/2887": {
       "source_id": "https://humanbio.pknu.ac.kr/humanbio/2887",

@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "dataset": "oceaneng",
-  "updated_at": "2026-11-23T12:57:19+09:00",
+  "updated_at": "2026-11-28T12:46:22+09:00",
   "items": {
     "https://oceaneng.pknu.ac.kr/oceaneng/937": {
       "source_id": "https://oceaneng.pknu.ac.kr/oceaneng/937",
@@ -18,23 +18,23 @@
       "source_id": "https://oceaneng.pknu.ac.kr/oceaneng/942",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-11-23T12:47:26+09:00",
+      "last_seen_at": "2026-11-28T12:43:42+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 513,
+      "last_no": 515,
       "name": "공지사항",
-      "updated_at": "2026-11-23T12:47:26+09:00"
+      "updated_at": "2026-11-28T12:43:42+09:00"
     },
     "https://oceaneng.pknu.ac.kr/oceaneng/953": {
       "source_id": "https://oceaneng.pknu.ac.kr/oceaneng/953",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-11-23T12:50:07+09:00",
+      "last_seen_at": "2026-11-28T12:43:47+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 629,
+      "last_no": 630,
       "name": "교내프로그램안내",
-      "updated_at": "2026-11-23T12:50:07+09:00"
+      "updated_at": "2026-11-28T12:43:47+09:00"
     },
     "https://oceaneng.pknu.ac.kr/oceaneng/954": {
       "source_id": "https://oceaneng.pknu.ac.kr/oceaneng/954",
@@ -57,6 +57,17 @@
       "last_no": 99,
       "name": "연구성과",
       "updated_at": "2026-11-23T12:56:32+09:00"
+    },
+    "https://oceaneng.pknu.ac.kr/oceaneng/938": {
+      "source_id": "https://oceaneng.pknu.ac.kr/oceaneng/938",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-28T12:42:51+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 187,
+      "name": "취업게시판",
+      "updated_at": "2026-11-28T12:42:51+09:00"
     }
   }
 }

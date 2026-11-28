@@ -1,18 +1,18 @@
 {
   "schema_version": "1.0",
   "dataset": "digitalfinance",
-  "updated_at": "2026-11-23T08:53:36+09:00",
+  "updated_at": "2026-11-28T10:48:05+09:00",
   "items": {
     "https://digitalfinance.pknu.ac.kr/digitalfinance/5498": {
       "source_id": "https://digitalfinance.pknu.ac.kr/digitalfinance/5498",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-11-23T08:51:41+09:00",
+      "last_seen_at": "2026-11-28T10:45:56+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 376,
+      "last_no": 378,
       "name": "공지사항",
-      "updated_at": "2026-11-23T08:51:41+09:00"
+      "updated_at": "2026-11-28T10:45:56+09:00"
     },
     "https://digitalfinance.pknu.ac.kr/digitalfinance/5748": {
       "source_id": "https://digitalfinance.pknu.ac.kr/digitalfinance/5748",

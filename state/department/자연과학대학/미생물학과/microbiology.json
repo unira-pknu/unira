@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "dataset": "microbiology",
-  "updated_at": "2026-11-23T11:25:15+09:00",
+  "updated_at": "2026-11-28T12:20:49+09:00",
   "items": {
     "http://microbiology.pknu.ac.kr/microbiology/388": {
       "source_id": "http://microbiology.pknu.ac.kr/microbiology/388",
@@ -29,12 +29,12 @@
       "source_id": "http://microbiology.pknu.ac.kr/microbiology/516",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-11-23T11:19:14+09:00",
+      "last_seen_at": "2026-11-28T12:18:41+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 7022,
+      "last_no": 7036,
       "name": "부경대학교 공지사항",
-      "updated_at": "2026-11-23T11:19:14+09:00"
+      "updated_at": "2026-11-28T12:18:41+09:00"
     },
     "http://microbiology.pknu.ac.kr/microbiology/391": {
       "source_id": "http://microbiology.pknu.ac.kr/microbiology/391",

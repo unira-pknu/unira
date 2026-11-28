@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "dataset": "pknudic",
+  "updated_at": "2026-11-28T12:57:33+09:00",
+  "items": {
+    "http://pknudic.pknu.ac.kr/pknudic/1193": {
+      "source_id": "http://pknudic.pknu.ac.kr/pknudic/1193",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-28T12:54:47+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 1090,
+      "name": "공지사항",
+      "updated_at": "2026-11-28T12:54:47+09:00"
+    },
+    "http://pknudic.pknu.ac.kr/pknudic/6910": {
+      "source_id": "http://pknudic.pknu.ac.kr/pknudic/6910",
+      "slug": "",
+      "content_hash": "",
+      "last_seen_at": "2026-11-28T12:57:20+09:00",
+      "miss_count": 0,
+      "status": "active",
+      "last_no": 41,
+      "name": "일반대학원 공지사항",
+      "updated_at": "2026-11-28T12:57:20+09:00"
+    }
+  }
+}

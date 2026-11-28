@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "dataset": "materials",
-  "updated_at": "2026-11-23T10:35:50+09:00",
+  "updated_at": "2026-11-28T12:08:25+09:00",
   "items": {
     "http://materials.pknu.ac.kr/materials/1059": {
       "source_id": "http://materials.pknu.ac.kr/materials/1059",
@@ -29,12 +29,12 @@
       "source_id": "http://materials.pknu.ac.kr/materials/1296",
       "slug": "",
       "content_hash": "",
-      "last_seen_at": "2026-11-23T10:35:25+09:00",
+      "last_seen_at": "2026-11-28T12:07:17+09:00",
       "miss_count": 0,
       "status": "active",
-      "last_no": 74,
+      "last_no": 75,
       "name": "전공 소식",
-      "updated_at": "2026-11-23T10:35:25+09:00"
+      "updated_at": "2026-11-28T12:07:17+09:00"
     },
     "http://materials.pknu.ac.kr/materials/1061": {
       "source_id": "http://materials.pknu.ac.kr/materials/1061",

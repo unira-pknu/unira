@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "dataset": "food",
-  "updated_at": "2026-11-23T09:38:00+09:00",
+  "updated_at": "2026-11-28T11:25:53+09:00",
   "items": {
     "https://food.pknu.ac.kr/food/7400": {
       "source_id": "https://food.pknu.ac.kr/food/7400",
