@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "dataset": "pknu_notice",
-  "updated_at": "2026-11-27T15:25:45+09:00",
+  "updated_at": "2026-11-28T15:02:48+09:00",
   "items": {
     "724841": {
       "slug": "22b0534f3109",
@@ -412,7 +412,7 @@
       "slug": "3b940a7159067fd1",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:16:52+09:00",
+      "last_seen_at": "2026-11-28T14:53:39+09:00",
       "source_id": "724718",
       "content_hash": "",
       "status": "active"
@@ -421,7 +421,7 @@
       "slug": "6e461612b3b473f7",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:16:54+09:00",
+      "last_seen_at": "2026-11-28T14:53:41+09:00",
       "source_id": "724717",
       "content_hash": "",
       "status": "active"
@@ -430,7 +430,7 @@
       "slug": "55c65f47e1422148",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:16:56+09:00",
+      "last_seen_at": "2026-11-28T14:53:43+09:00",
       "source_id": "724629",
       "content_hash": "",
       "status": "active"
@@ -817,7 +817,7 @@
       "slug": "a05bb19d94a46932",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:18:29+09:00",
+      "last_seen_at": "2026-11-28T14:55:27+09:00",
       "source_id": "724628",
       "content_hash": "",
       "status": "active"
@@ -826,7 +826,7 @@
       "slug": "3331cc8a79ab25da",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:18:31+09:00",
+      "last_seen_at": "2026-11-28T14:55:30+09:00",
       "source_id": "723841",
       "content_hash": "",
       "status": "active"
@@ -835,7 +835,7 @@
       "slug": "40d1b2adaf648d2a",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:18:34+09:00",
+      "last_seen_at": "2026-11-28T14:55:32+09:00",
       "source_id": "723821",
       "content_hash": "",
       "status": "active"
@@ -844,7 +844,7 @@
       "slug": "0ea25c80ca210d6d",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:18:35+09:00",
+      "last_seen_at": "2026-11-28T14:55:34+09:00",
       "source_id": "723625",
       "content_hash": "",
       "status": "active"
@@ -853,7 +853,7 @@
       "slug": "93bd1770b31e0ebf",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:18:37+09:00",
+      "last_seen_at": "2026-11-28T14:55:36+09:00",
       "source_id": "723624",
       "content_hash": "",
       "status": "active"
@@ -862,7 +862,7 @@
       "slug": "1d8b2334051f1b72",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:18:39+09:00",
+      "last_seen_at": "2026-11-28T14:55:38+09:00",
       "source_id": "723396",
       "content_hash": "",
       "status": "active"
@@ -871,7 +871,7 @@
       "slug": "ecc4b6151745ba8e",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:18:44+09:00",
+      "last_seen_at": "2026-11-28T14:55:43+09:00",
       "source_id": "723335",
       "content_hash": "",
       "status": "active"
@@ -880,7 +880,7 @@
       "slug": "328d854e8845242d",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:18:57+09:00",
+      "last_seen_at": "2026-11-28T14:55:58+09:00",
       "source_id": "723322",
       "content_hash": "",
       "status": "active"
@@ -889,7 +889,7 @@
       "slug": "71ec8908500ae94b",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:18:59+09:00",
+      "last_seen_at": "2026-11-28T14:56:00+09:00",
       "source_id": "723292",
       "content_hash": "",
       "status": "active"
@@ -898,7 +898,7 @@
       "slug": "5e93211f40084d1b",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:19:01+09:00",
+      "last_seen_at": "2026-11-28T14:56:01+09:00",
       "source_id": "723291",
       "content_hash": "",
       "status": "active"
@@ -907,7 +907,7 @@
       "slug": "e787a12601934194",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:19:09+09:00",
+      "last_seen_at": "2026-11-28T14:56:11+09:00",
       "source_id": "723158",
       "content_hash": "",
       "status": "active"
@@ -916,7 +916,7 @@
       "slug": "62dc264346ca4828",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:19:11+09:00",
+      "last_seen_at": "2026-11-28T14:56:13+09:00",
       "source_id": "723062",
       "content_hash": "",
       "status": "active"
@@ -925,7 +925,7 @@
       "slug": "577ad1f6802fbbb5",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:19:18+09:00",
+      "last_seen_at": "2026-11-28T14:56:21+09:00",
       "source_id": "723024",
       "content_hash": "",
       "status": "active"
@@ -934,7 +934,7 @@
       "slug": "ee98ca80cc16aae6",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:19:28+09:00",
+      "last_seen_at": "2026-11-28T14:56:31+09:00",
       "source_id": "722961",
       "content_hash": "",
       "status": "active"
@@ -943,7 +943,7 @@
       "slug": "4d49ea2094c6ff53",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:19:30+09:00",
+      "last_seen_at": "2026-11-28T14:56:33+09:00",
       "source_id": "722921",
       "content_hash": "",
       "status": "active"
@@ -952,7 +952,7 @@
       "slug": "4fb7f078234736cf",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:19:36+09:00",
+      "last_seen_at": "2026-11-28T14:56:40+09:00",
       "source_id": "722815",
       "content_hash": "",
       "status": "active"
@@ -961,7 +961,7 @@
       "slug": "e950ad1e5828c394",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:19:38+09:00",
+      "last_seen_at": "2026-11-28T14:56:43+09:00",
       "source_id": "722814",
       "content_hash": "",
       "status": "active"
@@ -970,7 +970,7 @@
       "slug": "7362e00c2d894244",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:19:41+09:00",
+      "last_seen_at": "2026-11-28T14:56:45+09:00",
       "source_id": "722813",
       "content_hash": "",
       "status": "active"
@@ -979,7 +979,7 @@
       "slug": "26a08954854e3172",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:19:44+09:00",
+      "last_seen_at": "2026-11-28T14:56:49+09:00",
       "source_id": "722812",
       "content_hash": "",
       "status": "active"
@@ -988,7 +988,7 @@
       "slug": "8a3c9726b0c26c6b",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:19:47+09:00",
+      "last_seen_at": "2026-11-28T14:56:52+09:00",
       "source_id": "722796",
       "content_hash": "",
       "status": "active"
@@ -997,7 +997,7 @@
       "slug": "e8ee23e0cd223553",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:19:53+09:00",
+      "last_seen_at": "2026-11-28T14:56:58+09:00",
       "source_id": "722760",
       "content_hash": "",
       "status": "active"
@@ -2140,7 +2140,7 @@
       "slug": "4bb43ee26d4dcc38",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:24:51+09:00",
+      "last_seen_at": "2026-11-28T15:01:53+09:00",
       "source_id": "726309",
       "content_hash": "",
       "status": "active"
@@ -2455,7 +2455,7 @@
       "slug": "0d29a136b25014f2",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:15:36+09:00",
+      "last_seen_at": "2026-11-28T14:52:21+09:00",
       "source_id": "726300",
       "content_hash": "",
       "status": "active"
@@ -2464,7 +2464,7 @@
       "slug": "b13df0341bf018f6",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:15:38+09:00",
+      "last_seen_at": "2026-11-28T14:52:23+09:00",
       "source_id": "726266",
       "content_hash": "",
       "status": "active"
@@ -2473,7 +2473,7 @@
       "slug": "24da74c3553cd53d",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:15:40+09:00",
+      "last_seen_at": "2026-11-28T14:52:24+09:00",
       "source_id": "726176",
       "content_hash": "",
       "status": "active"
@@ -2482,7 +2482,7 @@
       "slug": "ec6089df7c1d8278",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:15:43+09:00",
+      "last_seen_at": "2026-11-28T14:52:27+09:00",
       "source_id": "726161",
       "content_hash": "",
       "status": "active"
@@ -2491,7 +2491,7 @@
       "slug": "a3fa21933fd44337",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:15:45+09:00",
+      "last_seen_at": "2026-11-28T14:52:29+09:00",
       "source_id": "726159",
       "content_hash": "",
       "status": "active"
@@ -2500,7 +2500,7 @@
       "slug": "82440b18034644af",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:15:47+09:00",
+      "last_seen_at": "2026-11-28T14:52:31+09:00",
       "source_id": "726093",
       "content_hash": "",
       "status": "active"
@@ -2509,7 +2509,7 @@
       "slug": "5ac94dd2b1998bf9",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:15:49+09:00",
+      "last_seen_at": "2026-11-28T14:52:33+09:00",
       "source_id": "726084",
       "content_hash": "",
       "status": "active"
@@ -2518,7 +2518,7 @@
       "slug": "9a17cd8cdadb75bd",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:15:51+09:00",
+      "last_seen_at": "2026-11-28T14:52:35+09:00",
       "source_id": "726051",
       "content_hash": "",
       "status": "active"
@@ -2527,7 +2527,7 @@
       "slug": "24699f01577349bf",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:15:53+09:00",
+      "last_seen_at": "2026-11-28T14:52:38+09:00",
       "source_id": "726002",
       "content_hash": "",
       "status": "active"
@@ -2536,7 +2536,7 @@
       "slug": "c893eabf63185b11",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:15:55+09:00",
+      "last_seen_at": "2026-11-28T14:52:40+09:00",
       "source_id": "725888",
       "content_hash": "",
       "status": "active"
@@ -2545,7 +2545,7 @@
       "slug": "b344b1704d65f9c2",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:15:57+09:00",
+      "last_seen_at": "2026-11-28T14:52:41+09:00",
       "source_id": "725789",
       "content_hash": "",
       "status": "active"
@@ -2554,7 +2554,7 @@
       "slug": "85fe8ee6d23d237e",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:15:59+09:00",
+      "last_seen_at": "2026-11-28T14:52:43+09:00",
       "source_id": "725779",
       "content_hash": "",
       "status": "active"
@@ -2563,7 +2563,7 @@
       "slug": "b31f504c2840182d",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:16:01+09:00",
+      "last_seen_at": "2026-11-28T14:52:45+09:00",
       "source_id": "725772",
       "content_hash": "",
       "status": "active"
@@ -2572,7 +2572,7 @@
       "slug": "62a390900e3b2721",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:16:03+09:00",
+      "last_seen_at": "2026-11-28T14:52:47+09:00",
       "source_id": "725739",
       "content_hash": "",
       "status": "active"
@@ -2581,7 +2581,7 @@
       "slug": "699fd61d50118af3",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:16:05+09:00",
+      "last_seen_at": "2026-11-28T14:52:49+09:00",
       "source_id": "725726",
       "content_hash": "",
       "status": "active"
@@ -2590,7 +2590,7 @@
       "slug": "ace0883df318d035",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:16:07+09:00",
+      "last_seen_at": "2026-11-28T14:52:51+09:00",
       "source_id": "725647",
       "content_hash": "",
       "status": "active"
@@ -2599,7 +2599,7 @@
       "slug": "184cdd6024a192a8",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:16:12+09:00",
+      "last_seen_at": "2026-11-28T14:52:57+09:00",
       "source_id": "725641",
       "content_hash": "",
       "status": "active"
@@ -2608,7 +2608,7 @@
       "slug": "dd9adf3a73d9b9b8",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:16:14+09:00",
+      "last_seen_at": "2026-11-28T14:52:59+09:00",
       "source_id": "725555",
       "content_hash": "",
       "status": "active"
@@ -2617,7 +2617,7 @@
       "slug": "f0f44b31b1a2e805",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:16:16+09:00",
+      "last_seen_at": "2026-11-28T14:53:01+09:00",
       "source_id": "725527",
       "content_hash": "",
       "status": "active"
@@ -2626,7 +2626,7 @@
       "slug": "c5300d9c63bf75c6",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:16:18+09:00",
+      "last_seen_at": "2026-11-28T14:53:03+09:00",
       "source_id": "725431",
       "content_hash": "",
       "status": "active"
@@ -2635,7 +2635,7 @@
       "slug": "5a73241ba86ef46a",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:16:20+09:00",
+      "last_seen_at": "2026-11-28T14:53:05+09:00",
       "source_id": "725399",
       "content_hash": "",
       "status": "active"
@@ -2644,7 +2644,7 @@
       "slug": "02398920c89fd954",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:16:23+09:00",
+      "last_seen_at": "2026-11-28T14:53:08+09:00",
       "source_id": "725330",
       "content_hash": "",
       "status": "active"
@@ -2653,7 +2653,7 @@
       "slug": "33b0eb6d7861582f",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:16:25+09:00",
+      "last_seen_at": "2026-11-28T14:53:10+09:00",
       "source_id": "725313",
       "content_hash": "",
       "status": "active"
@@ -2662,7 +2662,7 @@
       "slug": "6516a57d27cfa4f7",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:16:27+09:00",
+      "last_seen_at": "2026-11-28T14:53:12+09:00",
       "source_id": "725306",
       "content_hash": "",
       "status": "active"
@@ -2671,7 +2671,7 @@
       "slug": "ddda20d7236808f8",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:16:29+09:00",
+      "last_seen_at": "2026-11-28T14:53:14+09:00",
       "source_id": "725254",
       "content_hash": "",
       "status": "active"
@@ -2680,7 +2680,7 @@
       "slug": "136efac604ae276c",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:16:34+09:00",
+      "last_seen_at": "2026-11-28T14:53:20+09:00",
       "source_id": "725123",
       "content_hash": "",
       "status": "active"
@@ -2689,7 +2689,7 @@
       "slug": "f2f838e5b0499f77",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:16:36+09:00",
+      "last_seen_at": "2026-11-28T14:53:21+09:00",
       "source_id": "725109",
       "content_hash": "",
       "status": "active"
@@ -2698,7 +2698,7 @@
       "slug": "813389aafac3d825",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:16:38+09:00",
+      "last_seen_at": "2026-11-28T14:53:23+09:00",
       "source_id": "725107",
       "content_hash": "",
       "status": "active"
@@ -2707,7 +2707,7 @@
       "slug": "5c49b7815b5564cf",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:16:40+09:00",
+      "last_seen_at": "2026-11-28T14:53:25+09:00",
       "source_id": "725050",
       "content_hash": "",
       "status": "active"
@@ -2716,7 +2716,7 @@
       "slug": "45e5a4d7cc55c321",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:16:42+09:00",
+      "last_seen_at": "2026-11-28T14:53:27+09:00",
       "source_id": "725044",
       "content_hash": "",
       "status": "active"
@@ -2725,7 +2725,7 @@
       "slug": "0761f16d54fcc216",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:16:48+09:00",
+      "last_seen_at": "2026-11-28T14:53:35+09:00",
       "source_id": "725030",
       "content_hash": "",
       "status": "active"
@@ -2734,7 +2734,7 @@
       "slug": "ec7044f9995fc117",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:16:50+09:00",
+      "last_seen_at": "2026-11-28T14:53:37+09:00",
       "source_id": "724927",
       "content_hash": "",
       "status": "active"
@@ -2743,7 +2743,7 @@
       "slug": "1438fdd33678fe12",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:17:28+09:00",
+      "last_seen_at": "2026-11-28T14:54:20+09:00",
       "source_id": "726264",
       "content_hash": "",
       "status": "active"
@@ -2752,7 +2752,7 @@
       "slug": "ff6144307eba3a2b",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:17:30+09:00",
+      "last_seen_at": "2026-11-28T14:54:22+09:00",
       "source_id": "726208",
       "content_hash": "",
       "status": "active"
@@ -2761,7 +2761,7 @@
       "slug": "5975eaac0f143ded",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:17:32+09:00",
+      "last_seen_at": "2026-11-28T14:54:23+09:00",
       "source_id": "726207",
       "content_hash": "",
       "status": "active"
@@ -2770,7 +2770,7 @@
       "slug": "1f1b607276601f3a",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:17:34+09:00",
+      "last_seen_at": "2026-11-28T14:54:25+09:00",
       "source_id": "726144",
       "content_hash": "",
       "status": "active"
@@ -2779,7 +2779,7 @@
       "slug": "6b151004938c7ae6",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:17:39+09:00",
+      "last_seen_at": "2026-11-28T14:54:31+09:00",
       "source_id": "726142",
       "content_hash": "",
       "status": "active"
@@ -2788,7 +2788,7 @@
       "slug": "d5ecae73c56a1e51",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:17:41+09:00",
+      "last_seen_at": "2026-11-28T14:54:33+09:00",
       "source_id": "725811",
       "content_hash": "",
       "status": "active"
@@ -2797,7 +2797,7 @@
       "slug": "d1f3d20c7b4de4b0",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:17:45+09:00",
+      "last_seen_at": "2026-11-28T14:54:37+09:00",
       "source_id": "725810",
       "content_hash": "",
       "status": "active"
@@ -2806,7 +2806,7 @@
       "slug": "e5606f1e36570024",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:17:47+09:00",
+      "last_seen_at": "2026-11-28T14:54:39+09:00",
       "source_id": "725786",
       "content_hash": "",
       "status": "active"
@@ -2815,7 +2815,7 @@
       "slug": "e20f5258ce640455",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:17:49+09:00",
+      "last_seen_at": "2026-11-28T14:54:41+09:00",
       "source_id": "725681",
       "content_hash": "",
       "status": "active"
@@ -2824,7 +2824,7 @@
       "slug": "1eef362e293bed27",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:17:52+09:00",
+      "last_seen_at": "2026-11-28T14:54:44+09:00",
       "source_id": "725591",
       "content_hash": "",
       "status": "active"
@@ -2833,7 +2833,7 @@
       "slug": "8af8a33909067d91",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:17:59+09:00",
+      "last_seen_at": "2026-11-28T14:54:53+09:00",
       "source_id": "725498",
       "content_hash": "",
       "status": "active"
@@ -2842,7 +2842,7 @@
       "slug": "bcb7a8f56db60926",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:18:02+09:00",
+      "last_seen_at": "2026-11-28T14:54:56+09:00",
       "source_id": "725475",
       "content_hash": "",
       "status": "active"
@@ -2851,7 +2851,7 @@
       "slug": "b44aa0d841adae42",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:18:04+09:00",
+      "last_seen_at": "2026-11-28T14:54:58+09:00",
       "source_id": "725348",
       "content_hash": "",
       "status": "active"
@@ -2860,7 +2860,7 @@
       "slug": "ff63b3b753ffde34",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:18:07+09:00",
+      "last_seen_at": "2026-11-28T14:55:02+09:00",
       "source_id": "725347",
       "content_hash": "",
       "status": "active"
@@ -2869,7 +2869,7 @@
       "slug": "cf4e9286c36d436b",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:18:13+09:00",
+      "last_seen_at": "2026-11-28T14:55:09+09:00",
       "source_id": "725293",
       "content_hash": "",
       "status": "active"
@@ -2878,7 +2878,7 @@
       "slug": "23d772c30ba8c4bb",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:18:22+09:00",
+      "last_seen_at": "2026-11-28T14:55:19+09:00",
       "source_id": "725003",
       "content_hash": "",
       "status": "active"
@@ -2887,7 +2887,7 @@
       "slug": "ba208425f9348d28",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:18:24+09:00",
+      "last_seen_at": "2026-11-28T14:55:21+09:00",
       "source_id": "725002",
       "content_hash": "",
       "status": "active"
@@ -2896,7 +2896,7 @@
       "slug": "ca0410dfd66237b8",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:21:02+09:00",
+      "last_seen_at": "2026-11-28T14:58:05+09:00",
       "source_id": "726203",
       "content_hash": "",
       "status": "active"
@@ -2905,7 +2905,7 @@
       "slug": "e484e90cdf71fda1",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:21:15+09:00",
+      "last_seen_at": "2026-11-28T14:58:18+09:00",
       "source_id": "726174",
       "content_hash": "",
       "status": "active"
@@ -2914,7 +2914,7 @@
       "slug": "b91906d12a5b4978",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:21:17+09:00",
+      "last_seen_at": "2026-11-28T14:58:20+09:00",
       "source_id": "726127",
       "content_hash": "",
       "status": "active"
@@ -2923,7 +2923,7 @@
       "slug": "650df78d6f22dc45",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:21:26+09:00",
+      "last_seen_at": "2026-11-28T14:58:29+09:00",
       "source_id": "726125",
       "content_hash": "",
       "status": "active"
@@ -2932,7 +2932,7 @@
       "slug": "fdbfb7f082001894",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:21:30+09:00",
+      "last_seen_at": "2026-11-28T14:58:33+09:00",
       "source_id": "726124",
       "content_hash": "",
       "status": "active"
@@ -2941,7 +2941,7 @@
       "slug": "fed70e7dc289010e",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:21:31+09:00",
+      "last_seen_at": "2026-11-28T14:58:35+09:00",
       "source_id": "726123",
       "content_hash": "",
       "status": "active"
@@ -2950,7 +2950,7 @@
       "slug": "62f258d234c5a1cb",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:21:38+09:00",
+      "last_seen_at": "2026-11-28T14:58:42+09:00",
       "source_id": "726117",
       "content_hash": "",
       "status": "active"
@@ -2959,7 +2959,7 @@
       "slug": "70c8c733090ad757",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:21:40+09:00",
+      "last_seen_at": "2026-11-28T14:58:44+09:00",
       "source_id": "726062",
       "content_hash": "",
       "status": "active"
@@ -2968,7 +2968,7 @@
       "slug": "0efee8c5f9941dd8",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:21:42+09:00",
+      "last_seen_at": "2026-11-28T14:58:46+09:00",
       "source_id": "726019",
       "content_hash": "",
       "status": "active"
@@ -2977,7 +2977,7 @@
       "slug": "2fafee6857548c6a",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:21:43+09:00",
+      "last_seen_at": "2026-11-28T14:58:47+09:00",
       "source_id": "725962",
       "content_hash": "",
       "status": "active"
@@ -2986,7 +2986,7 @@
       "slug": "d5f53c5d0090c688",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:21:45+09:00",
+      "last_seen_at": "2026-11-28T14:58:49+09:00",
       "source_id": "725906",
       "content_hash": "",
       "status": "active"
@@ -2995,7 +2995,7 @@
       "slug": "cdf5f2e4bcc321f1",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:21:48+09:00",
+      "last_seen_at": "2026-11-28T14:58:52+09:00",
       "source_id": "725813",
       "content_hash": "",
       "status": "active"
@@ -3004,7 +3004,7 @@
       "slug": "4fa35e29076836b7",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:21:51+09:00",
+      "last_seen_at": "2026-11-28T14:58:54+09:00",
       "source_id": "725795",
       "content_hash": "",
       "status": "active"
@@ -3013,7 +3013,7 @@
       "slug": "af5e3e041a9a29af",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:21:52+09:00",
+      "last_seen_at": "2026-11-28T14:58:56+09:00",
       "source_id": "725657",
       "content_hash": "",
       "status": "active"
@@ -3022,7 +3022,7 @@
       "slug": "45d220d46c6d8827",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:21:55+09:00",
+      "last_seen_at": "2026-11-28T14:58:58+09:00",
       "source_id": "725622",
       "content_hash": "",
       "status": "active"
@@ -3031,7 +3031,7 @@
       "slug": "e43518ab499fdbf7",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:21:58+09:00",
+      "last_seen_at": "2026-11-28T14:59:00+09:00",
       "source_id": "725607",
       "content_hash": "",
       "status": "active"
@@ -3040,7 +3040,7 @@
       "slug": "182cef414d0db0a3",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:22:05+09:00",
+      "last_seen_at": "2026-11-28T14:59:06+09:00",
       "source_id": "725553",
       "content_hash": "",
       "status": "active"
@@ -3049,7 +3049,7 @@
       "slug": "41f64a1b02c17e54",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:22:07+09:00",
+      "last_seen_at": "2026-11-28T14:59:08+09:00",
       "source_id": "725487",
       "content_hash": "",
       "status": "active"
@@ -3058,7 +3058,7 @@
       "slug": "6c1c67a6d001688d",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:22:16+09:00",
+      "last_seen_at": "2026-11-28T14:59:16+09:00",
       "source_id": "725474",
       "content_hash": "",
       "status": "active"
@@ -3067,7 +3067,7 @@
       "slug": "d46d343f85d84bbb",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:22:26+09:00",
+      "last_seen_at": "2026-11-28T14:59:25+09:00",
       "source_id": "725404",
       "content_hash": "",
       "status": "active"
@@ -3076,7 +3076,7 @@
       "slug": "be255189acedab96",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:22:28+09:00",
+      "last_seen_at": "2026-11-28T14:59:26+09:00",
       "source_id": "725382",
       "content_hash": "",
       "status": "active"
@@ -3085,7 +3085,7 @@
       "slug": "d24420ed54f8ca67",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:22:30+09:00",
+      "last_seen_at": "2026-11-28T14:59:28+09:00",
       "source_id": "725367",
       "content_hash": "",
       "status": "active"
@@ -3094,7 +3094,7 @@
       "slug": "e6b1e2014ef02e2a",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:22:33+09:00",
+      "last_seen_at": "2026-11-28T14:59:31+09:00",
       "source_id": "725190",
       "content_hash": "",
       "status": "active"
@@ -3103,7 +3103,7 @@
       "slug": "0587941582db403d",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:22:39+09:00",
+      "last_seen_at": "2026-11-28T14:59:37+09:00",
       "source_id": "725151",
       "content_hash": "",
       "status": "active"
@@ -3112,7 +3112,7 @@
       "slug": "72a6c6004003d5cb",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:22:46+09:00",
+      "last_seen_at": "2026-11-28T14:59:45+09:00",
       "source_id": "725073",
       "content_hash": "",
       "status": "active"
@@ -3121,7 +3121,7 @@
       "slug": "0083912beca43c13",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:22:48+09:00",
+      "last_seen_at": "2026-11-28T14:59:47+09:00",
       "source_id": "724942",
       "content_hash": "",
       "status": "active"
@@ -3130,7 +3130,7 @@
       "slug": "ce1934b8e6bdbc17",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:22:57+09:00",
+      "last_seen_at": "2026-11-28T14:59:55+09:00",
       "source_id": "724934",
       "content_hash": "",
       "status": "active"
@@ -3139,7 +3139,7 @@
       "slug": "45cd22b864a41326",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:23:05+09:00",
+      "last_seen_at": "2026-11-28T15:00:04+09:00",
       "source_id": "724908",
       "content_hash": "",
       "status": "active"
@@ -3148,7 +3148,7 @@
       "slug": "571e24c429c9bfb8",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:23:07+09:00",
+      "last_seen_at": "2026-11-28T15:00:06+09:00",
       "source_id": "724907",
       "content_hash": "",
       "status": "active"
@@ -3157,7 +3157,7 @@
       "slug": "d811433bc8ba0a88",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:23:29+09:00",
+      "last_seen_at": "2026-11-28T15:00:29+09:00",
       "source_id": "724885",
       "content_hash": "",
       "status": "active"
@@ -3175,7 +3175,7 @@
       "slug": "b3bb758a62c6ca86",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:24:53+09:00",
+      "last_seen_at": "2026-11-28T15:01:55+09:00",
       "source_id": "726303",
       "content_hash": "",
       "status": "active"
@@ -3184,7 +3184,7 @@
       "slug": "6edaf8259f612b0c",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:25:00+09:00",
+      "last_seen_at": "2026-11-28T15:02:02+09:00",
       "source_id": "726301",
       "content_hash": "",
       "status": "active"
@@ -3193,7 +3193,7 @@
       "slug": "95e622a8dd4b4099",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:25:02+09:00",
+      "last_seen_at": "2026-11-28T15:02:05+09:00",
       "source_id": "726228",
       "content_hash": "",
       "status": "active"
@@ -3202,7 +3202,7 @@
       "slug": "da0eaf565b605464",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:25:05+09:00",
+      "last_seen_at": "2026-11-28T15:02:07+09:00",
       "source_id": "726206",
       "content_hash": "",
       "status": "active"
@@ -3211,7 +3211,7 @@
       "slug": "a582627560754188",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:25:08+09:00",
+      "last_seen_at": "2026-11-28T15:02:11+09:00",
       "source_id": "726196",
       "content_hash": "",
       "status": "active"
@@ -3220,7 +3220,7 @@
       "slug": "a1d25b03b3831cd4",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:25:11+09:00",
+      "last_seen_at": "2026-11-28T15:02:13+09:00",
       "source_id": "726195",
       "content_hash": "",
       "status": "active"
@@ -3229,7 +3229,7 @@
       "slug": "394f0451863f9e97",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:25:13+09:00",
+      "last_seen_at": "2026-11-28T15:02:16+09:00",
       "source_id": "726100",
       "content_hash": "",
       "status": "active"
@@ -3238,7 +3238,7 @@
       "slug": "9b60a8145eec1168",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:25:17+09:00",
+      "last_seen_at": "2026-11-28T15:02:20+09:00",
       "source_id": "726090",
       "content_hash": "",
       "status": "active"
@@ -3247,7 +3247,7 @@
       "slug": "238a2e63509e309d",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:25:20+09:00",
+      "last_seen_at": "2026-11-28T15:02:22+09:00",
       "source_id": "726077",
       "content_hash": "",
       "status": "active"
@@ -3256,7 +3256,7 @@
       "slug": "29a3ad04161dd9cd",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:25:22+09:00",
+      "last_seen_at": "2026-11-28T15:02:25+09:00",
       "source_id": "726060",
       "content_hash": "",
       "status": "active"
@@ -3265,7 +3265,7 @@
       "slug": "d5476a167c8eb083",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:25:26+09:00",
+      "last_seen_at": "2026-11-28T15:02:29+09:00",
       "source_id": "726047",
       "content_hash": "",
       "status": "active"
@@ -3274,7 +3274,7 @@
       "slug": "f67382a8ebccbcd2",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:25:29+09:00",
+      "last_seen_at": "2026-11-28T15:02:32+09:00",
       "source_id": "725973",
       "content_hash": "",
       "status": "active"
@@ -3283,7 +3283,7 @@
       "slug": "a160df06e319b7b2",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:25:32+09:00",
+      "last_seen_at": "2026-11-28T15:02:35+09:00",
       "source_id": "725972",
       "content_hash": "",
       "status": "active"
@@ -3292,7 +3292,7 @@
       "slug": "fd393882dae3f2d2",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:25:34+09:00",
+      "last_seen_at": "2026-11-28T15:02:38+09:00",
       "source_id": "725969",
       "content_hash": "",
       "status": "active"
@@ -3301,7 +3301,7 @@
       "slug": "9540931528b9e210",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:25:36+09:00",
+      "last_seen_at": "2026-11-28T15:02:40+09:00",
       "source_id": "725957",
       "content_hash": "",
       "status": "active"
@@ -3310,7 +3310,7 @@
       "slug": "079f09647c7194a4",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:25:39+09:00",
+      "last_seen_at": "2026-11-28T15:02:42+09:00",
       "source_id": "725955",
       "content_hash": "",
       "status": "active"
@@ -3319,7 +3319,7 @@
       "slug": "eba038ffb94fd5bf",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:25:41+09:00",
+      "last_seen_at": "2026-11-28T15:02:45+09:00",
       "source_id": "725933",
       "content_hash": "",
       "status": "active"
@@ -3328,7 +3328,7 @@
       "slug": "0b0adc442a1bd467",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:25:45+09:00",
+      "last_seen_at": "2026-11-28T15:02:48+09:00",
       "source_id": "725922",
       "content_hash": "",
       "status": "active"
@@ -4489,7 +4489,7 @@
       "slug": "06ffcf143fa50da7",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:15:26+09:00",
+      "last_seen_at": "2026-11-28T14:52:10+09:00",
       "source_id": "726752",
       "content_hash": "",
       "status": "active"
@@ -4498,7 +4498,7 @@
       "slug": "11eefb70783194e9",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:15:28+09:00",
+      "last_seen_at": "2026-11-28T14:52:12+09:00",
       "source_id": "726747",
       "content_hash": "",
       "status": "active"
@@ -4507,7 +4507,7 @@
       "slug": "12f5dda621569c19",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:15:30+09:00",
+      "last_seen_at": "2026-11-28T14:52:14+09:00",
       "source_id": "726550",
       "content_hash": "",
       "status": "active"
@@ -4516,7 +4516,7 @@
       "slug": "06d7641c32c1fb66",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:15:32+09:00",
+      "last_seen_at": "2026-11-28T14:52:16+09:00",
       "source_id": "726533",
       "content_hash": "",
       "status": "active"
@@ -4525,7 +4525,7 @@
       "slug": "8ee7a59f69df2231",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:15:34+09:00",
+      "last_seen_at": "2026-11-28T14:52:18+09:00",
       "source_id": "726442",
       "content_hash": "",
       "status": "active"
@@ -4534,7 +4534,7 @@
       "slug": "b703478a46d52cd9",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:17:19+09:00",
+      "last_seen_at": "2026-11-28T14:54:10+09:00",
       "source_id": "726763",
       "content_hash": "",
       "status": "active"
@@ -4543,7 +4543,7 @@
       "slug": "e4ffd5690f06bf54",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:17:21+09:00",
+      "last_seen_at": "2026-11-28T14:54:12+09:00",
       "source_id": "726492",
       "content_hash": "",
       "status": "active"
@@ -4552,7 +4552,7 @@
       "slug": "6127e11109ed38d2",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:17:24+09:00",
+      "last_seen_at": "2026-11-28T14:54:15+09:00",
       "source_id": "726399",
       "content_hash": "",
       "status": "active"
@@ -4561,7 +4561,7 @@
       "slug": "a1a801eeb08f9313",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:17:26+09:00",
+      "last_seen_at": "2026-11-28T14:54:17+09:00",
       "source_id": "726360",
       "content_hash": "",
       "status": "active"
@@ -4570,7 +4570,7 @@
       "slug": "36ce97783a5f3b70",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:20:38+09:00",
+      "last_seen_at": "2026-11-28T14:57:45+09:00",
       "source_id": "726707",
       "content_hash": "",
       "status": "active"
@@ -4579,7 +4579,7 @@
       "slug": "f96eff3a5df92916",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:20:36+09:00",
+      "last_seen_at": "2026-11-28T14:57:43+09:00",
       "source_id": "726748",
       "content_hash": "",
       "status": "active"
@@ -4588,7 +4588,7 @@
       "slug": "f3577cb64fd9f3b3",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:20:39+09:00",
+      "last_seen_at": "2026-11-28T14:57:46+09:00",
       "source_id": "726699",
       "content_hash": "",
       "status": "active"
@@ -4597,7 +4597,7 @@
       "slug": "0949d62cbdcad752",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:20:43+09:00",
+      "last_seen_at": "2026-11-28T14:57:51+09:00",
       "source_id": "726682",
       "content_hash": "",
       "status": "active"
@@ -4606,7 +4606,7 @@
       "slug": "a934c73ae3dd6a0d",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:20:45+09:00",
+      "last_seen_at": "2026-11-28T14:57:53+09:00",
       "source_id": "726532",
       "content_hash": "",
       "status": "active"
@@ -4615,7 +4615,7 @@
       "slug": "89c8d0e6782b1210",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:20:59+09:00",
+      "last_seen_at": "2026-11-28T14:58:02+09:00",
       "source_id": "726373",
       "content_hash": "",
       "status": "active"
@@ -4624,7 +4624,7 @@
       "slug": "f44604847240c5c9",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:21:01+09:00",
+      "last_seen_at": "2026-11-28T14:58:04+09:00",
       "source_id": "726372",
       "content_hash": "",
       "status": "active"
@@ -4633,7 +4633,7 @@
       "slug": "d2dc69fb885ae2f7",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:24:10+09:00",
+      "last_seen_at": "2026-11-28T15:01:10+09:00",
       "source_id": "726749",
       "content_hash": "",
       "status": "active"
@@ -4642,7 +4642,7 @@
       "slug": "398296d78f2fefd3",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:24:13+09:00",
+      "last_seen_at": "2026-11-28T15:01:14+09:00",
       "source_id": "726695",
       "content_hash": "",
       "status": "active"
@@ -4651,7 +4651,7 @@
       "slug": "1ab503b1ad2bb663",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:24:15+09:00",
+      "last_seen_at": "2026-11-28T15:01:16+09:00",
       "source_id": "726694",
       "content_hash": "",
       "status": "active"
@@ -4660,7 +4660,7 @@
       "slug": "8ce02b075be205fe",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:24:18+09:00",
+      "last_seen_at": "2026-11-28T15:01:19+09:00",
       "source_id": "726642",
       "content_hash": "",
       "status": "active"
@@ -4669,7 +4669,7 @@
       "slug": "2832138a3b538415",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:24:21+09:00",
+      "last_seen_at": "2026-11-28T15:01:22+09:00",
       "source_id": "726614",
       "content_hash": "",
       "status": "active"
@@ -4678,7 +4678,7 @@
       "slug": "c48e7b50eebc767e",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:24:23+09:00",
+      "last_seen_at": "2026-11-28T15:01:24+09:00",
       "source_id": "726606",
       "content_hash": "",
       "status": "active"
@@ -4687,7 +4687,7 @@
       "slug": "4d7343e96c372400",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:24:25+09:00",
+      "last_seen_at": "2026-11-28T15:01:26+09:00",
       "source_id": "726583",
       "content_hash": "",
       "status": "active"
@@ -4696,7 +4696,7 @@
       "slug": "99aca48d6516f368",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:24:28+09:00",
+      "last_seen_at": "2026-11-28T15:01:29+09:00",
       "source_id": "726568",
       "content_hash": "",
       "status": "active"
@@ -4705,7 +4705,7 @@
       "slug": "a8cbf4a592fe8572",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:24:30+09:00",
+      "last_seen_at": "2026-11-28T15:01:31+09:00",
       "source_id": "726546",
       "content_hash": "",
       "status": "active"
@@ -4714,7 +4714,7 @@
       "slug": "419938ef1d39aae9",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:24:32+09:00",
+      "last_seen_at": "2026-11-28T15:01:33+09:00",
       "source_id": "726444",
       "content_hash": "",
       "status": "active"
@@ -4723,7 +4723,7 @@
       "slug": "66b855cb51f5637c",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:24:35+09:00",
+      "last_seen_at": "2026-11-28T15:01:37+09:00",
       "source_id": "726426",
       "content_hash": "",
       "status": "active"
@@ -4732,7 +4732,7 @@
       "slug": "687243e4fdbe0239",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:24:38+09:00",
+      "last_seen_at": "2026-11-28T15:01:39+09:00",
       "source_id": "726410",
       "content_hash": "",
       "status": "active"
@@ -4741,7 +4741,7 @@
       "slug": "f87d37a1e8b16824",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:24:41+09:00",
+      "last_seen_at": "2026-11-28T15:01:42+09:00",
       "source_id": "726400",
       "content_hash": "",
       "status": "active"
@@ -4750,7 +4750,7 @@
       "slug": "6c31f26bf9c19422",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:24:45+09:00",
+      "last_seen_at": "2026-11-28T15:01:47+09:00",
       "source_id": "726385",
       "content_hash": "",
       "status": "active"
@@ -4759,7 +4759,7 @@
       "slug": "500a71dde94dc3ab",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:24:48+09:00",
+      "last_seen_at": "2026-11-28T15:01:50+09:00",
       "source_id": "726384",
       "content_hash": "",
       "status": "active"
@@ -4813,7 +4813,7 @@
       "slug": "31fae5af9efc9427",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:20:34+09:00",
+      "last_seen_at": "2026-11-28T14:57:41+09:00",
       "source_id": "726776",
       "content_hash": "",
       "status": "active"
@@ -4912,7 +4912,7 @@
       "slug": "fbb2961472ca7f7b",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:17:17+09:00",
+      "last_seen_at": "2026-11-28T14:54:08+09:00",
       "source_id": "726812",
       "content_hash": "",
       "status": "active"
@@ -4930,7 +4930,7 @@
       "slug": "a0e946b9216997ae",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:13:19+09:00",
+      "last_seen_at": "2026-11-28T14:49:44+09:00",
       "source_id": "726820",
       "content_hash": "",
       "status": "active"
@@ -4939,7 +4939,7 @@
       "slug": "b3a96e06c71cde0b",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:15:13+09:00",
+      "last_seen_at": "2026-11-28T14:51:57+09:00",
       "source_id": "726938",
       "content_hash": "",
       "status": "active"
@@ -4948,7 +4948,7 @@
       "slug": "d4f97a78a51f9cf5",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:15:15+09:00",
+      "last_seen_at": "2026-11-28T14:51:59+09:00",
       "source_id": "726927",
       "content_hash": "",
       "status": "active"
@@ -5119,7 +5119,7 @@
       "slug": "7cf0be2dc3f4003c",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:15:21+09:00",
+      "last_seen_at": "2026-11-28T14:52:04+09:00",
       "source_id": "726919",
       "content_hash": "",
       "status": "active"
@@ -5128,7 +5128,7 @@
       "slug": "a6fc05f1a4a7619d",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:15:23+09:00",
+      "last_seen_at": "2026-11-28T14:52:06+09:00",
       "source_id": "726882",
       "content_hash": "",
       "status": "active"
@@ -5137,7 +5137,7 @@
       "slug": "c145562ae449a536",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:15:24+09:00",
+      "last_seen_at": "2026-11-28T14:52:08+09:00",
       "source_id": "726848",
       "content_hash": "",
       "status": "active"
@@ -5146,7 +5146,7 @@
       "slug": "635e23652574d79f",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:20:30+09:00",
+      "last_seen_at": "2026-11-28T14:57:38+09:00",
       "source_id": "726818",
       "content_hash": "",
       "status": "active"
@@ -5155,7 +5155,7 @@
       "slug": "7881a6f2ba3e284b",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:20:29+09:00",
+      "last_seen_at": "2026-11-28T14:57:36+09:00",
       "source_id": "726831",
       "content_hash": "",
       "status": "active"
@@ -5164,7 +5164,7 @@
       "slug": "c904a5cb91a75987",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:23:46+09:00",
+      "last_seen_at": "2026-11-28T15:00:46+09:00",
       "source_id": "726934",
       "content_hash": "",
       "status": "active"
@@ -5173,7 +5173,7 @@
       "slug": "d4c70b3f654f0d48",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:23:51+09:00",
+      "last_seen_at": "2026-11-28T15:00:51+09:00",
       "source_id": "726923",
       "content_hash": "",
       "status": "active"
@@ -5182,7 +5182,7 @@
       "slug": "9bb0c104e7f30299",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:23:55+09:00",
+      "last_seen_at": "2026-11-28T15:00:55+09:00",
       "source_id": "726901",
       "content_hash": "",
       "status": "active"
@@ -5191,7 +5191,7 @@
       "slug": "a38edf6b5cdf8cad",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:24:00+09:00",
+      "last_seen_at": "2026-11-28T15:01:00+09:00",
       "source_id": "726886",
       "content_hash": "",
       "status": "active"
@@ -5200,7 +5200,7 @@
       "slug": "b019f0b97a794437",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:24:04+09:00",
+      "last_seen_at": "2026-11-28T15:01:05+09:00",
       "source_id": "726885",
       "content_hash": "",
       "status": "active"
@@ -5209,7 +5209,7 @@
       "slug": "7f8419f780691850",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:24:07+09:00",
+      "last_seen_at": "2026-11-28T15:01:07+09:00",
       "source_id": "726849",
       "content_hash": "",
       "status": "active"
@@ -5218,7 +5218,7 @@
       "slug": "acaf20e6678409a5",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:14:44+09:00",
+      "last_seen_at": "2026-11-28T14:51:22+09:00",
       "source_id": "726989",
       "content_hash": "",
       "status": "active"
@@ -5227,7 +5227,7 @@
       "slug": "152d0d075f55f23c",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:14:28+09:00",
+      "last_seen_at": "2026-11-28T14:51:03+09:00",
       "source_id": "727032",
       "content_hash": "",
       "status": "active"
@@ -5236,7 +5236,7 @@
       "slug": "b60ea0f460d2703c",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:14:29+09:00",
+      "last_seen_at": "2026-11-28T14:51:05+09:00",
       "source_id": "727031",
       "content_hash": "",
       "status": "active"
@@ -5245,7 +5245,7 @@
       "slug": "71da8c2bbe8db624",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:14:32+09:00",
+      "last_seen_at": "2026-11-28T14:51:08+09:00",
       "source_id": "727030",
       "content_hash": "",
       "status": "active"
@@ -5254,7 +5254,7 @@
       "slug": "601bc2e0abb04dee",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:13:01+09:00",
+      "last_seen_at": "2026-11-28T14:49:25+09:00",
       "source_id": "727028",
       "content_hash": "",
       "status": "active"
@@ -5263,7 +5263,7 @@
       "slug": "d1eb5642647e7492",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:14:35+09:00",
+      "last_seen_at": "2026-11-28T14:51:11+09:00",
       "source_id": "727025",
       "content_hash": "",
       "status": "active"
@@ -5272,7 +5272,7 @@
       "slug": "61e6123f052e01a4",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:14:37+09:00",
+      "last_seen_at": "2026-11-28T14:51:13+09:00",
       "source_id": "727022",
       "content_hash": "",
       "status": "active"
@@ -5281,7 +5281,7 @@
       "slug": "3a597ee72ad86c6e",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:14:40+09:00",
+      "last_seen_at": "2026-11-28T14:51:17+09:00",
       "source_id": "727020",
       "content_hash": "",
       "status": "active"
@@ -5290,7 +5290,7 @@
       "slug": "3c8cc7c98fa4ca21",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:14:42+09:00",
+      "last_seen_at": "2026-11-28T14:51:20+09:00",
       "source_id": "726992",
       "content_hash": "",
       "status": "active"
@@ -5299,7 +5299,7 @@
       "slug": "5abccca69a5b2f17",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:14:46+09:00",
+      "last_seen_at": "2026-11-28T14:51:24+09:00",
       "source_id": "726985",
       "content_hash": "",
       "status": "active"
@@ -5308,7 +5308,7 @@
       "slug": "d98e7aa1e18773f8",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:14:48+09:00",
+      "last_seen_at": "2026-11-28T14:51:27+09:00",
       "source_id": "726984",
       "content_hash": "",
       "status": "active"
@@ -5317,7 +5317,7 @@
       "slug": "a812cb97cec8fedf",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:14:50+09:00",
+      "last_seen_at": "2026-11-28T14:51:29+09:00",
       "source_id": "726983",
       "content_hash": "",
       "status": "active"
@@ -5326,7 +5326,7 @@
       "slug": "b39a9b2fe4e64e0a",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:14:53+09:00",
+      "last_seen_at": "2026-11-28T14:51:31+09:00",
       "source_id": "726979",
       "content_hash": "",
       "status": "active"
@@ -5335,7 +5335,7 @@
       "slug": "6f8ba889db7c7986",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:14:55+09:00",
+      "last_seen_at": "2026-11-28T14:51:34+09:00",
       "source_id": "726972",
       "content_hash": "",
       "status": "active"
@@ -5344,7 +5344,7 @@
       "slug": "7d2f2e92e1f31d1f",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:14:57+09:00",
+      "last_seen_at": "2026-11-28T14:51:36+09:00",
       "source_id": "726971",
       "content_hash": "",
       "status": "active"
@@ -5353,7 +5353,7 @@
       "slug": "45eef0fed4dae8a6",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:14:59+09:00",
+      "last_seen_at": "2026-11-28T14:51:38+09:00",
       "source_id": "726970",
       "content_hash": "",
       "status": "active"
@@ -5362,7 +5362,7 @@
       "slug": "250855535809cdba",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:15:09+09:00",
+      "last_seen_at": "2026-11-28T14:51:53+09:00",
       "source_id": "726949",
       "content_hash": "",
       "status": "active"
@@ -5371,7 +5371,7 @@
       "slug": "5737921a99646bbf",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:15:11+09:00",
+      "last_seen_at": "2026-11-28T14:51:55+09:00",
       "source_id": "726946",
       "content_hash": "",
       "status": "active"
@@ -5380,7 +5380,7 @@
       "slug": "f6a644c18f228188",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:17:03+09:00",
+      "last_seen_at": "2026-11-28T14:53:51+09:00",
       "source_id": "726947",
       "content_hash": "",
       "status": "active"
@@ -5389,7 +5389,7 @@
       "slug": "e1be5d6ef1ab9a32",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:20:13+09:00",
+      "last_seen_at": "2026-11-28T14:57:20+09:00",
       "source_id": "727027",
       "content_hash": "",
       "status": "active"
@@ -5398,7 +5398,7 @@
       "slug": "7bd4eccb9f39138d",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:20:15+09:00",
+      "last_seen_at": "2026-11-28T14:57:22+09:00",
       "source_id": "727021",
       "content_hash": "",
       "status": "active"
@@ -5407,7 +5407,7 @@
       "slug": "91e9aeff30b24fdf",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:23:34+09:00",
+      "last_seen_at": "2026-11-28T15:00:34+09:00",
       "source_id": "727026",
       "content_hash": "",
       "status": "active"
@@ -5416,7 +5416,7 @@
       "slug": "fbce26202135d9ba",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:23:37+09:00",
+      "last_seen_at": "2026-11-28T15:00:37+09:00",
       "source_id": "726988",
       "content_hash": "",
       "status": "active"
@@ -5425,7 +5425,7 @@
       "slug": "3d69877f2f656c04",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:23:41+09:00",
+      "last_seen_at": "2026-11-28T15:00:41+09:00",
       "source_id": "726987",
       "content_hash": "",
       "status": "active"
@@ -5434,17 +5434,8 @@
       "slug": "2c61f43402e0047a",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:23:43+09:00",
+      "last_seen_at": "2026-11-28T15:00:43+09:00",
       "source_id": "726965",
-      "content_hash": "",
-      "status": "active"
-    },
-    "727058": {
-      "slug": "b853b11586e4278c",
-      "category": "공지사항",
-      "miss_count": 2,
-      "last_seen_at": "2026-11-24T18:28:23+09:00",
-      "source_id": "727058",
       "content_hash": "",
       "status": "active"
     },
@@ -5452,7 +5443,7 @@
       "slug": "724034b59751855c",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:14:17+09:00",
+      "last_seen_at": "2026-11-28T14:50:52+09:00",
       "source_id": "727056",
       "content_hash": "",
       "status": "active"
@@ -5461,7 +5452,7 @@
       "slug": "3fcfc66dc36372d0",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:14:23+09:00",
+      "last_seen_at": "2026-11-28T14:50:58+09:00",
       "source_id": "727043",
       "content_hash": "",
       "status": "active"
@@ -5470,7 +5461,7 @@
       "slug": "938159244db1f804",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:14:25+09:00",
+      "last_seen_at": "2026-11-28T14:51:00+09:00",
       "source_id": "727040",
       "content_hash": "",
       "status": "active"
@@ -5479,7 +5470,7 @@
       "slug": "cce798efef1003ed",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:12:59+09:00",
+      "last_seen_at": "2026-11-28T14:49:23+09:00",
       "source_id": "727036",
       "content_hash": "",
       "status": "active"
@@ -5488,7 +5479,7 @@
       "slug": "a6346cd1541bc724",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:14:13+09:00",
+      "last_seen_at": "2026-11-28T14:50:47+09:00",
       "source_id": "727069",
       "content_hash": "",
       "status": "active"
@@ -5497,7 +5488,7 @@
       "slug": "312d393ce62ace11",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:14:14+09:00",
+      "last_seen_at": "2026-11-28T14:50:49+09:00",
       "source_id": "727062",
       "content_hash": "",
       "status": "active"
@@ -5506,7 +5497,7 @@
       "slug": "fbbfcfaa035ad32f",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:14:04+09:00",
+      "last_seen_at": "2026-11-28T14:50:38+09:00",
       "source_id": "727080",
       "content_hash": "",
       "status": "active"
@@ -5515,7 +5506,7 @@
       "slug": "791bc7e0bbd818af",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:14:08+09:00",
+      "last_seen_at": "2026-11-28T14:50:42+09:00",
       "source_id": "727076",
       "content_hash": "",
       "status": "active"
@@ -5524,7 +5515,7 @@
       "slug": "c3f61b68ef32be2b",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:14:11+09:00",
+      "last_seen_at": "2026-11-28T14:50:45+09:00",
       "source_id": "727075",
       "content_hash": "",
       "status": "active"
@@ -5533,7 +5524,7 @@
       "slug": "07ecc37d0be35182",
       "category": "초빙·채용",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:23:32+09:00",
+      "last_seen_at": "2026-11-28T15:00:32+09:00",
       "source_id": "727073",
       "content_hash": "",
       "status": "active"
@@ -5542,7 +5533,7 @@
       "slug": "23928a0ebff1af39",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:12:54+09:00",
+      "last_seen_at": "2026-11-28T14:49:18+09:00",
       "source_id": "727090",
       "content_hash": "",
       "status": "active"
@@ -5551,7 +5542,7 @@
       "slug": "aa702f3094af8ac4",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:13:57+09:00",
+      "last_seen_at": "2026-11-28T14:50:29+09:00",
       "source_id": "727087",
       "content_hash": "",
       "status": "active"
@@ -5560,7 +5551,7 @@
       "slug": "778dbb66ea45449e",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:12:57+09:00",
+      "last_seen_at": "2026-11-28T14:49:21+09:00",
       "source_id": "727086",
       "content_hash": "",
       "status": "active"
@@ -5569,7 +5560,7 @@
       "slug": "ca24d1a2bb0bf550",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:13:59+09:00",
+      "last_seen_at": "2026-11-28T14:50:31+09:00",
       "source_id": "727085",
       "content_hash": "",
       "status": "active"
@@ -5578,7 +5569,7 @@
       "slug": "458e1bf95187516f",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:14:02+09:00",
+      "last_seen_at": "2026-11-28T14:50:36+09:00",
       "source_id": "727083",
       "content_hash": "",
       "status": "active"
@@ -5587,7 +5578,7 @@
       "slug": "c1cdbab09e6f27b0",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:20:02+09:00",
+      "last_seen_at": "2026-11-28T14:57:08+09:00",
       "source_id": "727094",
       "content_hash": "",
       "status": "active"
@@ -5596,7 +5587,7 @@
       "slug": "564c46667c91f7c5",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:20:12+09:00",
+      "last_seen_at": "2026-11-28T14:57:18+09:00",
       "source_id": "727093",
       "content_hash": "",
       "status": "active"
@@ -5605,7 +5596,7 @@
       "slug": "f857010ddd642a9d",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:13:53+09:00",
+      "last_seen_at": "2026-11-28T14:50:25+09:00",
       "source_id": "727109",
       "content_hash": "",
       "status": "active"
@@ -5614,7 +5605,7 @@
       "slug": "6341af6def81ee4d",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:13:55+09:00",
+      "last_seen_at": "2026-11-28T14:50:27+09:00",
       "source_id": "727103",
       "content_hash": "",
       "status": "active"
@@ -5623,7 +5614,7 @@
       "slug": "6334e3ccc88202a1",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:15:19+09:00",
+      "last_seen_at": "2026-11-28T14:52:02+09:00",
       "source_id": "727101",
       "content_hash": "",
       "status": "active"
@@ -5632,7 +5623,7 @@
       "slug": "e101a7805def2c2f",
       "category": "학사안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:16:58+09:00",
+      "last_seen_at": "2026-11-28T14:53:46+09:00",
       "source_id": "727113",
       "content_hash": "",
       "status": "active"
@@ -5641,7 +5632,7 @@
       "slug": "1d9f55a46fc6303e",
       "category": "등록·장학",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:20:01+09:00",
+      "last_seen_at": "2026-11-28T14:57:07+09:00",
       "source_id": "727108",
       "content_hash": "",
       "status": "active"
@@ -5650,7 +5641,7 @@
       "slug": "ba35fa66bc475e9f",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:13:40+09:00",
+      "last_seen_at": "2026-11-28T14:50:07+09:00",
       "source_id": "727130",
       "content_hash": "",
       "status": "active"
@@ -5659,7 +5650,7 @@
       "slug": "7ae1a07ef1b19488",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:13:42+09:00",
+      "last_seen_at": "2026-11-28T14:50:10+09:00",
       "source_id": "727129",
       "content_hash": "",
       "status": "active"
@@ -5668,7 +5659,7 @@
       "slug": "77fab61731cf6b0c",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:13:44+09:00",
+      "last_seen_at": "2026-11-28T14:50:13+09:00",
       "source_id": "727115",
       "content_hash": "",
       "status": "active"
@@ -5677,7 +5668,7 @@
       "slug": "ca05cd2c2f6cebb1",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:13:51+09:00",
+      "last_seen_at": "2026-11-28T14:50:22+09:00",
       "source_id": "727114",
       "content_hash": "",
       "status": "active"
@@ -5686,7 +5677,7 @@
       "slug": "25187c4022c3ccff",
       "category": "비교과안내",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:15:17+09:00",
+      "last_seen_at": "2026-11-28T14:52:01+09:00",
       "source_id": "727116",
       "content_hash": "",
       "status": "active"
@@ -5695,7 +5686,7 @@
       "slug": "3261ca95492af37d",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:13:28+09:00",
+      "last_seen_at": "2026-11-28T14:49:53+09:00",
       "source_id": "727142",
       "content_hash": "",
       "status": "active"
@@ -5704,7 +5695,7 @@
       "slug": "d6e8a9dca13d6e71",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:13:32+09:00",
+      "last_seen_at": "2026-11-28T14:49:57+09:00",
       "source_id": "727140",
       "content_hash": "",
       "status": "active"
@@ -5713,7 +5704,7 @@
       "slug": "b723a9fbe8266927",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:13:34+09:00",
+      "last_seen_at": "2026-11-28T14:50:01+09:00",
       "source_id": "727139",
       "content_hash": "",
       "status": "active"
@@ -5722,7 +5713,7 @@
       "slug": "882dfa97bae33391",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:13:36+09:00",
+      "last_seen_at": "2026-11-28T14:50:03+09:00",
       "source_id": "727136",
       "content_hash": "",
       "status": "active"
@@ -5731,7 +5722,7 @@
       "slug": "8385f01525f8d2a8",
       "category": "공지사항",
       "miss_count": 0,
-      "last_seen_at": "2026-11-27T15:13:38+09:00",
+      "last_seen_at": "2026-11-28T14:50:05+09:00",
       "source_id": "727135",
       "content_hash": "",
       "status": "active"
